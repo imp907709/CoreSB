@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CoreSB
+namespace CoreSB.Domain
 {
     public class WeatherForecast
     {

@@ -1,1 +1,22 @@
-{"Messages":{"SrviceMessages":{"TestMessage":"inited test message","ServiceIsNull":"service is null"},"InfoMessageTypes":{"Success":"Success","Error":"Error","ModelValidationError":"ModelValidationError","Information":"Information","EntityNotFound":"Entity not found","EntityAllreadyExistFound":"Entity allready exist"},"ActionTypes":{"onCreation":"creating","onUpdate":"updating","onGet":"reading","onDelete":"deleting"}}}
+{
+  "Messages": {
+    "SrviceMessages": {
+      "TestMessage": "inited test message",
+      "ServiceIsNull": "service is null"
+    },
+    "InfoMessageTypes": {
+      "Success": "Success",
+      "Error": "Error",
+      "ModelValidationError": "ModelValidationError",
+      "Information": "Information",
+      "EntityNotFound": "Entity not found",
+      "EntityAllreadyExistFound": "Entity allready exist"
+    },
+    "ActionTypes": {
+      "onCreation": "creating",
+      "onUpdate": "updating",
+      "onGet": "reading",
+      "onDelete": "deleting"
+    }
+  }
+}

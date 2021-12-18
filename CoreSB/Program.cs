@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using InfrastructureCheckers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace CoreSB
@@ -7,6 +8,7 @@ namespace CoreSB
     {
         public static void Main(string[] args)
         {
+            RepoAndUOWCheck.GO();
             CreateHostBuilder(args).Build().Run();
         }
 

@@ -1,24 +1,42 @@
 ﻿
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
+using CoreSB.Universal.Infrastructure.Bus;
+using CoreSB.Universal.Infrastructure.EF;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace crmvcsb
+namespace coreSB
 {
-    using System.Threading.Tasks;
-
     public class SandBox
     {
         static SandBox item = new SandBox();
         public static void GO()
         {
-            SandBox.item._GO();
+            item._GO();
         }
         public void _GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{ System.Reflection.MethodBase.GetCurrentMethod().DeclaringType };{System.Reflection.MethodBase.GetCurrentMethod().Name}");
+            Trace.WriteLine($"{ MethodBase.GetCurrentMethod().DeclaringType };{MethodBase.GetCurrentMethod().Name}");
         }
 
         public static Task GOasync()
@@ -41,20 +59,20 @@ namespace crmvcsb
 
 namespace InfrastructureCheckers
 {
-
-    using System.Collections.Generic;
-    using System.Text;
-    using CoreSB.Universal.Infrastructure.Bus;
-    using Microsoft.EntityFrameworkCore;
+    
+    public class ConnectionStrings 
+    {
+        public static string MsSQlCoreSBConnection => "Server=192.168.0.100,1433;Database=coreSB;User Id=sa;password=QwErTy_1;MultipleActiveResultSets=true";
+        public static string DockerMsSQlCoreSBConnection => "Server=WINDOWS-VCTMMRG\\SQLEXPRESS;Database=coreSB;Trusted_Connection=True;";
+        public static string PgSQlCoreSBConnection =>  "Host=localhost;Port=5433;Database=coreSB;Username=postgres;Password=postgres";
+    }
 
     public static class RepoAndUOWCheck
     {
-        //static string connectionStringSQL = "Server=HP-HP000114\\SQLEXPRESS02;Database=EFdb;Trusted_Connection=True;";
-        static string connectionStringSQL = "Server=AAAPC;Database=currenciesDB;User Id=tl;Password=awsedrDRSEAW;";
-        static string connectionStringSQLnewOrder = "Server=AAAPC;Database=newOrderDB;User Id=tl;Password=awsedrDRSEAW;";
+        static string connectionStringSQL = ConnectionStrings.MsSQlCoreSBConnection;
+        static string connectionStringSQLnewOrder = ConnectionStrings.MsSQlCoreSBConnection;
         public static void GO()
         {
-            ExpressionsPOC.GO();
             DbWithRepoReinitCheck();
         }
 
@@ -65,19 +83,18 @@ namespace InfrastructureCheckers
                 new DbContextOptionsBuilder<CurrencyContextWrite>()
                     .UseSqlServer(connectionStringSQL).Options))
             {
-                CoreSB.Universal.Infrastructure.EF.RepositoryEF repo = new CoreSB.Universal.Infrastructure.EF.RepositoryEF(context);
+                RepositoryEF repo = new RepositoryEF(context);
 
                 List<CurrencyRatesDAL> currencies = repo.QueryByFilter<CurrencyRatesDAL>(s => s.Id != 0).ToList();
                 repo.DeleteRange(currencies);
                 repo.Save();
 
                 repo.ReInitialize();
-
             }
 
             using (ContextNewOrder newOrderContext = new ContextNewOrder(new DbContextOptionsBuilder<ContextNewOrder>().UseSqlServer(connectionStringSQLnewOrder).Options))
             {
-                CoreSB.Universal.Infrastructure.EF.RepositoryEF repo = new CoreSB.Universal.Infrastructure.EF.RepositoryEF(newOrderContext);
+                RepositoryEF repo = new RepositoryEF(newOrderContext);
 
                 var addresses = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
                 repo.DeleteRange(addresses);
@@ -88,7 +105,6 @@ namespace InfrastructureCheckers
             }
 
         }
-
     }
 
     public class Buss
@@ -121,26 +137,16 @@ namespace InfrastructureCheckers
             return message;
         }
     }
+
+    public class ExpressionsPOCCheck
+    {
+        //ExpressionsPOC.GO();
+    }
 }
 
 
 namespace NetPlatformCheckers
 {
-
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Reflection;
-    using System.Runtime.CompilerServices;
-    using System.Security.Cryptography;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-
     public static class Check
     {
 
@@ -330,8 +336,8 @@ namespace NetPlatformCheckers
 
             result = a.Equals(b); //true && ()
             result = a == b; //true
-            result = string.ReferenceEquals(a, b); //false (not from same string)
-            result = string.ReferenceEquals(c, d); //false
+            result = ReferenceEquals(a, b); //false (not from same string)
+            result = ReferenceEquals(c, d); //false
 
             result = c.Equals(d); //true str equals by val
             result = c == d; //false obj equals by ref
@@ -340,8 +346,8 @@ namespace NetPlatformCheckers
             result = a == c;//false by ref
             result = e == r; //true by ref
 
-            result = object.ReferenceEquals(a, b); //false
-            result = object.ReferenceEquals(c, d); //false
+            result = ReferenceEquals(a, b); //false
+            result = ReferenceEquals(c, d); //false
 
 
             object objStr = "String";
@@ -371,28 +377,28 @@ namespace NetPlatformCheckers
             //ReferenceEquals
             //obj(str)||str""
             //true
-            result = object.ReferenceEquals(o1, o2);
-            result = object.ReferenceEquals(o4, o5);
-            result = object.ReferenceEquals(s1, s2);
-            result = object.ReferenceEquals(s4, s5);
+            result = ReferenceEquals(o1, o2);
+            result = ReferenceEquals(o4, o5);
+            result = ReferenceEquals(s1, s2);
+            result = ReferenceEquals(s4, s5);
 
             //false
-            result = object.ReferenceEquals(o1, o3);
-            result = object.ReferenceEquals(o1, o4);
-            result = object.ReferenceEquals(o1, o5);
-            result = object.ReferenceEquals(o2, o3);
-            result = object.ReferenceEquals(o2, o4);
-            result = object.ReferenceEquals(o2, o5);
-            result = object.ReferenceEquals(o3, o4);
-            result = object.ReferenceEquals(o3, o5);
-            result = object.ReferenceEquals(s1, s3);
-            result = object.ReferenceEquals(s1, s4);
-            result = object.ReferenceEquals(s1, s5);
-            result = object.ReferenceEquals(s2, s3);
-            result = object.ReferenceEquals(s2, s4);
-            result = object.ReferenceEquals(s2, s5);
-            result = object.ReferenceEquals(s3, s4);
-            result = object.ReferenceEquals(s3, s5);
+            result = ReferenceEquals(o1, o3);
+            result = ReferenceEquals(o1, o4);
+            result = ReferenceEquals(o1, o5);
+            result = ReferenceEquals(o2, o3);
+            result = ReferenceEquals(o2, o4);
+            result = ReferenceEquals(o2, o5);
+            result = ReferenceEquals(o3, o4);
+            result = ReferenceEquals(o3, o5);
+            result = ReferenceEquals(s1, s3);
+            result = ReferenceEquals(s1, s4);
+            result = ReferenceEquals(s1, s5);
+            result = ReferenceEquals(s2, s3);
+            result = ReferenceEquals(s2, s4);
+            result = ReferenceEquals(s2, s5);
+            result = ReferenceEquals(s3, s4);
+            result = ReferenceEquals(s3, s5);
 
 
             //==
@@ -650,8 +656,8 @@ namespace NetPlatformCheckers
         private void _GO()
         {
             ABSchild aschild = new ABSchild();
-            System.Diagnostics.Trace.WriteLine(ABSchild.ParentProp);
-            System.Diagnostics.Trace.WriteLine(ABSchild.AbsChildProp);
+            Trace.WriteLine(ABSchild.ParentProp);
+            Trace.WriteLine(ABSchild.AbsChildProp);
         }
     }
 
@@ -759,7 +765,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             parent parent = new parent();
             parent parentAsChild1 = new child1();
@@ -767,14 +773,14 @@ namespace NetPlatformCheckers
             child1 child = new child1();
 
 
-            System.Diagnostics.Trace.WriteLine(parent.printV()); //base
-            System.Diagnostics.Trace.WriteLine(parent.log()); //base
-            System.Diagnostics.Trace.WriteLine(parentAsChild1.printV()); //child1
-            System.Diagnostics.Trace.WriteLine(parentAsChild1.log()); //base
-            System.Diagnostics.Trace.WriteLine(parentAsChild2.printV()); //base
-            System.Diagnostics.Trace.WriteLine(parentAsChild2.log()); //base
-            System.Diagnostics.Trace.WriteLine(child.printV()); //child1
-            System.Diagnostics.Trace.WriteLine(child.log()); //child1
+            Trace.WriteLine(parent.printV()); //base
+            Trace.WriteLine(parent.log()); //base
+            Trace.WriteLine(parentAsChild1.printV()); //child1
+            Trace.WriteLine(parentAsChild1.log()); //base
+            Trace.WriteLine(parentAsChild2.printV()); //base
+            Trace.WriteLine(parentAsChild2.log()); //base
+            Trace.WriteLine(child.printV()); //child1
+            Trace.WriteLine(child.log()); //child1
         }
     }
     public static class EqualIsCheck
@@ -782,7 +788,7 @@ namespace NetPlatformCheckers
         public static void GO()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             parent parent = new parent();
             parent parentAsChild1 = new child1();
@@ -796,11 +802,11 @@ namespace NetPlatformCheckers
 
             bool childIsParent = child is parent;
 
-            System.Diagnostics.Trace.WriteLine($"parentAsChild2IsEqualsParentAsChild1: {parentAsChild2IsEqualsParentAsChild1}");
+            Trace.WriteLine($"parentAsChild2IsEqualsParentAsChild1: {parentAsChild2IsEqualsParentAsChild1}");
 
-            System.Diagnostics.Trace.WriteLine($"parentAsChild1IsParent: {parentAsChild1IsParent}");
-            System.Diagnostics.Trace.WriteLine($"parentAsChild1IsChild1: {parentAsChild1IsChild1}");
-            System.Diagnostics.Trace.WriteLine($"childIsParent: {childIsParent}");
+            Trace.WriteLine($"parentAsChild1IsParent: {parentAsChild1IsParent}");
+            Trace.WriteLine($"parentAsChild1IsChild1: {parentAsChild1IsChild1}");
+            Trace.WriteLine($"childIsParent: {childIsParent}");
         }
     }
 
@@ -812,22 +818,22 @@ namespace NetPlatformCheckers
 
     public class AC : IA
     {
-        public void A() { System.Diagnostics.Trace.WriteLine("A"); }
+        public void A() { Trace.WriteLine("A"); }
     }
 
     public class BC : AC
     {
-        public new void A() { System.Diagnostics.Trace.WriteLine("B"); }
+        public new void A() { Trace.WriteLine("B"); }
     }
     //overrides 
     public class CC : BC, IA
     {
-        public new void A() { System.Diagnostics.Trace.WriteLine("C"); }
+        public new void A() { Trace.WriteLine("C"); }
     }
     //Also overrides
     public class DD : AC, IA
     {
-        public new void A() { System.Diagnostics.Trace.WriteLine("D"); }
+        public new void A() { Trace.WriteLine("D"); }
     }
     public static class LinearInheritance
     {
@@ -865,11 +871,11 @@ namespace NetPlatformCheckers
     {
         public void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in A");
+            Trace.WriteLine("a in A");
         }
         public virtual void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in A");
+            Trace.WriteLine("b in A");
         }
     }
 
@@ -878,44 +884,44 @@ namespace NetPlatformCheckers
     {
         public new void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in B");
+            Trace.WriteLine("a in B");
         }
         public void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in B");
+            Trace.WriteLine("b in B");
         }
     }
     public class C : A, ia
     {
         public new void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in C");
+            Trace.WriteLine("a in C");
         }
         public new void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in C");
+            Trace.WriteLine("b in C");
         }
     }
     public class D : A
     {
         public new void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in D");
+            Trace.WriteLine("a in D");
         }
         public override void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in D");
+            Trace.WriteLine("b in D");
         }
     }
     public class E : A, ib
     {
         public new void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in E");
+            Trace.WriteLine("a in E");
         }
         public new void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in E");
+            Trace.WriteLine("b in E");
         }
     }
     public class Eo : A, ib
@@ -923,11 +929,11 @@ namespace NetPlatformCheckers
 
         public new void mA()
         {
-            System.Diagnostics.Trace.WriteLine("a in E");
+            Trace.WriteLine("a in E");
         }
         public override void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in Eo");
+            Trace.WriteLine("b in Eo");
         }
     }
 
@@ -939,7 +945,7 @@ namespace NetPlatformCheckers
     {
         public override void mB()
         {
-            System.Diagnostics.Trace.WriteLine("b in D2");
+            Trace.WriteLine("b in D2");
         }
     }
 
@@ -947,7 +953,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             A aFromB = new B();
             A aFormC = new C();
             A aFromD = new D();
@@ -1004,7 +1010,7 @@ namespace NetPlatformCheckers
         public static void GO()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             D1 d1 = new D1();
             A dfromA = new D1();
@@ -1116,7 +1122,7 @@ namespace NetPlatformCheckers
         public static void Go()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             ParentClass parentFromChild = new ChildClass();
 
@@ -1167,7 +1173,7 @@ namespace NetPlatformCheckers
                     if (cmpr(arr[i], arr[i + 1]) > 0)
                     {
                         sort = true;
-                        SwapG.swap<T>(arr, arr.IndexOf(arr[i]), arr.IndexOf(arr[i + 1]));
+                        swap<T>(arr, arr.IndexOf(arr[i]), arr.IndexOf(arr[i + 1]));
                     }
                 }
             }
@@ -1201,7 +1207,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             List<EntityForSwap> arr =
             new List<EntityForSwap>(){
                 new EntityForSwap(){ID=0},
@@ -1211,17 +1217,17 @@ namespace NetPlatformCheckers
                 new EntityForSwap(){ID=1}
             };
 
-            System.Diagnostics.Trace.WriteLine("before swap:");
+            Trace.WriteLine("before swap:");
             foreach (EntityForSwap p in arr) { Console.Write(p.ID); }
 
             SwapG.Sort<EntityForSwap>(arr, Comparers.desc<IEntityID>);
 
-            System.Diagnostics.Trace.WriteLine("after swap desc:");
+            Trace.WriteLine("after swap desc:");
             foreach (EntityForSwap p in arr) { Console.Write(p.ID); }
 
             SwapG.Sort<EntityForSwap>(arr, Comparers.asc<IEntityID>);
 
-            System.Diagnostics.Trace.WriteLine("after swap asc:");
+            Trace.WriteLine("after swap asc:");
             foreach (EntityForSwap p in arr) { Console.Write(p.ID); }
 
         }
@@ -1241,18 +1247,18 @@ namespace NetPlatformCheckers
         {
             //named method instance
             Del1 d11 = print;
-            System.Diagnostics.Trace.WriteLine(d11.Invoke(2));
-            System.Diagnostics.Trace.WriteLine(d11(3));
+            Trace.WriteLine(d11.Invoke(2));
+            Trace.WriteLine(d11(3));
 
             //anonimous method instance
             Del1 d12 = delegate (int i) { return "Anonimous to str: " + i.ToString(); };
-            System.Diagnostics.Trace.WriteLine(d12.Invoke(4));
-            System.Diagnostics.Trace.WriteLine(d12(5));
+            Trace.WriteLine(d12.Invoke(4));
+            Trace.WriteLine(d12(5));
 
             //lambda instance
             Del1 d13 = s => "Lambd to str:" + s.ToString();
-            System.Diagnostics.Trace.WriteLine(d13.Invoke(6));
-            System.Diagnostics.Trace.WriteLine(d13(7));
+            Trace.WriteLine(d13.Invoke(6));
+            Trace.WriteLine(d13(7));
 
         }
 
@@ -1300,13 +1306,13 @@ namespace NetPlatformCheckers
         string print2(int i)
         {
             string ret = "Print2 of str:" + i.ToString();
-            System.Diagnostics.Trace.WriteLine(ret);
+            Trace.WriteLine(ret);
             return ret;
         }
         string print3(int i)
         {
             string ret = "Print3 of str:" + i.ToString();
-            System.Diagnostics.Trace.WriteLine(ret);
+            Trace.WriteLine(ret);
             return ret;
         }
     }
@@ -1330,17 +1336,17 @@ namespace NetPlatformCheckers
         public void GO()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             //delegate initializations
             //with method name		  
             PrintString = PrintStringA;
 
             //#2.0 anonimous init
-            PrintString2 = delegate (string i) { System.Diagnostics.Trace.WriteLine(@"Anonimous init for: " + i); };
+            PrintString2 = delegate (string i) { Trace.WriteLine(@"Anonimous init for: " + i); };
 
             //#3.0 lambda
-            PrintString3 = (x) => { System.Diagnostics.Trace.WriteLine(@"Lambda init for: " + x); };
+            PrintString3 = (x) => { Trace.WriteLine(@"Lambda init for: " + x); };
 
             //change method order at runtime from Rand values
             arr = new GetStringDel[rnd.Next(1, 10)];
@@ -1376,7 +1382,7 @@ namespace NetPlatformCheckers
         }
         public void PrintStringA(string i)
         {
-            System.Diagnostics.Trace.WriteLine(" Method init for  : " + @" " + i);
+            Trace.WriteLine(" Method init for  : " + @" " + i);
         }
 
     }
@@ -1385,7 +1391,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             DelegateInvokation.GO();
 
             DelegateEmitter dr = new DelegateEmitter();
@@ -1473,7 +1479,7 @@ namespace NetPlatformCheckers
     {
         public void ReceiveEvent(object sender, CreateEvent e)
         {
-            System.Diagnostics.Trace.WriteLine(@"Event raised for sender: " + sender + @"; e: " + e.ID + @" " + e.Name);
+            Trace.WriteLine(@"Event raised for sender: " + sender + @"; e: " + e.ID + @" " + e.Name);
         }
     }
     public static class Event
@@ -1546,7 +1552,7 @@ namespace NetPlatformCheckers
             if (cr_.GetType().Equals(typeof(Car)))
             {
                 Car cr = (Car)cr_;
-                System.Diagnostics.Trace.WriteLine($"Speed changed: { cr.name}  {e.speed}");
+                Trace.WriteLine($"Speed changed: { cr.name}  {e.speed}");
             }
         }
     }
@@ -1557,7 +1563,7 @@ namespace NetPlatformCheckers
             if (o.GetType().Equals(typeof(Car)))
             {
                 Car cr = (Car)o;
-                System.Diagnostics.Trace.WriteLine($"Car broke: { cr.name}  {e.broken}");
+                Trace.WriteLine($"Car broke: { cr.name}  {e.broken}");
             }
         }
     }
@@ -1587,7 +1593,7 @@ namespace NetPlatformCheckers
     {
         public void lsiten(object e, PrintOrCancell args)
         {
-            System.Diagnostics.Trace.WriteLine(args.toPrint);
+            Trace.WriteLine(args.toPrint);
             if (args.toPrint.Length > 6) { args.stop = true; }
         }
     }
@@ -1660,7 +1666,7 @@ namespace NetPlatformCheckers
         }
         void logResult(int? res)
         {
-            System.Diagnostics.Trace.Write($"result={res}");
+            Trace.Write($"result={res}");
         }
     }
     public class ListenerAsync
@@ -1673,7 +1679,7 @@ namespace NetPlatformCheckers
                 int i = await Countlarge(args.arr);
                 args.sum = i;
             }
-            catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+            catch (Exception e) { Trace.WriteLine(e.Message); }
         }
         async Task<int> Countlarge(List<int> amt)
         {
@@ -1715,7 +1721,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             SampleEventCheck();
             CancelationCheck();
             UpdatedCoreEventCheck();
@@ -1725,7 +1731,7 @@ namespace NetPlatformCheckers
 
         static void SampleEventCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             Car car0 = new Car() { name = "car0" };
             Car car1 = new Car() { name = "car1" };
             SpeedListener sl = new SpeedListener();
@@ -1740,7 +1746,7 @@ namespace NetPlatformCheckers
         }
         static void CancelationCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             List<string> strs = new List<string>() { "a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa" };
             PrinterEmitter pe = new PrinterEmitter();
             PrintListener pl = new PrintListener();
@@ -1749,7 +1755,7 @@ namespace NetPlatformCheckers
         }
         static void UpdatedCoreEventCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             CountEmitter ce = new CountEmitter();
             CountListener cl = new CountListener();
             List<int> cnt = new List<int>() { 1, 2, 3, 4, 5, 6 };
@@ -1758,7 +1764,7 @@ namespace NetPlatformCheckers
         }
         static void AsyncEventsCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             CountAsync ca = new CountAsync();
             ListenerAsync la = new ListenerAsync();
             ca.onCnt += la.Listen;
@@ -1777,7 +1783,7 @@ namespace NetPlatformCheckers
 
         static void NamedEventsCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             Receiver rc = new Receiver();
             Emitter em = new Emitter();
             em._handler += rc.ReceiveEvent;
@@ -1939,7 +1945,7 @@ namespace NetPlatformCheckers
         {
             foreach (Document doc in documentList)
             {
-                System.Diagnostics.Debug.WriteLine("Document: {0}, with priority: {1}", doc.Title, doc.Priority);
+                Debug.WriteLine("Document: {0}, with priority: {1}", doc.Title, doc.Priority);
             }
         }
 
@@ -1992,21 +1998,21 @@ namespace NetPlatformCheckers
         {
             foreach (string st in ls)
             {
-                System.Diagnostics.Debug.WriteLine(st);
+                Debug.WriteLine(st);
             }
-            System.Diagnostics.Debug.WriteLine("-----");
+            Debug.WriteLine("-----");
         }
         public void displayNode(LinkedListNode<string> node_)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine(node_.Value);
-                System.Diagnostics.Debug.WriteLine(node_.Previous.Value);
-                System.Diagnostics.Debug.WriteLine(node_.Next.Value);
+                Debug.WriteLine(node_.Value);
+                Debug.WriteLine(node_.Previous.Value);
+                Debug.WriteLine(node_.Next.Value);
             }
             catch (Exception e)
             {
-                System.Diagnostics.Trace.Write(e.Message);
+                Trace.Write(e.Message);
             }
         }
     }
@@ -2015,7 +2021,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             PriorityDocumentManager.NodesInit();
 
@@ -2043,19 +2049,19 @@ namespace NetPlatformCheckers
 
         public async static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             AsyncCheck asCheck = new AsyncCheck();
             await asCheck.SumResultOfCollectionOfTasks();
         }
 
         public async Task<int> GO_async()
         {
-            System.Diagnostics.Trace.WriteLine("GO async started");
-            System.Diagnostics.Trace.WriteLine($"result = {AsyncCheck.result}");
+            Trace.WriteLine("GO async started");
+            Trace.WriteLine($"result = {result}");
             var r = await GetStringAsync();
-            System.Diagnostics.Trace.WriteLine("GO async finished");
-            System.Diagnostics.Trace.WriteLine($"result = {AsyncCheck.result}");
-            System.Diagnostics.Trace.WriteLine($"r = {r}");
+            Trace.WriteLine("GO async finished");
+            Trace.WriteLine($"result = {result}");
+            Trace.WriteLine($"r = {r}");
             return 1;
         }
         public async Task<string> GetStringAsync()
@@ -2111,7 +2117,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             for (int i = 0; i < 2000; i++)
             {
@@ -2150,7 +2156,7 @@ namespace NetPlatformCheckers
         public void LoopThroughtAssemblyReflections()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             Assembly asm = Assembly.GetCallingAssembly();
             Type[] types_ = asm.GetTypes();
@@ -2169,7 +2175,7 @@ namespace NetPlatformCheckers
                     if (constructor != null)
                     {
                         var c = Activator.CreateInstance(b);
-                        System.Diagnostics.Trace.WriteLine($"TypeName instatiated from asm: {c.GetType()}");
+                        Trace.WriteLine($"TypeName instatiated from asm: {c.GetType()}");
                     }
                 }
             }
@@ -2178,7 +2184,7 @@ namespace NetPlatformCheckers
         public void LoopThroughtProperties()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             List<ModelForReflectionTwo> ClassCollection = new List<ModelForReflectionTwo>(){
                 new ModelForReflectionTwo(){Id= new Guid(), Name ="Name1", Sername="Sername2"}
@@ -2198,11 +2204,11 @@ namespace NetPlatformCheckers
                     bool val = (bool)na.AttrType;
                 }
 
-                System.Diagnostics.Trace.WriteLine(c.Name);
+                Trace.WriteLine(c.Name);
                 foreach (ModelForReflectionTwo item in ClassCollection)
                 {
                     var d = item.GetType().GetProperty(c.Name).GetValue(item);
-                    System.Diagnostics.Trace.WriteLine($"Property Name, Value: {c.Name}, {d}");
+                    Trace.WriteLine($"Property Name, Value: {c.Name}, {d}");
                 }
             }
         }
@@ -2212,7 +2218,7 @@ namespace NetPlatformCheckers
     {
         public static void GO()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             Reflections r = new Reflections();
             r.LoopThroughtAssemblyReflections();
@@ -2253,7 +2259,7 @@ namespace NetPlatformCheckers
                     }
                     catch (Exception e)
                     {
-                        System.Diagnostics.Trace.WriteLine(e.Message);
+                        Trace.WriteLine(e.Message);
                     }
 
                     if (receive.IndexOf("[FINAL]") > -1)
@@ -2273,7 +2279,7 @@ namespace NetPlatformCheckers
                 }
                 catch (Exception e)
                 {
-                    System.Diagnostics.Trace.WriteLine(e.Message);
+                    Trace.WriteLine(e.Message);
                 }
                 socket.Shutdown(SocketShutdown.Both);
                 socket.Close();
@@ -2304,7 +2310,7 @@ namespace NetPlatformCheckers
                 }
                 catch (Exception e)
                 {
-                    System.Diagnostics.Trace.WriteLine(e.Message);
+                    Trace.WriteLine(e.Message);
                 }
 
                 string sendMessage = Console.ReadLine();
@@ -2317,7 +2323,7 @@ namespace NetPlatformCheckers
                 }
                 catch (Exception e)
                 {
-                    System.Diagnostics.Trace.WriteLine(e.Message);
+                    Trace.WriteLine(e.Message);
                 }
 
                 if (sendMessage.IndexOf("[FINAL]") > -1)
@@ -2582,11 +2588,6 @@ namespace NetPlatformCheckers
 
 namespace LINQtoObjectsCheck
 {
-
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-
     /*Models*/
     public class Racer
     {
@@ -2782,7 +2783,7 @@ namespace LINQtoObjectsCheck
         public static void GO()
         {
 
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             NewOverallCasesCheck();
 
@@ -3676,7 +3677,7 @@ namespace LINQtoObjectsCheck
 
         public static void DeferredCheck()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
             List<Item> items = new List<Item>(){
                 new Item(){Id=0, Name="nm1"},new Item(){Id=1,Name="nm2"},new Item(){Id=2,Name="nm3"},new Item(){Id=1,Name="nm4"}
             };
@@ -3686,7 +3687,7 @@ namespace LINQtoObjectsCheck
             id = 1;
             foreach (var i in itemById)
             {
-                System.Diagnostics.Trace.WriteLine(i.Name);
+                Trace.WriteLine(i.Name);
                 //nm2 nm4
             };
         }
@@ -3776,11 +3777,6 @@ namespace LINQtoObjectsCheck
 
 namespace TipsAndTricks
 {
-
-    using System;
-    using System.Security.Cryptography;
-    using System.Text;
-
     public static class TnT
     {
         public static void Check()
@@ -3813,14 +3809,14 @@ namespace TipsAndTricks
             //true
             bool equalsResult = str1.Equals(str2);
             //false
-            bool referenceResult = Object.ReferenceEquals(str1, str2);
+            bool referenceResult = ReferenceEquals(str1, str2);
 
         }
 
         /*Prints current executing class and method names */
         public static void PrintCurrentMethodAndClassName()
         {
-            System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+            Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
         }
 
         /// <summary>
@@ -3876,16 +3872,6 @@ namespace TipsAndTricks
 
 namespace KATAS
 {
-
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net.Http;
-    using System.Text;
-    using System.Text.Json;
-    using System.Threading.Tasks;
-
     //custom linq
 
 
@@ -3899,7 +3885,7 @@ namespace KATAS
         {
             public static void GO()
             {
-                tNineCheck.check1();
+                check1();
             }
             public static void check1()
             {
@@ -4004,7 +3990,7 @@ namespace KATAS
 
             public string print(string input_)
             {
-                return string.Join(string.Empty, KeyPadStrait.presser(input_.ToCharArray()));
+                return string.Join(string.Empty, presser(input_.ToCharArray()));
 
             }
         }
@@ -4274,7 +4260,7 @@ namespace KATAS
                 nums.ForEach(s =>
                 {
                     var sum = sumOfDigits(s);
-                    System.Diagnostics.Trace.WriteLine($"digit: {s}; sum = {sum};");
+                    Trace.WriteLine($"digit: {s}; sum = {sum};");
                 });
             }
 
@@ -4352,7 +4338,7 @@ namespace KATAS
                 foreach (var str in input)
                 {
                     string newStr = new string(str.OrderBy(c => c).ToArray());
-                    var alg = System.Security.Cryptography.SHA256.Create();
+                    var alg = SHA256.Create();
                     byte[] hashBytes = alg.ComputeHash(Encoding.UTF8.GetBytes(newStr));
                     int hashNew = BitConverter.ToInt32(hashBytes);
 
@@ -4369,7 +4355,7 @@ namespace KATAS
                 items.Select(s => new { s.Value.itemRef, s.Value.count })
                 .ToList()
                 .ForEach(s =>
-                    System.Diagnostics.Trace.WriteLine($"Itme entry count: {s.itemRef} {s.count}")
+                    Trace.WriteLine($"Itme entry count: {s.itemRef} {s.count}")
                 );
 
             }
@@ -4401,14 +4387,14 @@ namespace KATAS
 
                 var str = "abcdefg";
 
-                var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
+                var hash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
 
                 try
                 {
                     string input = "abcd123";
 
                     //computeHash
-                    byte[] bytes = System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
+                    byte[] bytes = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
 
 
                     List<byte> bytesFromString = new List<byte>();
@@ -4480,7 +4466,7 @@ namespace KATAS
                             width += 1;
                             if (width >= 50)
                             {
-                                sb.Append(System.Environment.NewLine);
+                                sb.Append(Environment.NewLine);
                                 width = 0;
                             }
                         }
@@ -4501,9 +4487,9 @@ namespace KATAS
         {
             public static void GO()
             {
-                System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
-                Bites.BitEncoding();
-                Bites.BitesTest();
+                Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
+                BitEncoding();
+                BitesTest();
             }
 
             public static void BitesTest()
@@ -4516,7 +4502,7 @@ namespace KATAS
                 byte[] bytes = { 0X0001, 0X0011, 0XF1, 0, 1 };
                 foreach (byte b in bytes)
                 {
-                    System.Diagnostics.Trace.WriteLine(Convert.ToString(b, 2));
+                    Trace.WriteLine(Convert.ToString(b, 2));
                 }
 
                 string str = "Value to bytes";
@@ -4592,8 +4578,8 @@ namespace KATAS
                 getBytes = getBytes.Except(getBytes.Where(s => s == 0)).ToList();
                 byte[] encBytes = Encoding.UTF8.GetBytes(str);
 
-                var hashFromStr = System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
-                var hashBytesBitconv = System.Security.Cryptography.SHA256.Create().ComputeHash(getBytes.ToArray());
+                var hashFromStr = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
+                var hashBytesBitconv = SHA256.Create().ComputeHash(getBytes.ToArray());
 
 
                 var hashesAreEqual = hashFromStr.SequenceEqual(hashBytesBitconv);
@@ -4764,13 +4750,13 @@ namespace KATAS
                 {
                     foreach (var array in t.TestLists)
                     {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
+                        var watch = Stopwatch.StartNew();
                         array.MethodName = t.MethodName;
                         array.Arrange = t.SortingMethod(array.Arrange).ToList();
                         watch.Stop();
                         array.Elapsed = watch.ElapsedMilliseconds;
 
-                        System.Diagnostics.Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
+                        Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
                     }
 
                 }
@@ -4984,9 +4970,9 @@ namespace KATAS
 
             public static void GO()
             {
-                HeapSortTest.HeapSortIntCheck();
-                HeapSortTest.HeapSortGenericCheckInt();
-                HeapSortTest.HeapSortGenericCheckChars();
+                HeapSortIntCheck();
+                HeapSortGenericCheckInt();
+                HeapSortGenericCheckChars();
 
             }
             static void HeapSortIntCheck()
@@ -5200,14 +5186,14 @@ namespace KATAS
                 var avtHeap = new int[] { 9, 6, 7, 4, 1 };
                 var avtSort = new int[] { 1, 3, 4, 5, 6, 7, 9 };
 
-                HeapSortArr.Sort(arr);
+                Sort(arr);
 
                 var bol = arr.SequenceEqual(avtSort);
 
             }
             static void Sort(int[] arr)
             {
-                HeapSortArr.BuildHeap(arr, arr.Length);
+                BuildHeap(arr, arr.Length);
             }
 
             /// <summary>
@@ -5224,7 +5210,7 @@ namespace KATAS
                 for (int i = len - 1; i >= 0; i--)
                 {
                     Swap(arr, 0, i);
-                    HeapSortArr.MaxHeap(arr, 0, i);
+                    MaxHeap(arr, 0, i);
                 }
             }
 
@@ -5402,7 +5388,7 @@ namespace KATAS
             }
             int compare(IList<T> arr, int idxLw, int idxHg)
             {
-                return System.Collections.Generic.Comparer<T>.Default.Compare(arr[idxLw], arr[idxHg]);
+                return Comparer<T>.Default.Compare(arr[idxLw], arr[idxHg]);
             }
             IList<T> swap(IList<T> arr, int idxLw, int idxHg)
             {
@@ -5531,7 +5517,7 @@ namespace KATAS
             {
                 foreach (Node<T> node in list)
                 {
-                    System.Diagnostics.Trace.WriteLine($"Node: {node.Id}; In reference: {node.Previous?.Id}-{node.Id}->{node.Next?.Id};");
+                    Trace.WriteLine($"Node: {node.Id}; In reference: {node.Previous?.Id}-{node.Id}->{node.Next?.Id};");
                 }
             }
             public string PrintLine(IList<Node<T>> list)
@@ -5545,7 +5531,7 @@ namespace KATAS
                     result += $"-{item?.Id}-";
                     item = item.Next;
                 }
-                System.Diagnostics.Trace.WriteLine(result);
+                Trace.WriteLine(result);
                 return result;
             }
             public string PrintValue(IList<Node<T>> list)
@@ -5559,7 +5545,7 @@ namespace KATAS
                     result += $"-{item?.Value}-";
                     item = item.Next;
                 }
-                System.Diagnostics.Trace.WriteLine(result);
+                Trace.WriteLine(result);
                 return result;
             }
         }
@@ -5571,7 +5557,7 @@ namespace KATAS
 
             public static void GO()
             {
-                System.Diagnostics.Trace.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().DeclaringType}.{System.Reflection.MethodBase.GetCurrentMethod().Name}----------");
+                Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
             }
 
@@ -5806,7 +5792,7 @@ namespace KATAS
             HeapSort(arrTosort);
             var b2 = arrTosort.SequenceEqual(sorted);
 
-            var hs = System.Security.Cryptography.SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
+            var hs = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
             var bts0 = Encoding.UTF8.GetBytes("string");
             var st = "string";
             var bts1 = st.Select(s => BitConverter.GetBytes(s)).SelectMany(c => c).Where(s => s != 0).ToList();
@@ -5889,15 +5875,7 @@ namespace KATAS
 
 namespace Rewrite
 {
-
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     //custom linq
-    using System.Linq.Expressions;
-    using System.Text;
-    using Newtonsoft.Json;
 
     /*StreamReadWrite */
     /*--------------------------------------------- */
@@ -6193,7 +6171,7 @@ namespace Rewrite
                     }
                     catch (Exception e)
                     {
-                        System.Diagnostics.Trace.WriteLine(e.Message);
+                        Trace.WriteLine(e.Message);
                     }
                 }
             }
@@ -6226,10 +6204,10 @@ namespace Rewrite
 
         private void FilePathDictionaryPrint()
         {
-            System.Diagnostics.Trace.WriteLine(@"---------------------------");
+            Trace.WriteLine(@"---------------------------");
             foreach (IPathDictSaearch pd in pathDictList)
             {
-                System.Diagnostics.Trace.WriteLine(pd.Searched + @" " + pd.Path);
+                Trace.WriteLine(pd.Searched + @" " + pd.Path);
             }
         }
 
@@ -6585,7 +6563,7 @@ namespace Rewrite
                         }
                         catch (Exception e)
                         {
-                            System.Diagnostics.Trace.WriteLine(e.Message);
+                            Trace.WriteLine(e.Message);
                         }
                         fss.Close();
                     }
