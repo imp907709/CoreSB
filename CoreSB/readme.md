@@ -13,13 +13,14 @@ dotnet add package Microsoft.AspNetCore.SignalR
 dotnet add package FluentValidation.AspNetCore
 dotnet add package RabbitMQ.Client
 dotnet add package Microsoft.EntityFrameworkCore
-dotnet add package Microsoft.EntityFrameworkCore.SqlServer 
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL 
 dotnet add package Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore 
 dotnet add package Microsoft.EntityFrameworkCore.Abstractions 
 dotnet add package Microsoft.EntityFrameworkCore.Analyzers 
 dotnet add package Microsoft.EntityFrameworkCore.InMemory 
 dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore 
-dotnet add package Serilog.AspNetCore	
+dotnet add package Serilog.AspNetCore
 
 dotnet add package xunit 
 dotnet add package xunit.runner.visualstudio
