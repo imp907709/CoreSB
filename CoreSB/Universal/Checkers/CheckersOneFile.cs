@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,6 +22,7 @@ using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -78,7 +79,13 @@ namespace InfrastructureCheckers
 
         public static void DbWithRepoReinitCheck()
         {
-
+            //Receive context from service collection 
+            ServiceCollection serviceCollection = new ServiceCollection();
+            serviceCollection.AddDbContext<CurrencyContextWrite>(
+                o => o.UseSqlServer(connectionStringSQL)
+                //o => o.UseNpgsql("Host=localhost;port=5432;Database=lms;Username=postgres;Password=postgres")
+            );
+            
             using (CurrencyContextWrite context = new CurrencyContextWrite(
                 new DbContextOptionsBuilder<CurrencyContextWrite>()
                     .UseSqlServer(connectionStringSQL).Options))
