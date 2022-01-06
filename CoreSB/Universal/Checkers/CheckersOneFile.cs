@@ -3879,8 +3879,6 @@ namespace TipsAndTricks
 
 namespace KATAS
 {
-    //custom linq
-
 
     public class TNine
     {
@@ -5724,25 +5722,36 @@ namespace KATAS
 
     public class Overall
     {
-        public class Prop
+        public static async Task GO_async()
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
+
+            var link =
+                @"https://api.instantwebtools.net/v1/airlines";
+
+            var folder = @"C:\files\test";
+
+            System.Diagnostics.Trace.WriteLine("test start");
+            for (int i = 0; i < 10; i++)
+            {
+                using (var client = new HttpClient())
+                {
+                    var result = await client.GetAsync(link);
+                    System.Diagnostics.Trace.WriteLine(result.StatusCode);     
+                }
+            }
+            System.Diagnostics.Trace.WriteLine("test finish");
+
         }
-        public class Item1
+        
+        public class Deduplicate
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
+            public int Priority { get; set; }
+            public string Id { get; set; }
         }
-        public class Item2
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public int Amt { get; set; }
-            public IList<Prop> properties { get; set; }
-        }
+        
         public static void GO()
         {
+            
             var items1 = new List<Item1>()
             {
                 new Item1(){Id = 1, Name ="name1"}
@@ -5807,6 +5816,26 @@ namespace KATAS
             var b3 = bts0.SequenceEqual(bts1);
         }
 
+        
+        
+        public class Prop
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+        public class Item1
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+        public class Item2
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int Amt { get; set; }
+            public IList<Prop> properties { get; set; }
+        }
+        
 
 
         public static void InsertionSort(int[] arr)
