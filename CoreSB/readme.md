@@ -4,7 +4,7 @@
 -------------------------------------------------------
 
 ```
-  
+
 dotnet add package Newtonsoft.Json 
 dotnet add package Autofac.Extensions.DependencyInjection
 dotnet add package AutoMapper 
@@ -30,6 +30,8 @@ dotnet add package Microsoft.NET.Test.Sdk
 dotnet add package Serilog.AspNetCore
 dotnet add package Swashbuckle.AspNetCore
 dotnet add package Swashbuckle.AspNetCore.SwaggerUI
+dotnet add package MediaToolkit
+dotnet add package VideoLibrary
 
 ```
 

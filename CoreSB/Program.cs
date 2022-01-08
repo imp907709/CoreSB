@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using InfrastructureCheckers;
+using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -10,6 +11,8 @@ namespace CoreSB
         public static async Task Main(string[] args)
         {
             await KATAS.Overall.GO_async();
+            LinqCheck.GO();
+            KATAS.Algorithms.SortingTests.GO();
             RepoAndUOWCheck.GO();
             CreateHostBuilder(args).Build().Run();
         }

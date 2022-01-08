@@ -176,7 +176,6 @@ namespace InfrastructureCheckers
         }
         public void ExpressionBuild()
         {
-
             BinaryExpression be = Expression.Power(Expression.Constant(2D), Expression.Constant(3D));
             Expression<Func<double>> fd = Expression.Lambda<Func<double>>(be);
             Func<double> ce = fd.Compile();
