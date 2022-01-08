@@ -21,9 +21,13 @@ using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
+using MediaToolkit;
+using MediaToolkit.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using NetPlatformCheckers;
 using Newtonsoft.Json;
+using VideoLibrary;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace coreSB
@@ -2581,12 +2585,9 @@ namespace NetPlatformCheckers
             int h31 = bt1.GetHashCode();
             int h32 = bt2.GetHashCode();
 
-            using (MD5 m = MD5.Create())
-            {
-                byte[] h41 = m.ComputeHash(bt1);
-                byte[] h42 = m.ComputeHash(bt2);
-            }
-
+            using MD5 m = MD5.Create();
+            byte[] h41 = m.ComputeHash(bt1);
+            byte[] h42 = m.ComputeHash(bt2);
         }
     }
 
@@ -2794,6 +2795,267 @@ namespace LINQtoObjectsCheck
 
             NewOverallCasesCheck();
 
+            OldRacersCheck();
+            bulkCheck();
+            UpdateCheck();
+            UpdateNestedCheck();
+            MaxDateCheck();
+            LinqSumGroupByNew();
+            SequenceCheck();
+            DeferredCheck();
+        }
+
+
+        static void NewOverallCasesCheck()
+        {
+            var props2 = new List<Property2>() {
+                new Property2(){ Id = 0, Name = "prop1"}
+                ,new Property2(){ Id = 1, Name = "prop3"}
+                ,new Property2(){ Id = 2, Name = "prop5"}
+                ,new Property2(){ Id = 3, Name = "prop6"}
+                ,new Property2(){ Id = 4, Name = "prop7"}
+            };
+            var props1 = new List<Property1>() {
+                new Property1(){ Id = 0, Name = "prop1"}
+                ,new Property1(){ Id = 1, Name = "prop3"}
+                ,new Property1(){ Id = 2, Name = "prop8"}
+                ,new Property1(){ Id = 3, Name = "prop9"}
+                ,new Property1(){ Id = 4, Name = "prop10"}
+            };
+            var items1 = new List<Item1>() {
+                new Item1(){Id = 0 , Name = "item1", Amount = 2,
+                    properties = new List<Property1>(){
+                    props1[0]
+                }},
+                new Item1(){Id = 1 , Name = "item2", Amount = 1,
+                    properties = new List<Property1>(){
+                    new Property1(){ Id = 0, Name = "prop1"}
+                }},
+                new Item1(){Id = 2 , Name = "item3", Amount = 3,
+                    properties = new List<Property1>(){
+                    props1[0],props1[1],props1[2]
+                }},
+                new Item1(){Id = 3 , Name = "item4", Amount = 2,
+                    properties = new List<Property1>(){
+                    props1[0],props1[1],new Property1(){ Id = 2, Name = "prop8"}
+                }},
+                new Item1(){Id = 4 , Name = "item5", Amount = 0,
+                    properties = new List<Property1>(){
+                    props1[0],props1[1],props1[2]
+                }}
+                ,
+                new Item1(){Id = 5 , Name = "item6",
+                    properties = new List<Property1>(){
+                    new Property1(){ Id = 5, Name = "prop11"}
+                }}
+            };
+            var items2 = new List<Item2>() {
+                new Item2(){Id=0,Name="item1", Amount = 0,
+                    properties = new List<Property1>(){
+                    props1[0]
+                }, Items1Ids = new List<int>(){ 0 } },
+                new Item2(){Id=1,Name="item2", Amount = 2,
+                    properties = new List<Property1>(){
+                    new Property1(){ Id = 0, Name = "prop1"}
+                }, Items1Ids = new List<int>(){ 0,1,2 }},
+                new Item2(){Id=2,Name="item3", Amount = 1,
+                    properties = new List<Property1>(){
+                    props1[2],new Property1(){ Id = 2, Name = "prop5"}
+                }}
+            };
+            var itemsToProp1 = new Item1ToP2()
+            {
+                itemsToProp = new List<Item1ToP2.itemToP>()
+                {
+                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[0]},
+                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[1]},
+                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[2]},
+                   new Item1ToP2.itemToP(){item = items1[1], prop=props2[2]},
+                   new Item1ToP2.itemToP(){item = items1[3], prop=props2[3]}
+                }
+            };
+
+            var propsToSearch = new List<Property1>() {
+                props1[0],new Property1(){ Id = 1, Name = "prop3"},props1[2]
+            };
+            var propsToSearch2 = new List<Property1>() {
+                new Property1(){ Id = 1, Name = "prop8"},props1[2]
+            };
+            var newProp = new Property1() { Id = 2, Name = "prop8" };
+            var refProp = props1[2];
+
+            var propsCol1 = new List<Property1>() { props1[0], props1[1], props1[4] };
+            var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
+            var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
+
+            
+            
+            
+            
+            
+            var ss0 = "String";
+            var ss1 = new string(new [] {'S', 't', 'r', 'i', 'n', 'g'});
+            var ss2 = nameof(String);
+
+            object oo1 = "String";
+            object oo2 = new string("String");
+            object oo3 = "String";
+            
+            var bb0 = (ss0 == ss1) && (ss0 == ss2) && (ss1 == ss2); //true
+            var bb1 = ss0 == oo1; //true
+            var bb2 = ss0 == oo2; //false
+            
+            var bb3 = oo3 == ss0; //true
+            var bb4 = oo1 == oo3; //true
+
+            var bb5 = oo1 == oo2; //false
+            var bb6 = ss2 == oo2; //false
+
+            var bb7 = ss1.Equals(oo2); //true
+            var bb8 = oo1.Equals(oo2); //true
+
+            var l0 = new List<dynamic>
+            {
+                new {name = "name1",id = 1, 
+                    prop = new List<dynamic>
+                    {
+                        new {id =1,title = "title1"},
+                        new {id =2,title = "title2"}
+                    }
+                },
+                new {name = "name2",id = 2},
+                new {name = "name3",id = 3}
+            };
+
+            var item0 = new {name = "name1", id = 0};
+            var item1 = new {name = "name1", id = 0};
+            var item3 = new {name = "name1", id = 1};
+
+            
+
+            var c2 = item0 == item1;
+            var c3 = item0.Equals(items1);
+
+            var i0  = items1.Where(s => s.properties.Any(c => c.Name == "prop1"));
+            var i1 = items1.FindAll(s => s.properties.Any(c => c.Name == "prop1"));
+            var i2  = items1.Where(s => s.properties.Exists(c => c.Name == "prop1"));
+
+           
+                
+                
+            //0 4
+            var intersect = propsCol2.Intersect(propsCol1).ToList();
+            //3 
+            var except = propsCol2.Except(propsCol1).ToList();
+            //0 3 4 1
+            var union = propsCol2.Union(propsCol1).ToList();
+
+            //0 3 4
+            var fullUpdate = propsToUpdate.Except(propsToUpdate.Except(propsCol2)).Union(propsCol2).ToList();
+            //2 3 0 4
+            var addUnique = propsToUpdate.Union(propsCol2).ToList();
+
+            //3
+            var toRemove = propsToUpdate.Intersect(propsCol2).ToList();
+            //0 4 
+            var toAdd = propsCol2.Except(propsToUpdate).ToList();
+            //2 0 4
+            var updateUnique = propsToUpdate.Except(toRemove).Union(toAdd).ToList();
+
+            //intersect - 2 items as by ref            
+            var propsIntersec = props1.Intersect(propsToSearch).ToList();
+
+
+            //0 2 3 4 
+            var whereIntersectAny = items1.Where(s => propsToSearch.Intersect(s.properties).Any());
+            // 0 1 2 3 4 
+            var whereExistsAny = items1.Where(s => propsToSearch.Exists(c => s.properties.Any(x => x.Name == c.Name))).ToList();
+
+            // where any by val compar
+            var propsWhereAny = props1.Where(s => propsToSearch.Any(c => c.Name == s.Name)).ToList();
+            // where exists
+            var propsWhereExists = props1.Where(s => propsToSearch.Exists(c => c.Name == s.Name)).ToList();
+
+
+            //true 
+            var colsEq = propsWhereExists.SequenceEqual(propsWhereAny);
+
+            // exist any to bool
+            var propsExist = props1.Exists(s => propsToSearch.Any(c => c.Name == s.Name));
+
+
+            //where contains nested prop
+            var whereAnyContains = items1
+                .Where(s => propsToSearch.Any(c => s.properties.Contains(c))).ToList();
+
+            //no items - > val equals
+            var newPropItems = items1
+                .Where(s => s.properties.Contains(newProp)).ToList();
+            //2 items val equals
+            var refPropItems = items1
+                .Where(s => s.properties.Contains(refProp)).ToList();
+
+            var groupBy = (
+                from s1 in items1
+                join s2 in items2 on s1.Name equals s2.Name into jn
+                from s3 in jn.DefaultIfEmpty()
+                group new { s3 } by new { name1 = s1.Name } into g
+                select new
+                {
+                    name = g.Key.name1,
+                    count = g.Count(s => !string.IsNullOrEmpty(s?.s3?.Name))
+                }
+            ).ToList();
+
+            var selectMany = items1.SelectMany(i => i.properties, (l, r) => new { item = l.Name, name = r.Name, amtl = l.Amount })
+                .ToList();
+            var selectManySelect = items1.SelectMany(i => i.properties, (l, r) => new { item = l, property = r, amtr = l.Amount })
+                .Select(s => new
+                {
+                    item = s.item.Name,
+                    name = s.property.Name
+                }).ToList();
+
+            var selectManyItems2 = items2.SelectMany(i => i.properties, (l, r) => new { item = l.Name, name = r.Name, amtr = l.Amount });
+
+            //multiple join multiple group by
+            var groupByMultipleLeftjoinMultiple =
+                (
+                from s1 in selectManySelect
+                join s2 in selectManyItems2 on new { s1.item, s1.name } equals new { s2.item, s2.name } into jn
+                from s3 in jn.DefaultIfEmpty()
+                    //group (s3) by new { name = s1.item, prop = s1.name} into g
+                    // || or
+                group new { s3 } by new { iteml = s1.item, propl = s1.name, itemr = s3?.item, propr = s3?.item } into g
+                select new
+                {
+                    iteml = g.Key.iteml,
+                    propl = g.Key.propl,
+                    itemr = g.Key.itemr,
+                    propr = g.Key.propr,
+
+                    items2Cnt = g.Count(c => !string.IsNullOrEmpty(c?.s3?.name)),
+                    items2Sum = g.Sum(c => c?.s3?.amtr)
+                }).ToList();
+
+            var groupByMultipleInnerJoin =
+                (
+                from s1 in selectManySelect
+                join s2 in items2 on s1.item equals s2.Name
+                group new { s2 } by new { iteml = s1.item, propl = s1.name, itemr = s2?.Name } into g
+                select new
+                {
+                    iteml = g.Key.iteml,
+                    propl = g.Key.propl,
+                    itemr = g.Key.itemr,
+
+                    item2 = g.Count(c => !string.IsNullOrEmpty(c?.s2?.Name))
+                }).ToList();
+        }
+
+        static void OldRacersCheck()
+        {
+            
             racers.Add(new Racer { Name = @"Racer1", Sername = @"sername1", Year = 1990, Car = @"car1" });
             racers.Add(new Racer { Name = @"Racer2", Sername = @"sername2", Year = 1991, Car = @"car1" });
             racers.Add(new Racer { Name = @"Racer3", Sername = @"sername3", Year = 1990, Car = @"car2" });
@@ -2821,7 +3083,7 @@ namespace LINQtoObjectsCheck
 
             var txt = @"aa b c das asdaa sd aa s aas";
             string src = "aa";
-            var schcnt = txt.Split().Where(s => s.ToLowerInvariant() == src.ToLowerInvariant()).Count();
+            var schcnt = txt.Split().Count(s => s.ToLowerInvariant() == src.ToLowerInvariant());
 
 
             //where any
@@ -3116,247 +3378,6 @@ namespace LINQtoObjectsCheck
                 cup => from s in cups where s.Competition == cup select s;
 
             var n = from s in CarByCup("Cup2").Intersect(CarByCup("Cup3")) select s;
-
-            bulkCheck();
-            UpdateCheck();
-            UpdateNestedCheck();
-            MaxDateCheck();
-            LinqSumGroupByNew();
-            SequenceCheck();
-            DeferredCheck();
-        }
-
-
-        static void NewOverallCasesCheck()
-        {
-            var props2 = new List<Property2>() {
-                new Property2(){ Id = 0, Name = "prop1"}
-                ,new Property2(){ Id = 1, Name = "prop3"}
-                ,new Property2(){ Id = 2, Name = "prop5"}
-                ,new Property2(){ Id = 3, Name = "prop6"}
-                ,new Property2(){ Id = 4, Name = "prop7"}
-            };
-            var props1 = new List<Property1>() {
-                new Property1(){ Id = 0, Name = "prop1"}
-                ,new Property1(){ Id = 1, Name = "prop3"}
-                ,new Property1(){ Id = 2, Name = "prop8"}
-                ,new Property1(){ Id = 3, Name = "prop9"}
-                ,new Property1(){ Id = 4, Name = "prop10"}
-            };
-            var items1 = new List<Item1>() {
-                new Item1(){Id = 0 , Name = "item1", Amount = 2,
-                    properties = new List<Property1>(){
-                    props1[0]
-                }},
-                new Item1(){Id = 1 , Name = "item2", Amount = 1,
-                    properties = new List<Property1>(){
-                    new Property1(){ Id = 0, Name = "prop1"}
-                }},
-                new Item1(){Id = 2 , Name = "item3", Amount = 3,
-                    properties = new List<Property1>(){
-                    props1[0],props1[1],props1[2]
-                }},
-                new Item1(){Id = 3 , Name = "item4", Amount = 2,
-                    properties = new List<Property1>(){
-                    props1[0],props1[1],new Property1(){ Id = 2, Name = "prop8"}
-                }},
-                new Item1(){Id = 4 , Name = "item5", Amount = 0,
-                    properties = new List<Property1>(){
-                    props1[0],props1[1],props1[2]
-                }}
-                ,
-                new Item1(){Id = 5 , Name = "item6",
-                    properties = new List<Property1>(){
-                    new Property1(){ Id = 5, Name = "prop11"}
-                }}
-            };
-            var items2 = new List<Item2>() {
-                new Item2(){Id=0,Name="item1", Amount = 0,
-                    properties = new List<Property1>(){
-                    props1[0]
-                }, Items1Ids = new List<int>(){ 0 } },
-                new Item2(){Id=1,Name="item2", Amount = 2,
-                    properties = new List<Property1>(){
-                    new Property1(){ Id = 0, Name = "prop1"}
-                }, Items1Ids = new List<int>(){ 0,1,2 }},
-                new Item2(){Id=2,Name="item3", Amount = 1,
-                    properties = new List<Property1>(){
-                    props1[2],new Property1(){ Id = 2, Name = "prop5"}
-                }}
-            };
-            var itemsToProp1 = new Item1ToP2()
-            {
-                itemsToProp = new List<Item1ToP2.itemToP>()
-                {
-                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[0]},
-                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[1]},
-                   new Item1ToP2.itemToP(){item = items1[0], prop=props2[2]},
-                   new Item1ToP2.itemToP(){item = items1[1], prop=props2[2]},
-                   new Item1ToP2.itemToP(){item = items1[3], prop=props2[3]}
-                }
-            };
-
-            var propsToSearch = new List<Property1>() {
-                props1[0],new Property1(){ Id = 1, Name = "prop3"},props1[2]
-            };
-            var propsToSearch2 = new List<Property1>() {
-                new Property1(){ Id = 1, Name = "prop8"},props1[2]
-            };
-            var newProp = new Property1() { Id = 2, Name = "prop8" };
-            var refProp = props1[2];
-
-            var propsCol1 = new List<Property1>() { props1[0], props1[1], props1[4] };
-            var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
-            var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
-
-            var sm20 = items1.SelectMany(s => s.properties, (l, r) =>
-              new
-              {
-                  nl = l.Name,
-                  na = l.Amount,
-                  rp = r.Name
-              });
-
-            var sm0 = items1.SelectMany(s
-                => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtl = l.Amount }).ToList();
-            var sm1 = items2.SelectMany(s
-                => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtr = l.Amount }).ToList();
-
-            var joinSm = sm0.GroupJoin(sm1,
-                l => new { l.item, l.prop },
-                r => new { r.item, r.prop },
-                (l, r) => new
-                {
-                    li = l.item,
-                    lp = l.prop,
-                    r = r.DefaultIfEmpty()
-                }).SelectMany(s => s.r, (l, r) => new
-                {
-                    li = l.li,
-                    lp = l.lp,
-                    amt = r?.amtr
-                }).ToList();
-
-            var jnGp = sm0.Join(sm1,
-                l => new { l.item, l.prop },
-                r => new { r.item, r.prop },
-                (l, r) => new
-                {
-                    li = l.item,
-                    lp = l.prop,
-                    r = r?.amtr
-                });
-
-            //0 4
-            var intersect = propsCol2.Intersect(propsCol1).ToList();
-            //3 
-            var except = propsCol2.Except(propsCol1).ToList();
-            //0 3 4 1
-            var union = propsCol2.Union(propsCol1).ToList();
-
-            //0 3 4
-            var fullUpdate = propsToUpdate.Except(propsToUpdate.Except(propsCol2)).Union(propsCol2).ToList();
-            //2 3 0 4
-            var addUnique = propsToUpdate.Union(propsCol2).ToList();
-
-            //3
-            var toRemove = propsToUpdate.Intersect(propsCol2).ToList();
-            //0 4 
-            var toAdd = propsCol2.Except(propsToUpdate).ToList();
-            //2 0 4
-            var updateUnique = propsToUpdate.Except(toRemove).Union(toAdd).ToList();
-
-            //intersect - 2 items as by ref            
-            var propsIntersec = props1.Intersect(propsToSearch).ToList();
-
-
-            //0 2 3 4 
-            var whereIntersectAny = items1.Where(s => propsToSearch.Intersect(s.properties).Any());
-            // 0 1 2 3 4 
-            var whereExistsAny = items1.Where(s => propsToSearch.Exists(c => s.properties.Any(x => x.Name == c.Name))).ToList();
-
-            // where any by val compar
-            var propsWhereAny = props1.Where(s => propsToSearch.Any(c => c.Name == s.Name)).ToList();
-            // where exists
-            var propsWhereExists = props1.Where(s => propsToSearch.Exists(c => c.Name == s.Name)).ToList();
-
-
-            //true 
-            var colsEq = propsWhereExists.SequenceEqual(propsWhereAny);
-
-            // exist any to bool
-            var propsExist = props1.Exists(s => propsToSearch.Any(c => c.Name == s.Name));
-
-
-            //where contains nested prop
-            var whereAnyContains = items1
-                .Where(s => propsToSearch.Any(c => s.properties.Contains(c))).ToList();
-
-            //no items - > val equals
-            var newPropItems = items1
-                .Where(s => s.properties.Contains(newProp)).ToList();
-            //2 items val equals
-            var refPropItems = items1
-                .Where(s => s.properties.Contains(refProp)).ToList();
-
-            var groupBy = (
-                from s1 in items1
-                join s2 in items2 on s1.Name equals s2.Name into jn
-                from s3 in jn.DefaultIfEmpty()
-                group new { s3 } by new { name1 = s1.Name } into g
-                select new
-                {
-                    name = g.Key.name1,
-                    count = g.Count(s => !string.IsNullOrEmpty(s?.s3?.Name))
-                }
-            ).ToList();
-
-            var selectMany = items1.SelectMany(i => i.properties, (l, r) => new { item = l.Name, name = r.Name, amtl = l.Amount })
-                .ToList();
-            var selectManySelect = items1.SelectMany(i => i.properties, (l, r) => new { item = l, property = r, amtr = l.Amount })
-                .Select(s => new
-                {
-                    item = s.item.Name,
-                    name = s.property.Name
-                }).ToList();
-
-            var selectManyItems2 = items2.SelectMany(i => i.properties, (l, r) => new { item = l.Name, name = r.Name, amtr = l.Amount });
-
-            //multiple join multiple group by
-            var groupByMultipleLeftjoinMultiple =
-                (
-                from s1 in selectManySelect
-                join s2 in selectManyItems2 on new { s1.item, s1.name } equals new { s2.item, s2.name } into jn
-                from s3 in jn.DefaultIfEmpty()
-                    //group (s3) by new { name = s1.item, prop = s1.name} into g
-                    // || or
-                group new { s3 } by new { iteml = s1.item, propl = s1.name, itemr = s3?.item, propr = s3?.item } into g
-                select new
-                {
-                    iteml = g.Key.iteml,
-                    propl = g.Key.propl,
-                    itemr = g.Key.itemr,
-                    propr = g.Key.propr,
-
-                    items2Cnt = g.Count(c => !string.IsNullOrEmpty(c?.s3?.name)),
-                    items2Sum = g.Sum(c => c?.s3?.amtr)
-                }).ToList();
-
-            var groupByMultipleInnerJoin =
-                (
-                from s1 in selectManySelect
-                join s2 in items2 on s1.item equals s2.Name
-                group new { s2 } by new { iteml = s1.item, propl = s1.name, itemr = s2?.Name } into g
-                select new
-                {
-                    iteml = g.Key.iteml,
-                    propl = g.Key.propl,
-                    itemr = g.Key.itemr,
-
-                    item2 = g.Count(c => !string.IsNullOrEmpty(c?.s2?.Name))
-                }).ToList();
-
-
         }
 
         public static void bulkCheck()
@@ -3788,6 +3809,7 @@ namespace TipsAndTricks
     {
         public static void Check()
         {
+            Breakpoint();
             NullEquality();
             StructsCompare();
         }
@@ -3796,7 +3818,7 @@ namespace TipsAndTricks
         {
             string a = null;
             //->throws System.NullReferenceException
-            a.Equals(null);
+            //a.Equals(null);
         }
 
         public struct Str1
@@ -3820,6 +3842,11 @@ namespace TipsAndTricks
 
         }
 
+        public static void Breakpoint()
+        {
+            {}
+        }
+        
         /*Prints current executing class and method names */
         public static void PrintCurrentMethodAndClassName()
         {
@@ -3827,7 +3854,7 @@ namespace TipsAndTricks
         }
 
         /// <summary>
-        /// Eternal lopp if unchecked
+        /// Eternal loop if unchecked
         /// </summary>
         static void OwerflowException()
         {
@@ -3879,133 +3906,132 @@ namespace TipsAndTricks
 
 namespace KATAS
 {
-
-    public class TNine
-    {
-        //https://code.google.com/codejam/contest/351101/dashboard#s=p2
-        //T9  
-
-        //running custom test cases
-        public static class tNineCheck
-        {
-            public static void GO()
-            {
-                check1();
-            }
-            public static void check1()
-            {
-                List<CaseList> cl = new List<CaseList>() {
-                    new CaseList(){Case="ab cff",Exp="2 220222333 333",Act=null}
-                    , new CaseList("hg e a","44 403302",null)
-                };
-
-                foreach (CaseList cl_ in cl)
-                {
-                    cl_.Act = tNineChecks.GO(new KeyPadStrait(), cl_.Case);
-                    cl_.check();
-                }
-            }
-
-        }
-        //class for test  cases usage
-        public class CaseList
-        {
-            public CaseList() { }
-
-            public CaseList(string @case, string exp, string act)
-            {
-                Case = @case;
-                Exp = exp;
-                Act = act;
-            }
-
-            public void check()
-            {
-                if (this.Exp == this.Act) { this.isOK = true; } else { this.isOK = false; }
-                //or 
-                //this.isOK=this.Exp == this.Act ?   true :  false;
-            }
-            public string Case { get; set; } = string.Empty;
-            public string Exp { get; set; } = string.Empty;
-            public string Act { get; set; } = null;
-            public bool? isOK { get; private set; } = null;
-        }
-
-        //key presser interface handler
-        public static class tNineChecks
-        {
-            public static string GO(IKeyPresser kp_, string case_)
-            {
-                return kp_.print(case_);
-            }
-        }
-
-        //key presser interface with base realization
-        public interface IKeyPresser
-        {
-            string print(string input);
-        }
-        public class KeyPresser : IKeyPresser
-        {
-            public string print(string input)
-            {
-                return null;
-            }
-        }
-
-        //straightforward "naive" approach with char arrays
-        public class KeyPadStrait : IKeyPresser
-        {
-
-            public static Dictionary<char, char?[]> keyPad = new Dictionary<char, char?[]>()
-            {
-                {'a', new char?[]{'2'} },{'b', new char?[]{'2','2'} },{'c', new char?[]{'2','2','2'} }
-                ,{'d', new char?[]{'3'} },{'e', new char?[]{'3','3'} },{'f', new char?[]{'3','3','3'} }
-                ,{'g', new char?[]{'4'} },{'h', new char?[]{'4','4'} },{'i', new char?[]{'4','4','4'} }
-                ,{ ' ', new char?[]{'0'}}
-
-            };
-            public static List<char> presser(char[] str_)
-            {
-
-                //"".ToCharArray().First();
-                char?[] foundPrev = null;
-
-                List<char> res = new List<char>();
-                for (int i = 0; i < str_.Count(); i++)
-                {
-                    char?[] found = null;
-                    if (keyPad.ContainsKey(str_[i]))
-                    {
-                        keyPad.TryGetValue(str_[i], out found);
-                        if (foundPrev != null)
-                        {
-                            if (foundPrev[0] == found[0]) { res.Add(' '); }
-                        }
-
-                        foreach (char ch in found)
-                        {
-                            res.Add(ch);
-                        }
-                        foundPrev = found;
-                    }
-                }
-                return res;
-            }
-
-            public string print(string input_)
-            {
-                return string.Join(string.Empty, presser(input_.ToCharArray()));
-
-            }
-        }
-
-    }
-
-
+    
     public class Miscellaneous
     {
 
+        public class TNine
+        {
+            //https://code.google.com/codejam/contest/351101/dashboard#s=p2
+            //T9  
+
+            //running custom test cases
+            public static class tNineCheck
+            {
+                public static void GO()
+                {
+                    check1();
+                }
+                public static void check1()
+                {
+                    List<CaseList> cl = new List<CaseList>() {
+                        new CaseList(){Case="ab cff",Exp="2 220222333 333",Act=null}
+                        , new CaseList("hg e a","44 403302",null)
+                    };
+
+                    foreach (CaseList cl_ in cl)
+                    {
+                        cl_.Act = tNineChecks.GO(new KeyPadStrait(), cl_.Case);
+                        cl_.check();
+                    }
+                }
+
+            }
+            //class for test  cases usage
+            public class CaseList
+            {
+                public CaseList() { }
+
+                public CaseList(string @case, string exp, string act)
+                {
+                    Case = @case;
+                    Exp = exp;
+                    Act = act;
+                }
+
+                public void check()
+                {
+                    if (this.Exp == this.Act) { this.isOK = true; } else { this.isOK = false; }
+                    //or 
+                    //this.isOK=this.Exp == this.Act ?   true :  false;
+                }
+                public string Case { get; set; } = string.Empty;
+                public string Exp { get; set; } = string.Empty;
+                public string Act { get; set; } = null;
+                public bool? isOK { get; private set; } = null;
+            }
+
+            //key presser interface handler
+            public static class tNineChecks
+            {
+                public static string GO(IKeyPresser kp_, string case_)
+                {
+                    return kp_.print(case_);
+                }
+            }
+
+            //key presser interface with base realization
+            public interface IKeyPresser
+            {
+                string print(string input);
+            }
+            public class KeyPresser : IKeyPresser
+            {
+                public string print(string input)
+                {
+                    return null;
+                }
+            }
+
+            //straightforward "naive" approach with char arrays
+            public class KeyPadStrait : IKeyPresser
+            {
+
+                public static Dictionary<char, char?[]> keyPad = new Dictionary<char, char?[]>()
+                {
+                    {'a', new char?[]{'2'} },{'b', new char?[]{'2','2'} },{'c', new char?[]{'2','2','2'} }
+                    ,{'d', new char?[]{'3'} },{'e', new char?[]{'3','3'} },{'f', new char?[]{'3','3','3'} }
+                    ,{'g', new char?[]{'4'} },{'h', new char?[]{'4','4'} },{'i', new char?[]{'4','4','4'} }
+                    ,{ ' ', new char?[]{'0'}}
+
+                };
+                public static List<char> presser(char[] str_)
+                {
+
+                    //"".ToCharArray().First();
+                    char?[] foundPrev = null;
+
+                    List<char> res = new List<char>();
+                    for (int i = 0; i < str_.Count(); i++)
+                    {
+                        char?[] found = null;
+                        if (keyPad.ContainsKey(str_[i]))
+                        {
+                            keyPad.TryGetValue(str_[i], out found);
+                            if (foundPrev != null)
+                            {
+                                if (foundPrev[0] == found[0]) { res.Add(' '); }
+                            }
+
+                            foreach (char ch in found)
+                            {
+                                res.Add(ch);
+                            }
+                            foundPrev = found;
+                        }
+                    }
+                    return res;
+                }
+
+                public string print(string input_)
+                {
+                    return string.Join(string.Empty, presser(input_.ToCharArray()));
+
+                }
+            }
+
+        }
+        
         public static class ReqwindKATA
         {
             public static string GO(string input_)
@@ -4281,7 +4307,125 @@ namespace KATAS
             }
         }
 
+         public class BracketsChecker
+        {
+            public static void GO()
+            {
+                List<string> strsOK = new List<string>() {
+                    "c * [ (a+b) / d]",  "()[][()]","([])[()]", "()","[]"
+                };
+                List<string> strsNotOK = new List<string>() {
+                    "(c * [a+b) / d]", ")[]", "]()", "[(())])" , "(([[])"
+                };
+                var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
+                var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
 
+                var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
+                var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
+
+            }
+
+            static Func<string, bool> braketsCount = (s) =>
+            {
+
+                Stack<char> brackets = new Stack<char>();
+
+                foreach (char i in s)
+                {
+                    if (brackets.Count == 0)
+                    {
+                        if (i == ')' || i == ']') { return false; }
+                        if (i == '(' || i == '[') { brackets.Push(i); };
+                    }
+                    else
+                    {
+                        if (i == ')') { if (brackets.Pop() != '(') { return false; } }
+                        if (i == ']') { if (brackets.Pop() != '[') { return false; } }
+
+                        if (i == '(' || i == '[') { brackets.Push(i); };
+                    }
+                }
+
+                return brackets.Count == 0;
+
+            };
+
+            public static bool bracketsCheck(string input)
+            {
+                List<char> opened = new List<char>() { '(', '[', '{' };
+                List<char> closed = new List<char>() { ')', ']', '}' };
+                Stack<char> cntr = new Stack<char>();
+
+                if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
+                if (closed.Contains(input[0])) { return false; }
+
+                foreach (var ch in input)
+                {
+                    if (opened.Contains(ch)) { cntr.Push(ch); }
+                    if (closed.Contains(ch))
+                    {
+                        if (cntr.Count() <= 0) { return false; }
+                        var previous = cntr.Pop();
+                        if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
+                    }
+                }
+
+                return cntr.Count() == 0;
+            }
+
+        }
+
+         public static class BalancedDelimeter
+         {
+
+             public static void GO()
+             {
+                 Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
+
+             }
+
+         }
+
+         public class HTTPserializeSave
+         {
+             public class Country
+             {
+                 public string id { get; set; }
+                 public string name { get; set; }
+             }
+
+             public static async Task<IEnumerable<Country>> GO()
+             {
+                 var httpClient = new HttpClient();
+                 var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
+                 var content = await response.Content.ReadAsStringAsync();
+
+                 var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
+                 var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
+                 var str = JsonSerializer.Serialize(filtered);
+
+                 await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
+                 return filtered;
+             }
+
+             public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
+             {
+                 await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
+                     JsonSerializer.Serialize(
+                         JsonSerializer.Deserialize<IEnumerable<T>>(
+                             await new HttpClient()
+                                 .GetAsync("https://api.worldremit.com/api/countries")?
+                                 .Result
+                                 .Content
+                                 .ReadAsStringAsync()
+                         )
+                     )
+                 );
+                 return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
+             }
+
+         }
+         
         //Kasper
         public class StringCount
         {
@@ -4608,10 +4752,213 @@ namespace KATAS
             return result;
         }
 
+        public class RoomNum
+        {
+            public int Section { get; set; }
+            public int RoomNumber { get; set; }
+        }
+        public class TrainRooms
+        {
+
+            public static List<RoomNum> rooms;
+            public static void GO()
+            {
+                init();
+
+                var section1 = rooms.Where(s => s.RoomNumber == 4).FirstOrDefault().Section;
+                var section2 = rooms.Where(s => s.RoomNumber == 52).FirstOrDefault().Section;
+            }
+
+            public static void init()
+            {
+                rooms = new List<RoomNum>();
+
+                int section = 1;
+
+                //fill rooms
+                for (int i = 1; i <= 36; i++)
+                {
+                    rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
+                    if (i % 4 == 0) { section += 1; }
+                }
+
+                section = 1;
+                for (int i = 54; i >= 37; i--)
+                {
+                    rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
+                    if (i % 2 == 0) { section += 1; }
+                }
+            }
+        }
+      
+    }
+   
+    public class Overall
+    {
+     
+        public static void GO()
+        {
+            
+            var items1 = new List<Item1>()
+            {
+                new Item1(){Id = 1, Name ="name1"}
+                ,new Item1(){Id = 3, Name ="name3"}
+                ,new Item1(){Id = 5, Name ="name5"}
+            };
+            var items2 = new List<Item2>()
+            {
+                new Item2(){ Id = 1, Name = "name1", Amt = 1, properties = new List<Prop>() {
+                    new Prop(){Id=1, Name = "p1"}, new Prop(){Id=2, Name = "p2"}
+                }},
+                new Item2(){ Id = 2, Name = "name2", Amt = 2, properties = new List<Prop>() {
+                    new Prop(){Id=1, Name = "p1"}
+                }},
+                new Item2(){ Id = 3, Name = "name3", Amt = 3, properties = new List<Prop>() {
+                    new Prop(){Id=1, Name = "p1"},new Prop(){Id=3, Name = "p3"}
+                }},
+                 new Item2(){ Id = 3, Name = "name4", Amt = 4, properties = new List<Prop>() {
+                    new Prop(){Id=3, Name = "p4"}
+                }}
+            };
+
+            var names = new List<string>() { "p1" };
+
+            var itm0 = items1.Join(items2,
+                l => new { l.Id, l.Name },
+                r => new { r.Id, r.Name },
+                (l, r) => new { lName = l.Name, rName = r.Name, amt = r.Amt }
+            ).ToList();
+            var itm1 = items1.GroupJoin(items1,
+                l => new { l.Id, l.Name },
+                r => new { r.Id, r.Name },
+                (l, r) => new { lName = l.Name, r = r.DefaultIfEmpty() }
+            ).ToList();
+            var itm2 = items2.SelectMany(s => s.properties, (l, r) => new { l.Name, l.Amt, prop = r.Name });
+            var itm3 = items2.Where(s => s.properties.Any(c => names.Exists(z => z == c.Name)))
+            .ToList();
+
+            var unsorted = new int[] { 9, 2, 4, 1, 6, 8, 7, 5 };
+            var arrTosort = new int[unsorted.Length];
+            var sorted = new int[arrTosort.Length];
+            Array.Copy(unsorted, sorted, unsorted.Length);
+            Array.Sort(sorted);
+
+            Array.Copy(unsorted, arrTosort, unsorted.Length);
+            InsertionSort(arrTosort);
+            var b0 = arrTosort.SequenceEqual(sorted);
+
+            Array.Copy(unsorted, arrTosort, unsorted.Length);
+            ShellSort(arrTosort);
+            var b1 = arrTosort.SequenceEqual(sorted);
+
+            Array.Copy(unsorted, arrTosort, unsorted.Length);
+            HeapSort(arrTosort);
+            var b2 = arrTosort.SequenceEqual(sorted);
+
+            var hs = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
+            var bts0 = Encoding.UTF8.GetBytes("string");
+            var st = "string";
+            var bts1 = st.Select(s => BitConverter.GetBytes(s)).SelectMany(c => c).Where(s => s != 0).ToList();
+
+            var b3 = bts0.SequenceEqual(bts1);
+        }
+
+        public static async Task GO_async()
+        {
+        }
+
+      
+        public class Prop
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+        public class Item1
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+        }
+        public class Item2
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int Amt { get; set; }
+            public IList<Prop> properties { get; set; }
+        }
+        
 
 
+        public static void InsertionSort(int[] arr)
+        {
+            for (int i = 1; i < arr.Length; i++)
+            {
+                var x = arr[i];
+                var j = i - 1;
+                while (j >= 0 && arr[j] > x)
+                {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
+                arr[j + 1] = x;
+            }
+        }
 
-        /*Collection for testing value collections */
+        public static void ShellSort(int[] arr)
+        {
+            for (var n = arr.Length / 2; n > 0; n /= 2)
+            {
+                for (var i = n; i < arr.Length; i++)
+                {
+                    var x = arr[i];
+                    int j;
+                    for (j = i; j >= n && arr[j - n] > x; j -= n)
+                    {
+                        arr[j] = arr[j - n];
+                    }
+                    arr[j] = x;
+                }
+            }
+        }
+
+        public static void HeapSort(int[] arr)
+        {
+            for (int i = arr.Length / 2 - 1; i >= 0; i--)
+            {
+                heapify(arr, i, arr.Length);
+            }
+
+            for (int i = arr.Length - 1; i >= 0; i--)
+            {
+                swap(arr, 0, i);
+                heapify(arr, 0, i);
+            }
+        }
+        public static void heapify(int[] arr, int n, int len)
+        {
+            var l = n * 2 + 1;
+            var r = n * 2 + 2;
+            var lg = n;
+
+            if (l < len && arr[l] > arr[lg]) { lg = l; }
+            if (r < len && arr[r] > arr[lg]) { lg = r; }
+            if (lg != n)
+            {
+                swap(arr, lg, n);
+                heapify(arr, lg, len);
+            }
+        }
+        public static void swap(int[] arr, int l, int r)
+        {
+            var x = arr[l];
+            arr[l] = arr[r];
+            arr[r] = x;
+        }
+        
+    }
+
+    public class Algorithms
+    {
+         /*Collection for testing value collections */
         public class TestListsStructs<T> where T : struct, IComparable
         {
             public List<T> Arrange { get; set; }
@@ -4682,6 +5029,7 @@ namespace KATAS
             public static void GO()
             {
                 SortingTests st = new SortingTests();
+                st.sampleIntCheck();
                 st.insertionSortTest();
             }
 
@@ -4728,7 +5076,6 @@ namespace KATAS
                 for (int i = 0; i < count; i++)
                 {
                     longList.Add(rnd.Next(0, maxRandomGap));
-
                 }
                 List<int> longListSorted = longList.Select(s => s).ToList();
                 longListSorted.Sort();
@@ -4763,18 +5110,23 @@ namespace KATAS
 
                         Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
                     }
-
                 }
             }
 
-            void sampleIntCHeck()
+            void sampleIntCheck()
             {
+                var initialArray = new int[] { 5, 1, 7, 3, 5, 9, 3, 5, 8 };
+                var sortedArr = initialArray.OrderBy(s => s).ToList();
+                
+                var shellToSortArr = new int[initialArray.Length];
+                Array.Copy(initialArray, shellToSortArr, initialArray.Length);
+                ShellSort.Sort(shellToSortArr);
+                var res = shellToSortArr.SequenceEqual(sortedArr);
 
-                var arr = new int[] { 5, 1, 7, 3, 5, 9, 3, 5, 8 };
-                var expArr = arr.OrderBy(s => s).ToArray();
-                ShellSort.Sort(arr);
-                //InsertionSortInt.Sort(arr);
-                var res = arr.SequenceEqual(expArr);
+                var quickSortArr = new int[initialArray.Length];
+                Array.Copy(initialArray,quickSortArr,initialArray.Length);
+               
+                var res2 = sortedArr.ToList().SequenceEqual(quickSortArr);
             }
         }
 
@@ -4807,7 +5159,7 @@ namespace KATAS
                 }
             }
 
-        }
+        } 
         public class InsertionSort<T> where T : struct, IComparable
         {
             public IList<T> Sort(IList<T> arr)
@@ -4963,7 +5315,7 @@ namespace KATAS
         }
 
 
-
+        //https://www.tutorialspoint.com/heap-sort-in-chash#:~:text=Heap%20Sort%20is%20a%20sorting,then%20the%20heap%20is%20reestablished.
         public class HeapSortTest
         {
             protected class TestLists
@@ -5063,14 +5415,10 @@ namespace KATAS
                 }
                 return idx;
             }
-            List<int> Swap(List<int> arr, int a, int b)
+            void Swap(List<int> arr, int a, int b)
             {
-                var item = arr[a];
-                arr[a] = arr[b];
-                arr[b] = item;
-                return arr;
+                (arr[a], arr[b]) = (arr[b], arr[a]);
             }
-
         }
         public class HeapSort<T> where T : struct, IComparable
         {
@@ -5154,7 +5502,7 @@ namespace KATAS
 
         public class HeapSortArr
         {
-            //https://www.tutorialspoint.com/heap-sort-in-chash#:~:text=Heap%20Sort%20is%20a%20sorting,then%20the%20heap%20is%20reestablished.
+            
             static void heapSort(int[] arr, int n)
             {
                 for (int i = n / 2 - 1; i >= 0; i--)
@@ -5554,359 +5902,7 @@ namespace KATAS
                 return result;
             }
         }
-
-
-
-        public static class BalancedDelimeter
-        {
-
-            public static void GO()
-            {
-                Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
-
-            }
-
-        }
-
     }
-
-
-    public class HTTPserializeSave
-    {
-        public class Country
-        {
-            public string id { get; set; }
-            public string name { get; set; }
-        }
-
-        public static async Task<IEnumerable<Country>> GO()
-        {
-            var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
-            var content = await response.Content.ReadAsStringAsync();
-
-            var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
-            var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
-            var str = JsonSerializer.Serialize(filtered);
-
-            await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
-            return filtered;
-        }
-
-        public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
-        {
-            await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
-                JsonSerializer.Serialize(
-                    JsonSerializer.Deserialize<IEnumerable<T>>(
-                        await new HttpClient()
-                        .GetAsync("https://api.worldremit.com/api/countries")?
-                        .Result
-                        .Content
-                        .ReadAsStringAsync()
-                    )
-                )
-            );
-            return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
-        }
-
-    }
-
-    public class BracketsChecker
-    {
-        public static void GO()
-        {
-            List<string> strsOK = new List<string>() {
-                "c * [ (a+b) / d]",  "()[][()]","([])[()]", "()","[]"
-            };
-            List<string> strsNotOK = new List<string>() {
-                "(c * [a+b) / d]", ")[]", "]()", "[(())])" , "(([[])"
-            };
-            var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
-            var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
-
-            var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
-            var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
-
-        }
-
-        static Func<string, bool> braketsCount = (s) =>
-        {
-
-            Stack<char> brackets = new Stack<char>();
-
-            foreach (char i in s)
-            {
-                if (brackets.Count == 0)
-                {
-                    if (i == ')' || i == ']') { return false; }
-                    if (i == '(' || i == '[') { brackets.Push(i); };
-                }
-                else
-                {
-                    if (i == ')') { if (brackets.Pop() != '(') { return false; } }
-                    if (i == ']') { if (brackets.Pop() != '[') { return false; } }
-
-                    if (i == '(' || i == '[') { brackets.Push(i); };
-                }
-            }
-
-            return brackets.Count == 0;
-
-        };
-
-        public static bool bracketsCheck(string input)
-        {
-            List<char> opened = new List<char>() { '(', '[', '{' };
-            List<char> closed = new List<char>() { ')', ']', '}' };
-            Stack<char> cntr = new Stack<char>();
-
-            if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
-            if (closed.Contains(input[0])) { return false; }
-
-            foreach (var ch in input)
-            {
-                if (opened.Contains(ch)) { cntr.Push(ch); }
-                if (closed.Contains(ch))
-                {
-                    if (cntr.Count() <= 0) { return false; }
-                    var previous = cntr.Pop();
-                    if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
-                }
-            }
-
-            return cntr.Count() == 0;
-        }
-
-    }
-
-
-    public class RoomNum
-    {
-        public int Section { get; set; }
-        public int RoomNumber { get; set; }
-    }
-    public class TrainRooms
-    {
-
-        public static List<RoomNum> rooms;
-        public static void GO()
-        {
-            init();
-
-            var section1 = rooms.Where(s => s.RoomNumber == 4).FirstOrDefault().Section;
-            var section2 = rooms.Where(s => s.RoomNumber == 52).FirstOrDefault().Section;
-        }
-
-        public static void init()
-        {
-            rooms = new List<RoomNum>();
-
-            int section = 1;
-
-            //fill rooms
-            for (int i = 1; i <= 36; i++)
-            {
-                rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
-                if (i % 4 == 0) { section += 1; }
-            }
-
-            section = 1;
-            for (int i = 54; i >= 37; i--)
-            {
-                rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
-                if (i % 2 == 0) { section += 1; }
-            }
-        }
-    }
-
-
-    public class Overall
-    {
-        public static async Task GO_async()
-        {
-
-            var link =
-                @"https://api.instantwebtools.net/v1/airlines";
-
-            var folder = @"C:\files\test";
-
-            System.Diagnostics.Trace.WriteLine("test start");
-            for (int i = 0; i < 10; i++)
-            {
-                using (var client = new HttpClient())
-                {
-                    var result = await client.GetAsync(link);
-                    System.Diagnostics.Trace.WriteLine(result.StatusCode);     
-                }
-            }
-            System.Diagnostics.Trace.WriteLine("test finish");
-
-        }
-        
-        public class Deduplicate
-        {
-            public int Priority { get; set; }
-            public string Id { get; set; }
-        }
-        
-        public static void GO()
-        {
-            
-            var items1 = new List<Item1>()
-            {
-                new Item1(){Id = 1, Name ="name1"}
-                ,new Item1(){Id = 3, Name ="name3"}
-                ,new Item1(){Id = 5, Name ="name5"}
-            };
-            var items2 = new List<Item2>()
-            {
-                new Item2(){ Id = 1, Name = "name1", Amt = 1, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"}, new Prop(){Id=2, Name = "p2"}
-                }},
-                new Item2(){ Id = 2, Name = "name2", Amt = 2, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"}
-                }},
-                new Item2(){ Id = 3, Name = "name3", Amt = 3, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"},new Prop(){Id=3, Name = "p3"}
-                }},
-                 new Item2(){ Id = 3, Name = "name4", Amt = 4, properties = new List<Prop>() {
-                    new Prop(){Id=3, Name = "p4"}
-                }}
-            };
-
-            var names = new List<string>() { "p1" };
-
-            var itm0 = items1.Join(items2,
-                l => new { l.Id, l.Name },
-                r => new { r.Id, r.Name },
-                (l, r) => new { lName = l.Name, rName = r.Name, amt = r.Amt }
-            ).ToList();
-            var itm1 = items1.GroupJoin(items1,
-                l => new { l.Id, l.Name },
-                r => new { r.Id, r.Name },
-                (l, r) => new { lName = l.Name, r = r.DefaultIfEmpty() }
-            ).ToList();
-            var itm2 = items2.SelectMany(s => s.properties, (l, r) => new { l.Name, l.Amt, prop = r.Name });
-            var itm3 = items2.Where(s => s.properties.Any(c => names.Exists(z => z == c.Name)))
-            .ToList();
-
-            var unsorted = new int[] { 9, 2, 4, 1, 6, 8, 7, 5 };
-            var arrTosort = new int[unsorted.Length];
-            var sorted = new int[arrTosort.Length];
-            Array.Copy(unsorted, sorted, unsorted.Length);
-            Array.Sort(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            InsertionSort(arrTosort);
-            var b0 = arrTosort.SequenceEqual(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            ShellSort(arrTosort);
-            var b1 = arrTosort.SequenceEqual(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            HeapSort(arrTosort);
-            var b2 = arrTosort.SequenceEqual(sorted);
-
-            var hs = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
-            var bts0 = Encoding.UTF8.GetBytes("string");
-            var st = "string";
-            var bts1 = st.Select(s => BitConverter.GetBytes(s)).SelectMany(c => c).Where(s => s != 0).ToList();
-
-            var b3 = bts0.SequenceEqual(bts1);
-        }
-
-        
-        
-        public class Prop
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-        public class Item1
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-        public class Item2
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public int Amt { get; set; }
-            public IList<Prop> properties { get; set; }
-        }
-        
-
-
-        public static void InsertionSort(int[] arr)
-        {
-            for (int i = 1; i < arr.Length; i++)
-            {
-                var x = arr[i];
-                var j = i - 1;
-                while (j >= 0 && arr[j] > x)
-                {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-                arr[j + 1] = x;
-            }
-        }
-
-        public static void ShellSort(int[] arr)
-        {
-            for (var n = arr.Length / 2; n > 0; n /= 2)
-            {
-                for (var i = n; i < arr.Length; i++)
-                {
-                    var x = arr[i];
-                    int j;
-                    for (j = i; j >= n && arr[j - n] > x; j -= n)
-                    {
-                        arr[j] = arr[j - n];
-                    }
-                    arr[j] = x;
-                }
-            }
-        }
-
-        public static void HeapSort(int[] arr)
-        {
-            for (int i = arr.Length / 2 - 1; i >= 0; i--)
-            {
-                heapify(arr, i, arr.Length);
-            }
-
-            for (int i = arr.Length - 1; i >= 0; i--)
-            {
-                swap(arr, 0, i);
-                heapify(arr, 0, i);
-            }
-        }
-        public static void heapify(int[] arr, int n, int len)
-        {
-            var l = n * 2 + 1;
-            var r = n * 2 + 2;
-            var lg = n;
-
-            if (l < len && arr[l] > arr[lg]) { lg = l; }
-            if (r < len && arr[r] > arr[lg]) { lg = r; }
-            if (lg != n)
-            {
-                swap(arr, lg, n);
-                heapify(arr, lg, len);
-            }
-        }
-        public static void swap(int[] arr, int l, int r)
-        {
-            var x = arr[l];
-            arr[l] = arr[r];
-            arr[r] = x;
-        }
-
-
-    }
-
 }
 
 namespace Rewrite
