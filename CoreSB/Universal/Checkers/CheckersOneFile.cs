@@ -4865,9 +4865,33 @@ namespace KATAS
 
         public static async Task GO_async()
         {
+            await LoadFromYoutube();
         }
 
-      
+        public static async Task LoadFromYoutube()
+        {
+            var destFolder = "C:\\files\\test";
+            var youtube = YouTube.Default;
+            var vid = youtube.GetVideo("https://www.youtube.com/watch?v=H8JvtcuXOLk");
+            
+            var destFullPath = $"{destFolder}\\{vid.FullName}";
+            var dir = Path.GetDirectoryName(destFullPath);
+            var name = Path.GetFileNameWithoutExtension(destFullPath);
+            var destWithoutExt = $"{dir}\\{name}";
+            
+            await File.WriteAllBytesAsync(destFullPath, await vid.GetBytesAsync());
+                
+            var inputFile = new MediaFile { Filename = destFullPath};
+            var outputFile = new MediaFile { Filename = $"{destWithoutExt}.mp3" };
+
+            using (var engine = new Engine())
+            {
+                engine.GetMetadata(inputFile);
+
+                engine.Convert(inputFile, outputFile);
+            }
+        }
+        
         public class Prop
         {
             public int Id { get; set; }
