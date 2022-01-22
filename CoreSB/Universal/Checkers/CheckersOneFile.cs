@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AngleSharp.Dom;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
@@ -197,8 +198,14 @@ namespace NetPlatformCheckers
 
             public static NumenatorDenumenator operator +(NumenatorDenumenator a, NumenatorDenumenator b) =>
                 new NumenatorDenumenator(a._numenator * b._denumenator + b._numenator * a._denumenator, a._denumenator * b._denumenator);
+            public static NumenatorDenumenator operator +(NumenatorDenumenator a, int b) =>
+                new (a._numenator + (a._denumenator*b), a._denumenator);
+            
             public static NumenatorDenumenator operator -(NumenatorDenumenator a, NumenatorDenumenator b) =>
                 a + (-b);
+            public static NumenatorDenumenator operator -(NumenatorDenumenator a, int b) =>
+                a + (-b);
+            
             public static NumenatorDenumenator operator *(NumenatorDenumenator a, NumenatorDenumenator b) =>
                 new NumenatorDenumenator(a._numenator * b._numenator, a._denumenator * b._denumenator);
             public static NumenatorDenumenator operator /(NumenatorDenumenator a, NumenatorDenumenator b) =>
@@ -213,13 +220,14 @@ namespace NetPlatformCheckers
         }
         public static void GO()
         {
-
-            int? a = null;
-            a ??= 1;
-
+            
             NumenatorDenumenator dn1 = new NumenatorDenumenator(3, 4);
-            NumenatorDenumenator dn2 = new NumenatorDenumenator(5, 7);
+            NumenatorDenumenator dn2 = new NumenatorDenumenator(17, 5);
 
+            var r0 = dn1 + 3; //15/4
+            var r1 = dn2 - 2; //7/5
+            var r2 = dn1 - 3; //-9/4
+            
             var t0 = -dn1;
             var t1 = +dn1;
 
@@ -308,6 +316,28 @@ namespace NetPlatformCheckers
         public static void GO()
         {
 
+            var ss0 = "String";
+            var ss1 = new string(new [] {'S', 't', 'r', 'i', 'n', 'g'});
+            var ss2 = nameof(String);
+
+            object oo1 = "String";
+            object oo2 = new string("String");
+            object oo3 = "String";
+            
+            var bb0 = (ss0 == ss1) && (ss0 == ss2) && (ss1 == ss2); //true
+            var bb1 = ss0 == oo1; //true
+            var bb2 = ss0 == oo2; //false
+            
+            var bb3 = oo3 == ss0; //true
+            var bb4 = oo1 == oo3; //true
+
+            var bb5 = oo1 == oo2; //false
+            var bb6 = ss2 == oo2; //false
+
+            var bb7 = ss1.Equals(oo2); //true
+            var bb8 = oo1.Equals(oo2); //true
+            
+            
             string a = new string(new char[] { 'a' });
             string b = new string(new char[] { 'a' });
 
@@ -2140,7 +2170,23 @@ namespace NetPlatformCheckers
             await Task.Factory.StartNew(() => Thread.Sleep(5000));
         }
     }
+    
+    public  static class TaskExtension
+    {
+        public static async Task<T> TimeoutAfter<T>(this Task<T> task, TimeSpan timeout)
+        {
+            var delayTask = Task.Delay(timeout);
 
+            var resultTask = await Task.WhenAny(task, delayTask);
+            if (resultTask == delayTask)
+            {
+                // Operation cancelled
+                throw new OperationCanceledException();
+            }
+
+            return await task;
+        }
+     }
 
     /*Reflections */
     /*--------------------------------------------- */
@@ -2876,10 +2922,10 @@ namespace LINQtoObjectsCheck
             };
 
             var propsToSearch = new List<Property1>() {
-                props1[0],new Property1(){ Id = 1, Name = "prop3"},props1[2]
+                props1[0],new Property1(){ Id = 1, Name = "prop3" },props1[2]
             };
             var propsToSearch2 = new List<Property1>() {
-                new Property1(){ Id = 1, Name = "prop8"},props1[2]
+                new Property1(){ Id = 1, Name = "prop8" },props1[2]
             };
             var newProp = new Property1() { Id = 2, Name = "prop8" };
             var refProp = props1[2];
@@ -2887,32 +2933,6 @@ namespace LINQtoObjectsCheck
             var propsCol1 = new List<Property1>() { props1[0], props1[1], props1[4] };
             var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
             var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
-
-            
-            
-            
-            
-            
-            var ss0 = "String";
-            var ss1 = new string(new [] {'S', 't', 'r', 'i', 'n', 'g'});
-            var ss2 = nameof(String);
-
-            object oo1 = "String";
-            object oo2 = new string("String");
-            object oo3 = "String";
-            
-            var bb0 = (ss0 == ss1) && (ss0 == ss2) && (ss1 == ss2); //true
-            var bb1 = ss0 == oo1; //true
-            var bb2 = ss0 == oo2; //false
-            
-            var bb3 = oo3 == ss0; //true
-            var bb4 = oo1 == oo3; //true
-
-            var bb5 = oo1 == oo2; //false
-            var bb6 = ss2 == oo2; //false
-
-            var bb7 = ss1.Equals(oo2); //true
-            var bb8 = oo1.Equals(oo2); //true
 
             var l0 = new List<dynamic>
             {
@@ -2931,18 +2951,6 @@ namespace LINQtoObjectsCheck
             var item1 = new {name = "name1", id = 0};
             var item3 = new {name = "name1", id = 1};
 
-            
-
-            var c2 = item0 == item1;
-            var c3 = item0.Equals(items1);
-
-            var i0  = items1.Where(s => s.properties.Any(c => c.Name == "prop1"));
-            var i1 = items1.FindAll(s => s.properties.Any(c => c.Name == "prop1"));
-            var i2  = items1.Where(s => s.properties.Exists(c => c.Name == "prop1"));
-
-           
-                
-                
             //0 4
             var intersect = propsCol2.Intersect(propsCol1).ToList();
             //3 
@@ -4425,7 +4433,7 @@ namespace KATAS
              }
 
          }
-         
+
         //Kasper
         public class StringCount
         {
@@ -4796,8 +4804,18 @@ namespace KATAS
     public class Overall
     {
      
+        public class DownloadRecord
+        {
+            public string URL { get; set; }
+            public long ElapsedMS { get; set; }
+        }
+        public class DownloadReport
+        {
+            public ICollection<DownloadRecord> records { get; set; } = new List<DownloadRecord>();
+        }
         public static void GO()
         {
+       
             
             var items1 = new List<Item1>()
             {
@@ -4862,17 +4880,76 @@ namespace KATAS
 
             var b3 = bts0.SequenceEqual(bts1);
         }
-
+        
+        public static DownloadReport report = new DownloadReport();
+        public static Stopwatch stopwatch = new Stopwatch();
+        
         public static async Task GO_async()
         {
-            await LoadFromYoutube();
+
+            //await CheckAnyNegation();
+            //await CompareMethods();
         }
 
-        public static async Task LoadFromYoutube()
+        public static async Task CheckAnyNegation()
+        {
+            var itemsAny = new List<Item1> {new Item1 {Id = 0, Name = null}};
+            var itemsEmpty = new List<Item1> ();
+            List<Item1> itemsNull = null;
+
+            var b0 = !itemsAny?.Any() ?? true;
+            var b1 = !itemsEmpty?.Any() ?? true;
+            var b2 = !itemsNull?.Any() ?? true;
+        }
+
+        public static async Task CompareMethods()
+        {
+            
+            await LoadFromYoutubeAsync();
+            
+            await LoadFromYoutubeParallel();
+
+            StringBuilder sb = new StringBuilder();
+            string res = string.Empty;
+            foreach (var r in report.records)
+            {
+                res += $"URL:{r.URL}; Ms:{r.ElapsedMS}";
+                res += "\r\n";
+            }
+
+            await File.WriteAllTextAsync(@"C:\files\test\downloadReport.txt", res);
+        }
+   
+     
+        public static async Task LoadFromYoutubeParallel()
+        {
+            var lines = await File.ReadAllLinesAsync(@"C:\\files\test\\youtubeURLs.txt");
+            var tasks = lines.Select(loadUrlFromYoutubeAsync);
+
+            await Task.WhenAll(tasks);
+        }
+
+        public static async Task LoadFromYoutubeAsync()
+        {
+            var lines = await File.ReadAllLinesAsync(@"C:\\files\test\\youtubeURLs.txt");
+            long elapsed = 0;
+            foreach (var s in lines)
+            {
+                stopwatch.Start();
+                await loadUrlFromYoutubeAsync(s);
+                stopwatch.Stop();
+                elapsed = elapsed==0 
+                    ? stopwatch.ElapsedMilliseconds 
+                    : stopwatch.ElapsedMilliseconds - elapsed;
+                report.records.Add(new DownloadRecord(){URL = s, ElapsedMS = stopwatch.ElapsedMilliseconds});
+            }
+        }
+
+        private static async Task loadUrlFromYoutubeAsync(string url)
         {
             var destFolder = "C:\\files\\test";
             var youtube = YouTube.Default;
-            var vid = youtube.GetVideo("https://www.youtube.com/watch?v=H8JvtcuXOLk");
+            var vid = youtube.GetVideo(url);
             
             var destFullPath = $"{destFolder}\\{vid.FullName}";
             var dir = Path.GetDirectoryName(destFullPath);
