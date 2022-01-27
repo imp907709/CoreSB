@@ -10,8 +10,8 @@ namespace CoreSB
     {
         public static async Task Main(string[] args)
         {
-            LinqCheck.GO();
             await KATAS.Overall.GO_async();
+            LinqCheck.GO();
             
             CreateHostBuilder(args).Build().Run();
         }

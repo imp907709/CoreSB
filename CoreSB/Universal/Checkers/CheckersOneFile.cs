@@ -22,6 +22,7 @@ using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
+using KATAS;
 using MediaToolkit;
 using MediaToolkit.Model;
 using Microsoft.EntityFrameworkCore;
@@ -2950,7 +2951,7 @@ namespace LINQtoObjectsCheck
             var item0 = new {name = "name1", id = 0};
             var item1 = new {name = "name1", id = 0};
             var item3 = new {name = "name1", id = 1};
-
+     
             //0 4
             var intersect = propsCol2.Intersect(propsCol1).ToList();
             //3 
@@ -3915,6 +3916,22 @@ namespace TipsAndTricks
 namespace KATAS
 {
     
+    public class ItemResult<T>
+    {
+        public delegate bool Sut(T item);
+        
+        public Sut methodUT { get; set; }
+        
+        public T item { get; set; }
+        public bool assert { get; set; }
+        public bool result { get; set; }
+
+        public void GO()
+        {
+            result = methodUT.Invoke(item) == assert;
+        }
+    }
+    
     public class Miscellaneous
     {
 
@@ -4039,7 +4056,7 @@ namespace KATAS
             }
 
         }
-        
+
         public static class ReqwindKATA
         {
             public static string GO(string input_)
@@ -4315,124 +4332,124 @@ namespace KATAS
             }
         }
 
-         public class BracketsChecker
+        public class BracketsChecker
         {
-            public static void GO()
-            {
-                List<string> strsOK = new List<string>() {
-                    "c * [ (a+b) / d]",  "()[][()]","([])[()]", "()","[]"
-                };
-                List<string> strsNotOK = new List<string>() {
-                    "(c * [a+b) / d]", ")[]", "]()", "[(())])" , "(([[])"
-                };
-                var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
-                var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
-
-                var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
-                var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
-
-            }
-
-            static Func<string, bool> braketsCount = (s) =>
-            {
-
-                Stack<char> brackets = new Stack<char>();
-
-                foreach (char i in s)
-                {
-                    if (brackets.Count == 0)
-                    {
-                        if (i == ')' || i == ']') { return false; }
-                        if (i == '(' || i == '[') { brackets.Push(i); };
-                    }
-                    else
-                    {
-                        if (i == ')') { if (brackets.Pop() != '(') { return false; } }
-                        if (i == ']') { if (brackets.Pop() != '[') { return false; } }
-
-                        if (i == '(' || i == '[') { brackets.Push(i); };
-                    }
-                }
-
-                return brackets.Count == 0;
-
+        public static void GO()
+        {
+            List<string> strsOK = new List<string>() {
+                "c * [ (a+b) / d]",  "()[][()]","([])[()]", "()","[]"
             };
+            List<string> strsNotOK = new List<string>() {
+                "(c * [a+b) / d]", ")[]", "]()", "[(())])" , "(([[])"
+            };
+            var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
+            var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
 
-            public static bool bracketsCheck(string input)
-            {
-                List<char> opened = new List<char>() { '(', '[', '{' };
-                List<char> closed = new List<char>() { ')', ']', '}' };
-                Stack<char> cntr = new Stack<char>();
-
-                if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
-                if (closed.Contains(input[0])) { return false; }
-
-                foreach (var ch in input)
-                {
-                    if (opened.Contains(ch)) { cntr.Push(ch); }
-                    if (closed.Contains(ch))
-                    {
-                        if (cntr.Count() <= 0) { return false; }
-                        var previous = cntr.Pop();
-                        if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
-                    }
-                }
-
-                return cntr.Count() == 0;
-            }
+            var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
+            var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
 
         }
 
-         public static class BalancedDelimeter
+        static Func<string, bool> braketsCount = (s) =>
+        {
+
+            Stack<char> brackets = new Stack<char>();
+
+            foreach (char i in s)
+            {
+                if (brackets.Count == 0)
+                {
+                    if (i == ')' || i == ']') { return false; }
+                    if (i == '(' || i == '[') { brackets.Push(i); };
+                }
+                else
+                {
+                    if (i == ')') { if (brackets.Pop() != '(') { return false; } }
+                    if (i == ']') { if (brackets.Pop() != '[') { return false; } }
+
+                    if (i == '(' || i == '[') { brackets.Push(i); };
+                }
+            }
+
+            return brackets.Count == 0;
+
+        };
+
+        public static bool bracketsCheck(string input)
+        {
+            List<char> opened = new List<char>() { '(', '[', '{' };
+            List<char> closed = new List<char>() { ')', ']', '}' };
+            Stack<char> cntr = new Stack<char>();
+
+            if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
+            if (closed.Contains(input[0])) { return false; }
+
+            foreach (var ch in input)
+            {
+                if (opened.Contains(ch)) { cntr.Push(ch); }
+                if (closed.Contains(ch))
+                {
+                    if (cntr.Count() <= 0) { return false; }
+                    var previous = cntr.Pop();
+                    if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
+                }
+            }
+
+            return cntr.Count() == 0;
+        }
+
+        }
+
+        public static class BalancedDelimeter
+        {
+
+         public static void GO()
          {
-
-             public static void GO()
-             {
-                 Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
-
-             }
+             Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
          }
 
-         public class HTTPserializeSave
+        }
+
+        public class HTTPserializeSave
+        {
+         public class Country
          {
-             public class Country
-             {
-                 public string id { get; set; }
-                 public string name { get; set; }
-             }
+             public string id { get; set; }
+             public string name { get; set; }
+         }
 
-             public static async Task<IEnumerable<Country>> GO()
-             {
-                 var httpClient = new HttpClient();
-                 var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
-                 var content = await response.Content.ReadAsStringAsync();
+         public static async Task<IEnumerable<Country>> GO()
+         {
+             var httpClient = new HttpClient();
+             var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
+             var content = await response.Content.ReadAsStringAsync();
 
-                 var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
-                 var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
-                 var str = JsonSerializer.Serialize(filtered);
+             var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
+             var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
+             var str = JsonSerializer.Serialize(filtered);
 
-                 await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
-                 return filtered;
-             }
+             await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
+             return filtered;
+         }
 
-             public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
-             {
-                 await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
-                     JsonSerializer.Serialize(
-                         JsonSerializer.Deserialize<IEnumerable<T>>(
-                             await new HttpClient()
-                                 .GetAsync("https://api.worldremit.com/api/countries")?
-                                 .Result
-                                 .Content
-                                 .ReadAsStringAsync()
-                         )
+         public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
+         {
+             await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
+                 JsonSerializer.Serialize(
+                     JsonSerializer.Deserialize<IEnumerable<T>>(
+                         await new HttpClient()
+                             .GetAsync("https://api.worldremit.com/api/countries")?
+                             .Result
+                             .Content
+                             .ReadAsStringAsync()
                      )
-                 );
-                 return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
-             }
-
+                 )
+             );
+             return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
          }
+
+        }
 
         //Kasper
         public class StringCount
@@ -4798,12 +4815,12 @@ namespace KATAS
                 }
             }
         }
-      
+
     }
    
     public class Overall
     {
-     
+       
         public class DownloadRecord
         {
             public string URL { get; set; }
@@ -4883,10 +4900,23 @@ namespace KATAS
         
         public static DownloadReport report = new DownloadReport();
         public static Stopwatch stopwatch = new Stopwatch();
+
+        public class DataItem
+        {
+            public int Id { get; set; }
+            public string email { get; set; }
+            public string first_name { get; set; }
+            public string avatar { get; set; }
+        }
+        public class Data
+        {
+         public int page { get; set; }
+         public int total { get; set; }
+         public ICollection<DataItem> data { get; set; }
+        }
         
         public static async Task GO_async()
         {
-
             //await CheckAnyNegation();
             //await CompareMethods();
         }
@@ -5259,7 +5289,6 @@ namespace KATAS
                     i += 1;
                 }
             }
-
         } 
         public class InsertionSort<T> where T : struct, IComparable
         {
