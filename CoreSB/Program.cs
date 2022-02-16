@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
+using coreSB;
 using InfrastructureCheckers;
+using KATAS;
 using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -10,9 +12,11 @@ namespace CoreSB
     {
         public static async Task Main(string[] args)
         {
-            await KATAS.Overall.GO_async();
-            LinqCheck.GO();
+
+            KATAS.Miscellaneous.Etna.GO();
             
+            LinqCheck.GO();
+
             CreateHostBuilder(args).Build().Run();
         }
 

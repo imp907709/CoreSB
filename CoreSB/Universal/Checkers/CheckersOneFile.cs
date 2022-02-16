@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -29,6 +30,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NetPlatformCheckers;
 using Newtonsoft.Json;
+using NiL.JS.Statements;
 using VideoLibrary;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -702,6 +704,135 @@ namespace NetPlatformCheckers
             Trace.WriteLine(ABSchild.AbsChildProp);
         }
     }
+    
+      //Records struct readonly
+    /*--------------------------------------------- */
+    public record Record_(string A, string B);
+
+    public record struct RecordStruct
+    {
+        public string A { get; set; }
+        public string B { get; set; }
+
+        public RecordStruct(string a, string b)
+        {
+            A = a;
+            B = b;
+        }
+    };
+
+    //Only init properties
+    public readonly record struct ReadOnlyRecordStruct(string A, string B);
+
+    public record RecordWithClass
+    {
+        public string A { get; set; }
+        public ICollection<ItemForRecord> items { get; init; }
+    }
+
+    public record ItemForRecord
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class RecStructConstCheck
+    {
+        public RecStructConstCheck() { }
+
+        public RecStructConstCheck(string b)
+        {
+            this.B = b;
+        }
+
+        public const string A = "A";
+        public readonly string B;
+
+        public Record_ rec { get; set; }
+        public RecordStruct recStr { get; set; }
+        public ReadOnlyRecordStruct roRecStr { get; set; }
+    }
+
+    public class RecordsStructsReadonlyCheck
+    {
+        public static void GO()
+        {
+            RecStructConstCheck c = new RecStructConstCheck("BB");
+            var a = RecStructConstCheck.A;
+
+            Record_ r1 = new("A", "B");
+            Record_ r2 = new("A", "B");
+            RecordStruct rs1 = new("A", "B");
+            RecordStruct rs2 = new("A", "B");
+            ReadOnlyRecordStruct ros1 = new("A", "B");
+            ReadOnlyRecordStruct ros2 = new("A", "B");
+
+            c.roRecStr = new ReadOnlyRecordStruct();
+
+            //TRUE
+            var br = r1 == r2;
+            var brs = rs1 == rs2;
+            var bros = ros1 == ros2;
+
+            //all with {} instances compared by value
+
+            //new record with different and same field
+            Record_ r12 = r1 with {A = "A2"};
+            Record_ r13 = r1 with {A = "A"};
+            var b12 = r12 == r1;
+            var b13 = r13 == r1;
+
+            //new record struct from record with same and other field
+            RecordStruct rs12 = rs1 with {A = "A2"};
+            RecordStruct rs13 = rs1 with {A = "A"};
+            var bs12 = rs12 == rs1;
+            var bs13 = rs13 == rs1;
+
+            //new readonly record struct 
+            ReadOnlyRecordStruct ros12 = ros1 with {A = "A2"};
+            ReadOnlyRecordStruct ros13 = ros1 with {A = "A"};
+            var bos12 = ros12 == ros1;
+            var bos13 = ros13 == ros1;
+
+            //FORBIDDEN compile error
+            /*
+                r1.A = "A2";
+                rs1.A = "A2";
+                ros1.A = "A2";
+            */
+
+            Record_ r14 = r12 with {B = "B2"};
+
+            RecordWithClass rwc = new(){A="A", items = new List<ItemForRecord>()
+            {
+                new() {Id = 1, Name = "name1"}, new() {Id = 2, Name = "name2"}
+            }};
+
+            //FORBIDDEN 
+            //rwc.items = new List<ItemForRecord>();
+            
+            var lc1 = new []{"a","b","c"};
+            var lc2 = lc1[0..lc1.Length];
+            lc2[1] = "d";
+            var arrbool = lc1[1] != lc2[1];
+
+            var list1 = new List<string>{"a","b","c"};
+            var list2 = list1.ToArray()[0..list1.Count];
+            list2[1] = "C";
+            var listBool = list1[1] != list2[1];
+
+            var itms = rwc.items.ToArray()[0..rwc.items.Count];
+            RecordWithClass rwc2 = rwc with { items = itms };
+
+            itms[1].Name = "change";
+            
+            var rFirst = rwc2.items.Where(s => s.Id == 2).FirstOrDefault();
+            rFirst.Name = "nm" ;
+            var brwc = rwc.items.Where(s => s.Id == 2).FirstOrDefault().Name != "nm";
+        }
+    }
+
+    /*--------------------------------------------- */
 
 
 
@@ -2951,7 +3082,40 @@ namespace LINQtoObjectsCheck
             var item0 = new {name = "name1", id = 0};
             var item1 = new {name = "name1", id = 0};
             var item3 = new {name = "name1", id = 1};
-     
+
+            var wea = items1.Where(s => s.properties.Exists(c => propsToSearch.Any(z => z.Name == c.Name))).ToList();
+            var wae = items1.Where(s => s.properties.Any(c => propsToSearch.Exists(z => z.Name == c.Name))).ToList();
+            var wac = items1.Where(s => s.properties.Any(c => propsToSearch.Contains(c))).ToList();
+
+            var sm1 = items1.SelectMany(p => p.properties, (l, r) => new
+            {
+                itm = l.Name,prop = r.Name, amt = l.Amount
+            });
+            var sm2 = items1.SelectMany(p => p.properties, (l, r) => new
+            {
+                itm = l.Name,prop = r.Name, amt = l.Amount
+            });
+
+            var gpb = items1.GroupBy
+            (
+                k => new {k.Amount, k.Name},
+                k => k.Amount,
+                (l, r) => new {l.Name, l.Amount}
+            );
+
+            var gpjn = items1.GroupJoin(
+                items2,
+                l => l.properties,
+                r => r.properties,
+                (l, r) => new {l.Name, l.Amount, r}).ToList();
+            
+            var jnsm = 
+                items1.Join(
+                    items2,
+                    l => l.Name,
+                    r => r.Name,
+                    (l, r) => new {l.Name, l.Amount, rn = r.Name, ra = r.Amount}).ToList();
+            
             //0 4
             var intersect = propsCol2.Intersect(propsCol1).ToList();
             //3 
@@ -3060,6 +3224,47 @@ namespace LINQtoObjectsCheck
 
                     item2 = g.Count(c => !string.IsNullOrEmpty(c?.s2?.Name))
                 }).ToList();
+            
+            var selectManyOne = items1.SelectMany(p => p.properties, (l, r) => new {name = l.Name, amt = l.Amount, prop = r.Name})
+                .ToList();
+            var selectManyTwo = items2.SelectMany(p => p.properties, (l, r) => new {name = l.Name, amt = l.Amount, prop = r.Name})
+                .ToList();
+            
+            var groupJoinByMultipleLeft =
+            (
+                from s in selectManyOne
+                join s2 in selectManyTwo on new {s.name, s.prop} equals new {s2.name, s2.prop} into jn
+                from s3 in jn.DefaultIfEmpty()
+                group s by new {s3?.name, s3?.prop}
+                into g
+                select new {name = g.Key.name, prop = g.Key.prop, amt = g.Sum(c => c?.amt)}
+            ).ToList();
+            
+            var join = selectManyOne.Join(selectManyTwo,
+                    lk => new { lk.name, lk.prop},
+                    rk => new { rk.name, rk.prop},
+                    (l,r) => new {l.name,r.prop, amt = l.amt+r.amt})
+                .ToList();
+
+            var groupJoin = selectManyOne.GroupJoin(selectManyTwo,
+                    k => k.amt, 
+                    r=>r.amt,
+                    (l,r)=> new
+                    {
+                        name = l.name,l.prop,l.amt,
+                        ramt = r.Sum(s=>s.amt+l.amt)
+                    })
+                .ToList();
+
+            var groupBy_ = selectManyOne.GroupBy(
+                    lk => new { lk.name, lk.prop},
+                    rk => rk.amt,
+                    (l, r) => new
+                    {
+                        l.name,l.prop,
+                        amt = r.Sum(s=>s)
+                    })
+                .ToList();
         }
 
         static void OldRacersCheck()
@@ -4777,6 +4982,44 @@ namespace KATAS
             return result;
         }
 
+        public int MaxUniqueSubstringLength(string str)
+        {
+            
+            var cnt = 0;
+            var cntMax = 0;
+
+            List<char> chars = new List<char>();
+            
+            foreach (var ch in str)
+            {
+
+                if (chars.Contains(ch))
+                {
+                    if (cnt > cntMax)
+                    {
+                        cntMax = cnt;
+                    }
+
+                    cnt = 1;
+                    chars = new List<char>();
+                    chars.Add(ch);
+                    continue;
+                }
+
+                if (!chars.Contains(ch))
+                {
+                    cnt+=1;
+                    chars.Add(ch);
+                }
+            }
+
+            if (cnt > cntMax)
+            {
+                cntMax = cnt;
+            }
+            return cntMax;
+        }
+        
         public class RoomNum
         {
             public int Section { get; set; }
@@ -4815,166 +5058,213 @@ namespace KATAS
                 }
             }
         }
+        
+        
+        
+        public class ListNode
+        {
+            public int Value { get; set; }
+            public ListNode Next { get; set; }
+        }
+        public class Etna
+        {
+            private static Etna n = new Etna();
+            
+            private static bool _continue = true;
+            private static int _threashhold = 100;
+            private static int _iterations = 0;
+            
+            private static ListNode _previous = null;
+            private static ListNode _next = null;
+            
+            public static void GO()
+            {
+                n.go();
+            }
+            private void go()
+            {
+                
+                var n0 = new ListNode() {Value = 3, Next = null};
+                var n1 = new ListNode() {Value = 2, Next = n0};
+                var n2 = new ListNode() {Value = 1, Next = n1};
+                var nodes = new ListNode() {Value = 0, Next = n2};
+                Print(nodes);
+                reset();
+                ReverseLinkedList(nodes);
+                reset();
+                Print(n0);
 
+            }
+
+            private static void reset()
+            {
+                _iterations = 0;
+                _continue = true;
+            }
+
+            private static void check()
+            {
+                _iterations++;
+                _continue = _iterations < _threashhold && _continue;
+            }
+
+            public void Print(ListNode n)
+            {
+                System.Diagnostics.Trace.WriteLine($"node value:{n.Value}");
+                if (n.Next == null)
+                {
+                    _continue = false;
+                    return;
+                }
+
+                check();
+                while (_continue)
+                {
+                    Print(n.Next);
+                }
+            }
+            public void ReverseLinkedList(ListNode n)
+            {
+                if (n == null)
+                {
+                    _continue = false;
+                    return;
+                }
+                if (n.Next == null)
+                {
+                    _continue = false;
+                }
+              
+                //first element
+                if (_previous == null)
+                {
+                    _previous = n;
+                    _next = n.Next;
+                    n.Next = null;
+                }
+                else
+                {
+                    _next = n.Next;
+                    n.Next = _previous;
+                    _previous = n;
+                }
+
+                check();
+                while (_continue)
+                {
+                    ReverseLinkedList(_next);
+                }
+            }
+            
+            public static void Merge(IList<int> a, List<int> b )
+            {
+                for (int i = 0; i < a.Count; i++)
+                {
+                    for (int i2 = 0; i2 < b.Count; i2++)
+                    {
+                    }
+                }
+            }
+        }
     }
    
     public class Overall
     {
-       
-        public class DownloadRecord
+
+        public class Singletone
         {
-            public string URL { get; set; }
-            public long ElapsedMS { get; set; }
-        }
-        public class DownloadReport
-        {
-            public ICollection<DownloadRecord> records { get; set; } = new List<DownloadRecord>();
-        }
-        public static void GO()
-        {
-       
+            private static Singletone _instance;
             
-            var items1 = new List<Item1>()
-            {
-                new Item1(){Id = 1, Name ="name1"}
-                ,new Item1(){Id = 3, Name ="name3"}
-                ,new Item1(){Id = 5, Name ="name5"}
-            };
-            var items2 = new List<Item2>()
-            {
-                new Item2(){ Id = 1, Name = "name1", Amt = 1, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"}, new Prop(){Id=2, Name = "p2"}
-                }},
-                new Item2(){ Id = 2, Name = "name2", Amt = 2, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"}
-                }},
-                new Item2(){ Id = 3, Name = "name3", Amt = 3, properties = new List<Prop>() {
-                    new Prop(){Id=1, Name = "p1"},new Prop(){Id=3, Name = "p3"}
-                }},
-                 new Item2(){ Id = 3, Name = "name4", Amt = 4, properties = new List<Prop>() {
-                    new Prop(){Id=3, Name = "p4"}
-                }}
-            };
-
-            var names = new List<string>() { "p1" };
-
-            var itm0 = items1.Join(items2,
-                l => new { l.Id, l.Name },
-                r => new { r.Id, r.Name },
-                (l, r) => new { lName = l.Name, rName = r.Name, amt = r.Amt }
-            ).ToList();
-            var itm1 = items1.GroupJoin(items1,
-                l => new { l.Id, l.Name },
-                r => new { r.Id, r.Name },
-                (l, r) => new { lName = l.Name, r = r.DefaultIfEmpty() }
-            ).ToList();
-            var itm2 = items2.SelectMany(s => s.properties, (l, r) => new { l.Name, l.Amt, prop = r.Name });
-            var itm3 = items2.Where(s => s.properties.Any(c => names.Exists(z => z == c.Name)))
-            .ToList();
-
-            var unsorted = new int[] { 9, 2, 4, 1, 6, 8, 7, 5 };
-            var arrTosort = new int[unsorted.Length];
-            var sorted = new int[arrTosort.Length];
-            Array.Copy(unsorted, sorted, unsorted.Length);
-            Array.Sort(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            InsertionSort(arrTosort);
-            var b0 = arrTosort.SequenceEqual(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            ShellSort(arrTosort);
-            var b1 = arrTosort.SequenceEqual(sorted);
-
-            Array.Copy(unsorted, arrTosort, unsorted.Length);
-            HeapSort(arrTosort);
-            var b2 = arrTosort.SequenceEqual(sorted);
-
-            var hs = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
-            var bts0 = Encoding.UTF8.GetBytes("string");
-            var st = "string";
-            var bts1 = st.Select(s => BitConverter.GetBytes(s)).SelectMany(c => c).Where(s => s != 0).ToList();
-
-            var b3 = bts0.SequenceEqual(bts1);
-        }
-        
-        public static DownloadReport report = new DownloadReport();
-        public static Stopwatch stopwatch = new Stopwatch();
-
-        public class DataItem
-        {
-            public int Id { get; set; }
-            public string email { get; set; }
-            public string first_name { get; set; }
-            public string avatar { get; set; }
-        }
-        public class Data
-        {
-         public int page { get; set; }
-         public int total { get; set; }
-         public ICollection<DataItem> data { get; set; }
-        }
-        
-        public static async Task GO_async()
-        {
-            //await CheckAnyNegation();
-            //await CompareMethods();
-        }
-
-        public static async Task CheckAnyNegation()
-        {
-            var itemsAny = new List<Item1> {new Item1 {Id = 0, Name = null}};
-            var itemsEmpty = new List<Item1> ();
-            List<Item1> itemsNull = null;
-
-            var b0 = !itemsAny?.Any() ?? true;
-            var b1 = !itemsEmpty?.Any() ?? true;
-            var b2 = !itemsNull?.Any() ?? true;
-        }
-
-        public static async Task CompareMethods()
-        {
+            public Singletone(){}
             
-            await LoadFromYoutubeAsync();
-            
-            await LoadFromYoutubeParallel();
-
-            StringBuilder sb = new StringBuilder();
-            string res = string.Empty;
-            foreach (var r in report.records)
+            static Singletone()
             {
-                res += $"URL:{r.URL}; Ms:{r.ElapsedMS}";
-                res += "\r\n";
+                _instance = new Singletone();
+            }
+            
+            public static Singletone GetInstance() => _instance;
+        }
+
+        public class Recursion
+        {
+            internal bool _continue = true;
+            internal int _threashhold = 100;
+            internal int _iterations = 0;
+            
+            public void reset()
+            {
+                _iterations = 0;
+                _continue = true;
             }
 
-            await File.WriteAllTextAsync(@"C:\files\test\downloadReport.txt", res);
-        }
-   
-     
-        public static async Task LoadFromYoutubeParallel()
-        {
-            var lines = await File.ReadAllLinesAsync(@"C:\\files\test\\youtubeURLs.txt");
-            var tasks = lines.Select(loadUrlFromYoutubeAsync);
-
-            await Task.WhenAll(tasks);
-        }
-
-        public static async Task LoadFromYoutubeAsync()
-        {
-            var lines = await File.ReadAllLinesAsync(@"C:\\files\test\\youtubeURLs.txt");
-            long elapsed = 0;
-            foreach (var s in lines)
+            public void check()
             {
-                stopwatch.Start();
-                await loadUrlFromYoutubeAsync(s);
-                stopwatch.Stop();
-                elapsed = elapsed==0 
-                    ? stopwatch.ElapsedMilliseconds 
-                    : stopwatch.ElapsedMilliseconds - elapsed;
-                report.records.Add(new DownloadRecord(){URL = s, ElapsedMS = stopwatch.ElapsedMilliseconds});
+                _iterations++;
+                _continue = _iterations < _threashhold && _continue;
             }
         }
+        
+        public class ListNode
+        {
+            public int Value { get; set; }
+            public ListNode Next { get; set; }
+        }
+        
+        public class LinkedListReverse : Recursion
+        {
+            private ListNode _previous;
+            private ListNode _next;
+            public void Print(ListNode n)
+            {
+                System.Diagnostics.Trace.WriteLine($"node value:{n.Value}");
+                if (n.Next == null)
+                {
+                    _continue = false;
+                    return;
+                }
 
+                check();
+                while (_continue)
+                {
+                    Print(n.Next);
+                }
+            }
+            public void ReverseLinkedList(ListNode n)
+            {
+                if (n == null)
+                {
+                    _continue = false;
+                    return;
+                }
+                if (n.Next == null)
+                {
+                    _continue = false;
+                }
+              
+                //first element
+                if (_previous == null)
+                {
+                    _previous = n;
+                    _next = n.Next;
+                    n.Next = null;
+                }
+                else
+                {
+                    _next = n.Next;
+                    n.Next = _previous;
+                    _previous = n;
+                }
+
+                check();
+                while (_continue)
+                {
+                    ReverseLinkedList(_next);
+                }
+            }
+
+            
+        }
+        
         private static async Task loadUrlFromYoutubeAsync(string url)
         {
             var destFolder = "C:\\files\\test";
@@ -4998,25 +5288,6 @@ namespace KATAS
                 engine.Convert(inputFile, outputFile);
             }
         }
-        
-        public class Prop
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-        public class Item1
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-        public class Item2
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public int Amt { get; set; }
-            public IList<Prop> properties { get; set; }
-        }
-        
 
 
         public static void InsertionSort(int[] arr)
@@ -5033,7 +5304,6 @@ namespace KATAS
                 arr[j + 1] = x;
             }
         }
-
         public static void ShellSort(int[] arr)
         {
             for (var n = arr.Length / 2; n > 0; n /= 2)
@@ -5085,8 +5355,9 @@ namespace KATAS
             arr[r] = x;
         }
         
+        
     }
-
+    
     public class Algorithms
     {
          /*Collection for testing value collections */
@@ -5260,36 +5531,7 @@ namespace KATAS
                 var res2 = sortedArr.ToList().SequenceEqual(quickSortArr);
             }
         }
-
-
-        public class InsertionSortInt
-        {
-            public static void GO()
-            {
-                var arrToSort = new int[] { 1, 9, 15, 8, 7, 10 };
-
-                var arrExpect = (int[])arrToSort.Clone();
-                Array.Sort(arrExpect);
-                sort(arrToSort);
-                var sorted = arrToSort.SequenceEqual(arrExpect);
-            }
-            public static void sort(int[] arr)
-            {
-                var i = 1;
-                while (i < arr.Length)
-                {
-                    var x = arr[i];
-                    var j = i - 1;
-                    while (j >= 0 && arr[j] > x)
-                    {
-                        arr[j + 1] = arr[j];
-                        j -= 1;
-                    }
-                    arr[j + 1] = x;
-                    i += 1;
-                }
-            }
-        } 
+        
         public class InsertionSort<T> where T : struct, IComparable
         {
             public IList<T> Sort(IList<T> arr)
@@ -5326,6 +5568,7 @@ namespace KATAS
                 return arr;
             }
         }
+        
 
         public class ShellSort
         {
@@ -5347,37 +5590,8 @@ namespace KATAS
                 }
             }
         }
-
-        public class ShellSortInt
-        {
-            public static void GO()
-            {
-                var arr = new int[] { 8, 2, 14, 6, 3, 13, 15, 4, 11, 7, 1, 12, 5, 9, 10 };
-                var arrExpected = ((int[])arr.Clone()).OrderBy(s => s).ToArray<int>();
-                Sort(arr, arr.Length * 2);
-                bool equ = arr.SequenceEqual(arrExpected);
-            }
-            public static void Sort(int[] arr, int n)
-            {
-                for (int gap = n / 2; gap > 0; gap /= 2)
-                {
-                    for (int i = gap; i < arr.Length; i += 1)
-                    {
-                        var s = arr[i];
-
-                        int j;
-                        for (j = i; j >= gap && arr[j - gap] > s; j -= gap)
-                        {
-                            arr[j] = arr[j - gap];
-                        }
-                        arr[j] = s;
-                    }
-                }
-            }
-        }
-
-
-
+      
+    
         public class QuickSortTest
         {
             public static void GO()
@@ -5444,6 +5658,7 @@ namespace KATAS
             }
         }
 
+     
 
         //https://www.tutorialspoint.com/heap-sort-in-chash#:~:text=Heap%20Sort%20is%20a%20sorting,then%20the%20heap%20is%20reestablished.
         public class HeapSortTest
@@ -5632,105 +5847,49 @@ namespace KATAS
 
         public class HeapSortArr
         {
-            
-            static void heapSort(int[] arr, int n)
+            public void sort(int[] arr)
             {
-                for (int i = n / 2 - 1; i >= 0; i--)
-                    heapify(arr, n, i);
-                for (int i = n - 1; i >= 0; i--)
-                {
-                    int temp = arr[0];
-                    arr[0] = arr[i];
-                    arr[i] = temp;
-                    heapify(arr, i, 0);
-                }
+                buildHeap(arr);
             }
-            static void heapify(int[] arr, int n, int i)
+
+            void buildHeap(int[] arr)
             {
-                int largest = i;
-                int left = 2 * i + 1;
-                int right = 2 * i + 2;
-                if (left < n && arr[left] > arr[largest])
-                    largest = left;
-                if (right < n && arr[right] > arr[largest])
-                    largest = right;
-                if (largest != i)
+                for (int i = arr.Length /2-1; i > 0; i--)
                 {
-                    int swap = arr[i];
-                    arr[i] = arr[largest];
-                    arr[largest] = swap;
-                    heapify(arr, n, largest);
+                    heapify(arr,arr.Length,i);
+                }
+
+                for (int i = arr.Length - 1; i >= 0; i--)
+                {
+                    swap(arr,i,0);
+                    heapify(arr,i,0);
                 }
             }
 
-            public static void GO()
+            void heapify(int[] arr, int len, int idx)
             {
-                var arr = new int[] { 3, 5, 6, 4, 7, 9, 1 };
-                var avtHeap = new int[] { 9, 6, 7, 4, 1 };
-                var avtSort = new int[] { 1, 3, 4, 5, 6, 7, 9 };
+                var leftNodeIdx = idx * 2 + 1;
+                var rightNodeIdx = idx * 2 + 2;
+                var largest = idx;
 
-                Sort(arr);
+                if (leftNodeIdx < len && arr[largest] < arr[leftNodeIdx])
+                    largest = leftNodeIdx;
 
-                var bol = arr.SequenceEqual(avtSort);
+                if (rightNodeIdx < len && arr[largest] < arr[rightNodeIdx])
+                    largest = rightNodeIdx;
 
-            }
-            static void Sort(int[] arr)
-            {
-                BuildHeap(arr, arr.Length);
-            }
-
-            /// <summary>
-            /// From middle to border build heap bu comparing node parents with node
-            /// </summary>
-            /// <param name="arr"></param>
-            /// <param name="len"></param>
-            static void BuildHeap(int[] arr, int len)
-            {
-                for (int i = len / 2 - 1; i >= 0; i--)
+                if (largest != idx)
                 {
-                    MaxHeap(arr, i, len);
-                }
-                for (int i = len - 1; i >= 0; i--)
-                {
-                    Swap(arr, 0, i);
-                    MaxHeap(arr, 0, i);
+                    swap(arr,largest,idx);
+                    heapify(arr,len, largest);
                 }
             }
 
-            /// <summary>
-            /// Compare parents with node
-            /// and swap if node larger
-            /// recursive
-            /// </summary>
-            /// <param name="arr"></param>
-            /// <param name="i">int is 1 so decrease 1 for index</param>
-            static void MaxHeap(int[] arr, int i, int len)
+            void swap(int[] arr, int l, int r)
             {
-                var l = 2 * i + 1;
-                var r = 2 * i + 2;
-                var lg = i;
-
-                if (l < len && arr[l] > arr[lg]) { lg = l; }
-
-                if (r < len && arr[r] > arr[lg]) { lg = r; }
-
-                if (lg != i)
-                {
-                    Swap(arr, lg, i);
-                    MaxHeap(arr, lg, len);
-                }
+                (arr[l],arr[r])=(arr[r],arr[l]);
             }
-            static void Swap(int[] arr, int a, int b)
-            {
-                var s = arr[a];
-                arr[a] = arr[b];
-                arr[b] = s;
-            }
-
-
         }
-
-
 
         public class MergeSortTest
         {
@@ -5880,6 +6039,13 @@ namespace KATAS
 
         }
 
+        public class MergeSortArr
+        {
+            public void sort(int[] arr)
+            {
+                Task t;
+            }
+        }
 
 
         public class LinkedListSortTest
