@@ -10,27 +10,23 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AngleSharp.Dom;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
-using KATAS;
 using MediaToolkit;
 using MediaToolkit.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NetPlatformCheckers;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NiL.JS.Statements;
 using VideoLibrary;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -4118,1247 +4114,7 @@ namespace TipsAndTricks
 
 }
 
-namespace KATAS
-{
-    
-    public class ItemResult<T>
-    {
-        public delegate bool Sut(T item);
-        
-        public Sut methodUT { get; set; }
-        
-        public T item { get; set; }
-        public bool assert { get; set; }
-        public bool result { get; set; }
-
-        public void GO()
-        {
-            result = methodUT.Invoke(item) == assert;
-        }
-    }
-    
-    public class Miscellaneous
-    {
-
-        public class TNine
-        {
-            //https://code.google.com/codejam/contest/351101/dashboard#s=p2
-            //T9  
-
-            //running custom test cases
-            public static class tNineCheck
-            {
-                public static void GO()
-                {
-                    check1();
-                }
-                public static void check1()
-                {
-                    List<CaseList> cl = new List<CaseList>() {
-                        new CaseList(){Case="ab cff",Exp="2 220222333 333",Act=null}
-                        , new CaseList("hg e a","44 403302",null)
-                    };
-
-                    foreach (CaseList cl_ in cl)
-                    {
-                        cl_.Act = tNineChecks.GO(new KeyPadStrait(), cl_.Case);
-                        cl_.check();
-                    }
-                }
-
-            }
-            //class for test  cases usage
-            public class CaseList
-            {
-                public CaseList() { }
-
-                public CaseList(string @case, string exp, string act)
-                {
-                    Case = @case;
-                    Exp = exp;
-                    Act = act;
-                }
-
-                public void check()
-                {
-                    if (this.Exp == this.Act) { this.isOK = true; } else { this.isOK = false; }
-                    //or 
-                    //this.isOK=this.Exp == this.Act ?   true :  false;
-                }
-                public string Case { get; set; } = string.Empty;
-                public string Exp { get; set; } = string.Empty;
-                public string Act { get; set; } = null;
-                public bool? isOK { get; private set; } = null;
-            }
-
-            //key presser interface handler
-            public static class tNineChecks
-            {
-                public static string GO(IKeyPresser kp_, string case_)
-                {
-                    return kp_.print(case_);
-                }
-            }
-
-            //key presser interface with base realization
-            public interface IKeyPresser
-            {
-                string print(string input);
-            }
-            public class KeyPresser : IKeyPresser
-            {
-                public string print(string input)
-                {
-                    return null;
-                }
-            }
-
-            //straightforward "naive" approach with char arrays
-            public class KeyPadStrait : IKeyPresser
-            {
-
-                public static Dictionary<char, char?[]> keyPad = new Dictionary<char, char?[]>()
-                {
-                    {'a', new char?[]{'2'} },{'b', new char?[]{'2','2'} },{'c', new char?[]{'2','2','2'} }
-                    ,{'d', new char?[]{'3'} },{'e', new char?[]{'3','3'} },{'f', new char?[]{'3','3','3'} }
-                    ,{'g', new char?[]{'4'} },{'h', new char?[]{'4','4'} },{'i', new char?[]{'4','4','4'} }
-                    ,{ ' ', new char?[]{'0'}}
-
-                };
-                public static List<char> presser(char[] str_)
-                {
-
-                    //"".ToCharArray().First();
-                    char?[] foundPrev = null;
-
-                    List<char> res = new List<char>();
-                    for (int i = 0; i < str_.Count(); i++)
-                    {
-                        char?[] found = null;
-                        if (keyPad.ContainsKey(str_[i]))
-                        {
-                            keyPad.TryGetValue(str_[i], out found);
-                            if (foundPrev != null)
-                            {
-                                if (foundPrev[0] == found[0]) { res.Add(' '); }
-                            }
-
-                            foreach (char ch in found)
-                            {
-                                res.Add(ch);
-                            }
-                            foundPrev = found;
-                        }
-                    }
-                    return res;
-                }
-
-                public string print(string input_)
-                {
-                    return string.Join(string.Empty, presser(input_.ToCharArray()));
-
-                }
-            }
-
-        }
-
-        public static class ReqwindKATA
-        {
-            public static string GO(string input_)
-            {
-
-                List<char> arr = new List<char>();
-                Stack<char> st = new Stack<char>();
-                Stack<char> st2 = new Stack<char>();
-
-                for (int i = 0; i < input_.ToArray().Length; i++)
-                {
-                    char ch = input_.ToArray()[i];
-
-                    if (ch != ' ')
-                    {
-                        st.Push(ch);
-                    }
-                    else
-                    {
-                        if (st.Count >= 5)
-                        {
-                            while (st.Count > 0)
-                            {
-                                arr.Add(st.Pop());
-                            }
-
-                        }
-                        else
-                        {
-                            while (st.Count > 0)
-                            {
-                                st2.Push(st.Pop());
-                            }
-                            while (st2.Count > 0)
-                            {
-                                arr.Add(st2.Pop());
-                            }
-
-                        }
-                        arr.Add(' ');
-                    }
-                }
-
-                if (st.Count >= 5)
-                {
-                    while (st.Count > 0)
-                    {
-                        arr.Add(st.Pop());
-                    }
-
-                }
-                else
-                {
-                    while (st.Count > 0)
-                    {
-                        st2.Push(st.Pop());
-                    }
-                    while (st2.Count > 0)
-                    {
-                        arr.Add(st2.Pop());
-                    }
-
-                }
-
-                return string.Join(null, arr);
-            }
-        }
-
-        public static class FindKata
-        {
-            public static char GO(char[] input)
-            {
-                byte[] arr = Encoding.ASCII.GetBytes(input);
-                char result = ' ';
-                for (int i = 0; i < arr.Length - 1; i++)
-                {
-                    if (arr[i] + 1 < arr[i + 1])
-                    {
-                        result = (char)(arr[i] + 1);
-                        break;
-                    }
-                }
-
-                return result;
-            }
-
-        }
-
-        public static class DivideKATA
-        {
-            public static int[] Divisors(int n)
-            {
-                if (n < 2) { return null; }
-
-
-                List<int> divisors = new List<int>();
-
-                for (int i = 2; i < n; i++)
-                {
-                    if (n % i == 0) { divisors.Add(i); }
-                }
-                if (divisors.Count == 0)
-                {
-                    return null;
-                }
-                else
-                {
-                    return divisors.ToArray();
-                }
-
-            }
-        }
-
-        public static class FormatRearrange
-        {
-            public static void GO()
-            {
-                StringsCheck();
-            }
-
-            static void StringsCheck()
-            {
-
-                string input = "{0}{1} {2}";
-                string r1 = Rearrange(input);
-            }
-
-            static string Rearrange(string input_)
-            {
-                string result = input_;
-                char[] chr = input_.ToCharArray();
-                int lng = chr.Length;
-                char[] prevDigit = null;
-                char[] currDigit = null;
-
-                for (int i = 0; i < lng; i++)
-                {
-
-                    int i2 = i;
-
-                    if (char.IsDigit(chr[i2]))
-                    {
-
-                        if (i2 + 1 < lng)
-                        {
-                            while (char.IsDigit(chr[i2 + 1]))
-                            {
-                                i2++;
-                            }
-
-                        }
-
-
-                        if (prevDigit == null)
-                        {
-                            prevDigit = ChArrFill(i, i2, chr);
-                        }
-                        else
-                        {
-                            currDigit = ChArrFill(i, i2, chr);
-
-                            if (!check(currDigit, prevDigit))
-                            {
-                                currDigit = intRecount(currDigit, prevDigit);
-
-                                char[] chrN = new char[chr.Length + currDigit.Length - prevDigit.Length];
-
-                                for (int i4 = 0; i4 < i; i4++)
-                                {
-                                    chrN[i4] = chr[i4];
-                                }
-                                for (int i4 = i; i4 < i2; i4++)
-                                {
-                                    chrN[i4] = chr[i4];
-                                }
-                                for (int i4 = i2; i4 <= lng; i4++)
-                                {
-                                    chrN[i4] = chr[i4];
-                                }
-
-                                result = charArrToInteger(chrN).ToString();
-                            }
-                            else
-                            {
-                                prevDigit = intToCharArr(charArrToInteger(currDigit));
-                            }
-
-                        }
-
-                    }
-
-                }
-
-                return result;
-            }
-
-            static int charArrToInteger(char[] arr_)
-            {
-                int res = 0;
-                int i = 1;
-                for (int i2 = arr_.Length - 1; i2 >= 0; i2--)
-                {
-                    res += (int)(char.GetNumericValue(arr_[i2]) * i);
-                    i *= 10;
-                }
-                return res;
-            }
-            static char[] intToCharArr(int i_)
-            {
-                return i_.ToString().ToCharArray();
-            }
-            static char[] intRecount(char[] currDig_, char[] prevDigit_)
-            {
-                if (charArrToInteger(currDig_) == charArrToInteger(prevDigit_) + 1)
-                {
-                    return currDig_;
-                }
-                else
-                {
-                    return intToCharArr(charArrToInteger(prevDigit_) + 1);
-                }
-            }
-            static bool check(char[] currDig_, char[] prevDigit_)
-            {
-                if (charArrToInteger(currDig_) == charArrToInteger(prevDigit_) + 1)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            static char[] ChArrFill(int i_, int i2_, char[] chFrom_)
-            {
-                char[] chTo_ = new char[(i2_ - i_) + 1];
-
-                for (int i3_ = 0; i3_ <= (i2_ - i_); i3_++)
-                {
-                    chTo_[i3_] = chFrom_[i_ + i3_];
-                }
-                return chTo_;
-            }
-
-        }
-
-        public static class DigitSumm
-        {
-            public static void GO()
-            {
-                List<int> nums = new List<int>();
-                Random rnd = new Random();
-                for (int i = 0; i < 10; i++)
-                {
-                    nums.Add(rnd.Next(1, 100000));
-                }
-                nums.ForEach(s =>
-                {
-                    var sum = sumOfDigits(s);
-                    Trace.WriteLine($"digit: {s}; sum = {sum};");
-                });
-            }
-
-            static int sumOfDigits(int number)
-            {
-                int result = 0;
-                while (number != 0)
-                {
-                    result += number % 10;
-                    number /= 10;
-                }
-                return result;
-            }
-        }
-
-        public class BracketsChecker
-        {
-        public static void GO()
-        {
-            List<string> strsOK = new List<string>() {
-                "c * [ (a+b) / d]",  "()[][()]","([])[()]", "()","[]"
-            };
-            List<string> strsNotOK = new List<string>() {
-                "(c * [a+b) / d]", ")[]", "]()", "[(())])" , "(([[])"
-            };
-            var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
-            var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
-
-            var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
-            var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
-
-        }
-
-        static Func<string, bool> braketsCount = (s) =>
-        {
-
-            Stack<char> brackets = new Stack<char>();
-
-            foreach (char i in s)
-            {
-                if (brackets.Count == 0)
-                {
-                    if (i == ')' || i == ']') { return false; }
-                    if (i == '(' || i == '[') { brackets.Push(i); };
-                }
-                else
-                {
-                    if (i == ')') { if (brackets.Pop() != '(') { return false; } }
-                    if (i == ']') { if (brackets.Pop() != '[') { return false; } }
-
-                    if (i == '(' || i == '[') { brackets.Push(i); };
-                }
-            }
-
-            return brackets.Count == 0;
-
-        };
-
-        public static bool bracketsCheck(string input)
-        {
-            List<char> opened = new List<char>() { '(', '[', '{' };
-            List<char> closed = new List<char>() { ')', ']', '}' };
-            Stack<char> cntr = new Stack<char>();
-
-            if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
-            if (closed.Contains(input[0])) { return false; }
-
-            foreach (var ch in input)
-            {
-                if (opened.Contains(ch)) { cntr.Push(ch); }
-                if (closed.Contains(ch))
-                {
-                    if (cntr.Count() <= 0) { return false; }
-                    var previous = cntr.Pop();
-                    if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
-                }
-            }
-
-            return cntr.Count() == 0;
-        }
-
-        }
-
-        public static class BalancedDelimeter
-        {
-
-         public static void GO()
-         {
-             Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
-
-         }
-
-        }
-
-        public class HTTPserializeSave
-        {
-         public class Country
-         {
-             public string id { get; set; }
-             public string name { get; set; }
-         }
-
-         public static async Task<IEnumerable<Country>> GO()
-         {
-             var httpClient = new HttpClient();
-             var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
-             var content = await response.Content.ReadAsStringAsync();
-
-             var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
-             var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
-             var str = JsonSerializer.Serialize(filtered);
-
-             await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
-             return filtered;
-         }
-
-         public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
-         {
-             await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
-                 JsonSerializer.Serialize(
-                     JsonSerializer.Deserialize<IEnumerable<T>>(
-                         await new HttpClient()
-                             .GetAsync("https://api.worldremit.com/api/countries")?
-                             .Result
-                             .Content
-                             .ReadAsStringAsync()
-                     )
-                 )
-             );
-             return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
-         }
-
-        }
-
-        //Kasper
-        public class StringCount
-        {
-            public static void GO(string input)
-            {
-                var inp = "aaabbcc";
-                inp = input;
-
-                //group by query
-                var counts = (
-                from s in inp
-                group s by new { s } into c
-                select new
-                {
-                    Key = c.Key,
-                    count = c.Count()
-                }).ToList();
-
-
-                //group by API
-                var countsTwo = inp
-                .GroupBy(p => p, (Key, g) => new
-                {
-                    K = Key,
-                    C = g.Count()
-                }).ToList();
-
-                //foreach with dictionary
-                Dictionary<char, int> result = new Dictionary<char, int>();
-                foreach (char ch in input)
-                {
-                    if (!result.ContainsKey(ch))
-                    {
-                        result.Add(ch, 1);
-                    }
-                    else
-                    {
-                        result[ch] += 1;
-                    }
-                }
-            }
-        }
-
-        //OZONe
-        public static class WordsCount
-        {
-            static List<string> input = new List<string>() { "ABC", "ACB", "ABCD", "ABD", "ABCE", "CBA" };
-
-            internal class Item
-            {
-                internal string itemRef { get; set; }
-                internal int count { get; set; }
-            }
-            static Dictionary<int, Item> items = new Dictionary<int, Item>();
-            public static void GO()
-            {
-
-                //foreach
-                foreach (var str in input)
-                {
-                    string newStr = new string(str.OrderBy(c => c).ToArray());
-                    var alg = SHA256.Create();
-                    byte[] hashBytes = alg.ComputeHash(Encoding.UTF8.GetBytes(newStr));
-                    int hashNew = BitConverter.ToInt32(hashBytes);
-
-                    if (!items.ContainsKey(hashNew))
-                    {
-                        items.Add(hashNew, new Item { itemRef = str, count = 1 });
-                    }
-                    else
-                    {
-                        items[hashNew].count += 1;
-                    }
-                }
-
-                items.Select(s => new { s.Value.itemRef, s.Value.count })
-                .ToList()
-                .ForEach(s =>
-                    Trace.WriteLine($"Itme entry count: {s.itemRef} {s.count}")
-                );
-
-            }
-
-        }
-
-        //chars
-        public class Convertions
-        {
-            //System.Security.Cryptography.SHA256.Create().ComputeHash
-            //byte[] => hash
-
-            //BitConverter.GetBytes
-            //Type !str => byte[]
-            //BitConverter.GetBytes
-            //byte[] => types|str
-
-            //Encoding.UTF8.GetBytes
-            //type => byte[]
-
-            //Convert.ToString()
-            //var -> totype
-
-            //System.Environment.CurrentDirectory
-            //Directory.GetCurrentDirectory()  
-
-            public static void GO()
-            {
-
-                var str = "abcdefg";
-
-                var hash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
-
-                try
-                {
-                    string input = "abcd123";
-
-                    //computeHash
-                    byte[] bytes = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
-
-
-                    List<byte> bytesFromString = new List<byte>();
-                    foreach (char ch in input)
-                    {
-                        byte[] tempBytes = BitConverter.GetBytes(ch);
-                        bytesFromString.AddRange(tempBytes);
-                    }
-
-                    //converted bytes
-                    string result = new string(BitConverter.ToString(bytesFromString.ToArray()));
-                    //original chars
-                    List<char> charsFromByte = new List<char>(bytesFromString.ToList().Where(s => s != 0).Select(Convert.ToChar));
-                    //original string
-                    string resultOne = new string(charsFromByte.ToArray());
-
-                    //new string from converted bytes
-                    string[] byteString = result.Split("-");
-                    List<char> charsFromBiteString = new List<char>();
-                    foreach (string st in byteString)
-                    {
-                        byte bt;
-                        byte.TryParse(st, out bt);
-
-                        char ch = Convert.ToChar(bt);
-                        charsFromBiteString.Add(ch);
-                    }
-                    string resultTwo = new string(charsFromBiteString.ToArray());
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-            }
-
-            public void Bulk()
-            {
-                StreamWriter sw = new StreamWriter("output1.txt");
-
-                byte[] bites = { 0X0000, 0X0001, 0X0002, 0X0003, 0X0003, 0X0061 };
-                char[] charsFromBite = BitConverter.ToString(bites).ToCharArray();
-
-                char[] chars = { '\u0061', '\u0308' };
-
-                chars = chars.Union(charsFromBite).ToArray();
-                string str = new string(chars);
-
-                byte[] bytesFromChars = Encoding.UTF8.GetBytes(chars);
-                string stringFromByte = BitConverter.ToString(bytesFromChars);
-
-                sw.WriteLine(str);
-
-                sw.WriteLine($"Encoding.UTF8: {stringFromByte}");
-                sw.WriteLine($"Encoding.UTF32: {BitConverter.ToString(Encoding.UTF32.GetBytes(chars))}");
-                sw.WriteLine($"Encoding.Unicode: {BitConverter.ToString(Encoding.Unicode.GetBytes(chars))}");
-                sw.WriteLine($"Encoding UTF8: {BitConverter.ToString(bites)}");
-
-                StringBuilder sb = new StringBuilder();
-                int width = 0;
-                for (int i = 0; i < 65535; i++)
-                {
-                    try
-                    {
-                        char chnew = Convert.ToChar(i);
-                        char ch = Convert.ToChar(i);
-                        if (!char.IsDigit(chnew) && !char.IsHighSurrogate(chnew) && !char.IsLowSurrogate(chnew) && !char.IsSurrogate(chnew))
-                        {
-                            sb.Append(Convert.ToChar(i));
-                            width += 1;
-                            if (width >= 50)
-                            {
-                                sb.Append(Environment.NewLine);
-                                width = 0;
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-
-                    }
-                }
-                sw.WriteLine(Char.ConvertFromUtf32(0x1D160));
-                sw.WriteLine(sb.ToString());
-                sw.Close();
-            }
-
-        }
-
-        public static class Bites
-        {
-            public static void GO()
-            {
-                Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
-                BitEncoding();
-                BitesTest();
-            }
-
-            public static void BitesTest()
-            {
-                byte bt = 0X80;
-                int a = 0X80;
-                int res = a & a;
-                var str0 = Convert.ToString(bt, 2);
-
-                byte[] bytes = { 0X0001, 0X0011, 0XF1, 0, 1 };
-                foreach (byte b in bytes)
-                {
-                    Trace.WriteLine(Convert.ToString(b, 2));
-                }
-
-                string str = "Value to bytes";
-
-                List<char> charsFromCharBits = new List<char>();
-                List<char> charsFromIntBits = new List<char>();
-
-                foreach (char ch in str)
-                {
-                    string str1 = char.ToString(ch);
-
-                    int intFromChar = Convert.ToInt32(ch);
-                    byte byteFromInt = Convert.ToByte(intFromChar);
-                    byte byteFromCh = Convert.ToByte(ch);
-
-                    byte[] btArrCh = BitConverter.GetBytes(ch);
-                    byte[] btArrInt = BitConverter.GetBytes(intFromChar);
-
-                    charsFromCharBits.Add(BitConverter.ToChar(btArrCh));
-                    charsFromIntBits.Add(BitConverter.ToChar(btArrInt));
-
-                    string byteStringRep = BitConverter.ToString(btArrCh);
-                }
-
-                string stringFromCharBits = new string(charsFromCharBits.ToArray());
-                string stringFromIntBits = new string(charsFromIntBits.ToArray());
-
-                bool eq0 = stringFromCharBits == stringFromIntBits;
-                bool eq1 = stringFromCharBits.Equals(stringFromIntBits);
-
-                List<char> charsFromStringOfBites = new List<char>();
-
-                string hexValue = "56 61 6C"; //"48 65 6C 6C 6F 20 57 6F 72 6C 64 21";
-                string[] hexValues = hexValue.Split(' ');
-                foreach (string hS in hexValues)
-                {
-
-                    try
-                    {
-                        int intFromString = Convert.ToInt32(hS, 16);
-                        byte byteFromString = Convert.ToByte(hS, 16);
-
-                        byte[] bytesFromInt = BitConverter.GetBytes(intFromString);
-                        byte bfs;
-
-                        byte.TryParse(hS, out bfs);
-                        charsFromStringOfBites.Add(BitConverter.ToChar(bytesFromInt));
-                    }
-                    catch (Exception e)
-                    {
-
-                    }
-                }
-
-                string stringFromStringOfBytes = new string(charsFromStringOfBites.ToArray());
-
-            }
-
-            public static void BitEncoding()
-            {
-
-                string str = "string123";
-                List<byte> getBytes = str.Select(s => BitConverter.GetBytes(s))
-                    .Aggregate(new List<byte>(), (acc, i) =>
-                    {
-                        foreach (byte bt in i)
-                        {
-                            acc.Add(bt);
-                        }
-
-                        return acc;
-                    });
-                getBytes = getBytes.Except(getBytes.Where(s => s == 0)).ToList();
-                byte[] encBytes = Encoding.UTF8.GetBytes(str);
-
-                var hashFromStr = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
-                var hashBytesBitconv = SHA256.Create().ComputeHash(getBytes.ToArray());
-
-
-                var hashesAreEqual = hashFromStr.SequenceEqual(hashBytesBitconv);
-
-                var strFromBitBytes = Encoding.UTF8.GetString(getBytes.ToArray());
-                var strFromEncBytes = Encoding.UTF8.GetString(encBytes);
-
-                var strnigsAreEqual = (str == strFromBitBytes) && (str == strFromEncBytes);
-
-            }
-        }
-
-        public static int FactorialCount(int upperGap)
-        {
-            if (upperGap == 0) { return 0; }
-            int result = 1;
-            for (int i = 1; i <= upperGap; i++)
-            {
-                result *= i;
-            }
-            return result;
-        }
-
-        public int MaxUniqueSubstringLength(string str)
-        {
-            
-            var cnt = 0;
-            var cntMax = 0;
-
-            List<char> chars = new List<char>();
-            
-            foreach (var ch in str)
-            {
-
-                if (chars.Contains(ch))
-                {
-                    if (cnt > cntMax)
-                    {
-                        cntMax = cnt;
-                    }
-
-                    cnt = 1;
-                    chars = new List<char>();
-                    chars.Add(ch);
-                    continue;
-                }
-
-                if (!chars.Contains(ch))
-                {
-                    cnt+=1;
-                    chars.Add(ch);
-                }
-            }
-
-            if (cnt > cntMax)
-            {
-                cntMax = cnt;
-            }
-            return cntMax;
-        }
-        
-        public class RoomNum
-        {
-            public int Section { get; set; }
-            public int RoomNumber { get; set; }
-        }
-        public class TrainRooms
-        {
-
-            public static List<RoomNum> rooms;
-            public static void GO()
-            {
-                init();
-
-                var section1 = rooms.Where(s => s.RoomNumber == 4).FirstOrDefault().Section;
-                var section2 = rooms.Where(s => s.RoomNumber == 52).FirstOrDefault().Section;
-            }
-
-            public static void init()
-            {
-                rooms = new List<RoomNum>();
-
-                int section = 1;
-
-                //fill rooms
-                for (int i = 1; i <= 36; i++)
-                {
-                    rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
-                    if (i % 4 == 0) { section += 1; }
-                }
-
-                section = 1;
-                for (int i = 54; i >= 37; i--)
-                {
-                    rooms.Add(new RoomNum() { Section = section, RoomNumber = i });
-                    if (i % 2 == 0) { section += 1; }
-                }
-            }
-        }
-        
-        
-        
-        public class ListNode
-        {
-            public int Value { get; set; }
-            public ListNode Next { get; set; }
-        }
-        public class Etna
-        {
-            private static Etna n = new Etna();
-            
-            private static bool _continue = true;
-            private static int _threashhold = 100;
-            private static int _iterations = 0;
-            
-            private static ListNode _previous = null;
-            private static ListNode _next = null;
-            
-            public static void GO()
-            {
-                n.go();
-            }
-            private void go()
-            {
-                
-                var n0 = new ListNode() {Value = 3, Next = null};
-                var n1 = new ListNode() {Value = 2, Next = n0};
-                var n2 = new ListNode() {Value = 1, Next = n1};
-                var nodes = new ListNode() {Value = 0, Next = n2};
-                Print(nodes);
-                reset();
-                ReverseLinkedList(nodes);
-                reset();
-                Print(n0);
-
-            }
-
-            private static void reset()
-            {
-                _iterations = 0;
-                _continue = true;
-            }
-
-            private static void check()
-            {
-                _iterations++;
-                _continue = _iterations < _threashhold && _continue;
-            }
-
-            public void Print(ListNode n)
-            {
-                System.Diagnostics.Trace.WriteLine($"node value:{n.Value}");
-                if (n.Next == null)
-                {
-                    _continue = false;
-                    return;
-                }
-
-                check();
-                while (_continue)
-                {
-                    Print(n.Next);
-                }
-            }
-            public void ReverseLinkedList(ListNode n)
-            {
-                if (n == null)
-                {
-                    _continue = false;
-                    return;
-                }
-                if (n.Next == null)
-                {
-                    _continue = false;
-                }
-              
-                //first element
-                if (_previous == null)
-                {
-                    _previous = n;
-                    _next = n.Next;
-                    n.Next = null;
-                }
-                else
-                {
-                    _next = n.Next;
-                    n.Next = _previous;
-                    _previous = n;
-                }
-
-                check();
-                while (_continue)
-                {
-                    ReverseLinkedList(_next);
-                }
-            }
-            
-            public static void Merge(IList<int> a, List<int> b )
-            {
-                for (int i = 0; i < a.Count; i++)
-                {
-                    for (int i2 = 0; i2 < b.Count; i2++)
-                    {
-                    }
-                }
-            }
-        }
-    }
-   
-    public class Overall
-    {
-
-        public class Singletone
-        {
-            private static Singletone _instance;
-            
-            public Singletone(){}
-            
-            static Singletone()
-            {
-                _instance = new Singletone();
-            }
-            
-            public static Singletone GetInstance() => _instance;
-        }
-
-        public class Recursion
-        {
-            internal bool _continue = true;
-            internal int _threashhold = 100;
-            internal int _iterations = 0;
-            
-            public void reset()
-            {
-                _iterations = 0;
-                _continue = true;
-            }
-
-            public void check()
-            {
-                _iterations++;
-                _continue = _iterations < _threashhold && _continue;
-            }
-        }
-        
-        public class ListNode
-        {
-            public int Value { get; set; }
-            public ListNode Next { get; set; }
-        }
-        
-        public class LinkedListReverse : Recursion
-        {
-            private ListNode _previous;
-            private ListNode _next;
-            public void Print(ListNode n)
-            {
-                System.Diagnostics.Trace.WriteLine($"node value:{n.Value}");
-                if (n.Next == null)
-                {
-                    _continue = false;
-                    return;
-                }
-
-                check();
-                while (_continue)
-                {
-                    Print(n.Next);
-                }
-            }
-            public void ReverseLinkedList(ListNode n)
-            {
-                if (n == null)
-                {
-                    _continue = false;
-                    return;
-                }
-                if (n.Next == null)
-                {
-                    _continue = false;
-                }
-              
-                //first element
-                if (_previous == null)
-                {
-                    _previous = n;
-                    _next = n.Next;
-                    n.Next = null;
-                }
-                else
-                {
-                    _next = n.Next;
-                    n.Next = _previous;
-                    _previous = n;
-                }
-
-                check();
-                while (_continue)
-                {
-                    ReverseLinkedList(_next);
-                }
-            }
-
-            
-        }
-        
-        private static async Task loadUrlFromYoutubeAsync(string url)
-        {
-            var destFolder = "C:\\files\\test";
-            var youtube = YouTube.Default;
-            var vid = youtube.GetVideo(url);
-            
-            var destFullPath = $"{destFolder}\\{vid.FullName}";
-            var dir = Path.GetDirectoryName(destFullPath);
-            var name = Path.GetFileNameWithoutExtension(destFullPath);
-            var destWithoutExt = $"{dir}\\{name}";
-            
-            await File.WriteAllBytesAsync(destFullPath, await vid.GetBytesAsync());
-                
-            var inputFile = new MediaFile { Filename = destFullPath};
-            var outputFile = new MediaFile { Filename = $"{destWithoutExt}.mp3" };
-
-            using (var engine = new Engine())
-            {
-                engine.GetMetadata(inputFile);
-
-                engine.Convert(inputFile, outputFile);
-            }
-        }
-
-
-        public static void InsertionSort(int[] arr)
-        {
-            for (int i = 1; i < arr.Length; i++)
-            {
-                var x = arr[i];
-                var j = i - 1;
-                while (j >= 0 && arr[j] > x)
-                {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-                arr[j + 1] = x;
-            }
-        }
-        public static void ShellSort(int[] arr)
-        {
-            for (var n = arr.Length / 2; n > 0; n /= 2)
-            {
-                for (var i = n; i < arr.Length; i++)
-                {
-                    var x = arr[i];
-                    int j;
-                    for (j = i; j >= n && arr[j - n] > x; j -= n)
-                    {
-                        arr[j] = arr[j - n];
-                    }
-                    arr[j] = x;
-                }
-            }
-        }
-
-        public static void HeapSort(int[] arr)
-        {
-            for (int i = arr.Length / 2 - 1; i >= 0; i--)
-            {
-                heapify(arr, i, arr.Length);
-            }
-
-            for (int i = arr.Length - 1; i >= 0; i--)
-            {
-                swap(arr, 0, i);
-                heapify(arr, 0, i);
-            }
-        }
-        public static void heapify(int[] arr, int n, int len)
-        {
-            var l = n * 2 + 1;
-            var r = n * 2 + 2;
-            var lg = n;
-
-            if (l < len && arr[l] > arr[lg]) { lg = l; }
-            if (r < len && arr[r] > arr[lg]) { lg = r; }
-            if (lg != n)
-            {
-                swap(arr, lg, n);
-                heapify(arr, lg, len);
-            }
-        }
-        public static void swap(int[] arr, int l, int r)
-        {
-            var x = arr[l];
-            arr[l] = arr[r];
-            arr[r] = x;
-        }
-        
-        
-    }
-    
-    public class Algorithms
+namespace Algorithms
     {
          /*Collection for testing value collections */
         public class TestListsStructs<T> where T : struct, IComparable
@@ -6046,8 +4802,7 @@ namespace KATAS
                 Task t;
             }
         }
-
-
+        
         public class LinkedListSortTest
         {
             public static void GO()
@@ -6198,6 +4953,1290 @@ namespace KATAS
                 return result;
             }
         }
+    }
+
+namespace Miscellaneous
+{
+    public class Miscellaneous
+    {
+    
+        public class Singletone
+        {
+            private static Singletone _instance;
+
+            public Singletone() { }
+
+            static Singletone()
+            {
+                _instance = new Singletone();
+            }
+
+            public static Singletone GetInstance() => _instance;
+        }
+
+        public class Recursion
+        {
+            internal bool _continue = true;
+            internal int _threashhold = 100;
+            internal int _iterations = 0;
+
+            public void reset()
+            {
+                _iterations = 0;
+                _continue = true;
+            }
+
+            public void check()
+            {
+                _iterations++;
+                _continue = _iterations < _threashhold && _continue;
+            }
+        }
+
+        public class ListNode
+        {
+            public int Value { get; set; }
+            public ListNode Next { get; set; }
+        }
+
+        
+        public class LinkedListReverseCheck
+        {
+            private static LinkedListReverseCheck i => new LinkedListReverseCheck();
+            public static void GO()
+            {
+                i.go();
+            }
+
+            private void go()
+            {
+                ListNode n0 = new ListNode {Value = 0, Next = null};
+                ListNode n1 = new ListNode {Value = 1, Next = n0};
+                ListNode n2 = new ListNode {Value = 2, Next = n1};
+                ListNode n3 = new ListNode {Value = 3, Next = n2};
+                ListNode n4 = new ListNode {Value = 4, Next = n3};
+                
+                LinkedListReverse l = new();
+                l.reset();
+                l.Print(n4);
+                l.reset();
+                l.ReverseLinkedList(n4);
+                l.reset();
+                l.Print(n0);
+            }
+        }
+        public class LinkedListReverse : Recursion
+        {
+            private ListNode _previous;
+            private ListNode _next;
+
+            public void Print(ListNode n)
+            {
+                Trace.WriteLine($"node value:{n.Value}");
+                if (n.Next == null)
+                {
+                    _continue = false;
+                    return;
+                }
+
+                check();
+                while (_continue)
+                {
+                    Print(n.Next);
+                }
+            }
+
+            public void ReverseLinkedList(ListNode n)
+            {
+                if (n == null)
+                {
+                    _continue = false;
+                    return;
+                }
+
+                if (n.Next == null)
+                {
+                    _continue = false;
+                }
+
+                //first element
+                if (_previous == null)
+                {
+                    _previous = n;
+                    _next = n.Next;
+                    n.Next = null;
+                }
+                else
+                {
+                    _next = n.Next;
+                    n.Next = _previous;
+                    _previous = n;
+                }
+
+                check();
+                while (_continue)
+                {
+                    ReverseLinkedList(_next);
+                }
+            }
+
+
+        }
+        
+        public class MergeList
+        {
+            private static MergeList i = new MergeList();
+            
+            public static void GO()
+            {
+                i.go();
+            }
+
+            public void go()
+            {
+                List<int> left = new List<int>() {5,6,7,10,12,15};
+                List<int> right = new List<int>() {4,8,9,11,14};
+
+                var sorted = left.Union(right).OrderBy(s=>s);
+                
+                var r = Sort(left, right);
+
+                var b = sorted.SequenceEqual(r);
+            }
+
+            public List<int> Sort(List<int> l , List<int> r)
+            {
+                List<int> result = new List<int>((l.Count + r.Count));
+
+                int i = 0;
+                int i2 = 0;
+                while (i < l.Count && i2 < r.Count)
+                {
+                    if ( l[i] >= r[i2] )
+                    {
+                        result.Add(r[i2]);
+                        i2++;
+                    }
+                    else if (l[i] < r[i2] )
+                    {
+                        result.Add(l[i]);
+                        i++;
+                    }
+                }
+
+                if (i < l.Count)
+                {
+                    while (i < l.Count)
+                    {
+                        result.Add(l[i]);
+                        i++;
+                    }
+                }
+                if (i2 < r.Count)
+                {
+                    while (i2 < r.Count)
+                    {
+                        result.Add(r[i2]);
+                        i2++;
+                    }
+                }
+
+                return result;
+            }
+            
+        }
+
+        
+        private static async Task loadUrlFromYoutubeAsync(string url)
+        {
+            var destFolder = "C:\\files\\test";
+            var youtube = YouTube.Default;
+            var vid = youtube.GetVideo(url);
+
+            var destFullPath = $"{destFolder}\\{vid.FullName}";
+            var dir = Path.GetDirectoryName(destFullPath);
+            var name = Path.GetFileNameWithoutExtension(destFullPath);
+            var destWithoutExt = $"{dir}\\{name}";
+
+            await File.WriteAllBytesAsync(destFullPath, await vid.GetBytesAsync());
+
+            var inputFile = new MediaFile {Filename = destFullPath};
+            var outputFile = new MediaFile {Filename = $"{destWithoutExt}.mp3"};
+
+            using (var engine = new Engine())
+            {
+                engine.GetMetadata(inputFile);
+
+                engine.Convert(inputFile, outputFile);
+            }
+        }
+        
+
+        public class TNine
+        {
+            //https://code.google.com/codejam/contest/351101/dashboard#s=p2
+            //T9  
+
+            //running custom test cases
+            public static class tNineCheck
+            {
+                public static void GO()
+                {
+                    check1();
+                }
+
+                public static void check1()
+                {
+                    List<CaseList> cl = new List<CaseList>()
+                    {
+                        new CaseList() {Case = "ab cff", Exp = "2 220222333 333", Act = null},
+                        new CaseList("hg e a", "44 403302", null)
+                    };
+
+                    foreach (CaseList cl_ in cl)
+                    {
+                        cl_.Act = tNineChecks.GO(new KeyPadStrait(), cl_.Case);
+                        cl_.check();
+                    }
+                }
+
+            }
+
+            //class for test  cases usage
+            public class CaseList
+            {
+                public CaseList() { }
+
+                public CaseList(string @case, string exp, string act)
+                {
+                    Case = @case;
+                    Exp = exp;
+                    Act = act;
+                }
+
+                public void check()
+                {
+                    if (this.Exp == this.Act) { this.isOK = true; }
+                    else { this.isOK = false; }
+
+                    //or 
+                    //this.isOK=this.Exp == this.Act ?   true :  false;
+                }
+
+                public string Case { get; set; } = string.Empty;
+                public string Exp { get; set; } = string.Empty;
+                public string Act { get; set; } = null;
+                public bool? isOK { get; private set; } = null;
+            }
+
+            //key presser interface handler
+            public static class tNineChecks
+            {
+                public static string GO(IKeyPresser kp_, string case_)
+                {
+                    return kp_.print(case_);
+                }
+            }
+
+            //key presser interface with base realization
+            public interface IKeyPresser
+            {
+                string print(string input);
+            }
+
+            public class KeyPresser : IKeyPresser
+            {
+                public string print(string input)
+                {
+                    return null;
+                }
+            }
+
+            //straightforward "naive" approach with char arrays
+            public class KeyPadStrait : IKeyPresser
+            {
+
+                public static Dictionary<char, char?[]> keyPad = new Dictionary<char, char?[]>()
+                {
+                    {'a', new char?[] {'2'}},
+                    {'b', new char?[] {'2', '2'}},
+                    {'c', new char?[] {'2', '2', '2'}},
+                    {'d', new char?[] {'3'}},
+                    {'e', new char?[] {'3', '3'}},
+                    {'f', new char?[] {'3', '3', '3'}},
+                    {'g', new char?[] {'4'}},
+                    {'h', new char?[] {'4', '4'}},
+                    {'i', new char?[] {'4', '4', '4'}},
+                    {' ', new char?[] {'0'}}
+                };
+
+                public static List<char> presser(char[] str_)
+                {
+
+                    //"".ToCharArray().First();
+                    char?[] foundPrev = null;
+
+                    List<char> res = new List<char>();
+                    for (int i = 0; i < str_.Count(); i++)
+                    {
+                        char?[] found = null;
+                        if (keyPad.ContainsKey(str_[i]))
+                        {
+                            keyPad.TryGetValue(str_[i], out found);
+                            if (foundPrev != null)
+                            {
+                                if (foundPrev[0] == found[0]) { res.Add(' '); }
+                            }
+
+                            foreach (char ch in found)
+                            {
+                                res.Add(ch);
+                            }
+
+                            foundPrev = found;
+                        }
+                    }
+
+                    return res;
+                }
+
+                public string print(string input_)
+                {
+                    return string.Join(string.Empty, presser(input_.ToCharArray()));
+
+                }
+            }
+
+        }
+
+        public static class ReqwindKATA
+        {
+            public static string GO(string input_)
+            {
+
+                List<char> arr = new List<char>();
+                Stack<char> st = new Stack<char>();
+                Stack<char> st2 = new Stack<char>();
+
+                for (int i = 0; i < input_.ToArray().Length; i++)
+                {
+                    char ch = input_.ToArray()[i];
+
+                    if (ch != ' ')
+                    {
+                        st.Push(ch);
+                    }
+                    else
+                    {
+                        if (st.Count >= 5)
+                        {
+                            while (st.Count > 0)
+                            {
+                                arr.Add(st.Pop());
+                            }
+
+                        }
+                        else
+                        {
+                            while (st.Count > 0)
+                            {
+                                st2.Push(st.Pop());
+                            }
+
+                            while (st2.Count > 0)
+                            {
+                                arr.Add(st2.Pop());
+                            }
+
+                        }
+
+                        arr.Add(' ');
+                    }
+                }
+
+                if (st.Count >= 5)
+                {
+                    while (st.Count > 0)
+                    {
+                        arr.Add(st.Pop());
+                    }
+
+                }
+                else
+                {
+                    while (st.Count > 0)
+                    {
+                        st2.Push(st.Pop());
+                    }
+
+                    while (st2.Count > 0)
+                    {
+                        arr.Add(st2.Pop());
+                    }
+
+                }
+
+                return string.Join(null, arr);
+            }
+        }
+
+        public static class FindKata
+        {
+            public static char GO(char[] input)
+            {
+                byte[] arr = Encoding.ASCII.GetBytes(input);
+                char result = ' ';
+                for (int i = 0; i < arr.Length - 1; i++)
+                {
+                    if (arr[i] + 1 < arr[i + 1])
+                    {
+                        result = (char)(arr[i] + 1);
+                        break;
+                    }
+                }
+
+                return result;
+            }
+
+        }
+
+        public static class DivideKATA
+        {
+            public static int[] Divisors(int n)
+            {
+                if (n < 2) { return null; }
+
+
+                List<int> divisors = new List<int>();
+
+                for (int i = 2; i < n; i++)
+                {
+                    if (n % i == 0) { divisors.Add(i); }
+                }
+
+                if (divisors.Count == 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    return divisors.ToArray();
+                }
+
+            }
+        }
+
+        public static class FormatRearrange
+        {
+            public static void GO()
+            {
+                StringsCheck();
+            }
+
+            static void StringsCheck()
+            {
+
+                string input = "{0}{1} {2}";
+                string r1 = Rearrange(input);
+            }
+
+            static string Rearrange(string input_)
+            {
+                string result = input_;
+                char[] chr = input_.ToCharArray();
+                int lng = chr.Length;
+                char[] prevDigit = null;
+                char[] currDigit = null;
+
+                for (int i = 0; i < lng; i++)
+                {
+
+                    int i2 = i;
+
+                    if (char.IsDigit(chr[i2]))
+                    {
+
+                        if (i2 + 1 < lng)
+                        {
+                            while (char.IsDigit(chr[i2 + 1]))
+                            {
+                                i2++;
+                            }
+
+                        }
+
+
+                        if (prevDigit == null)
+                        {
+                            prevDigit = ChArrFill(i, i2, chr);
+                        }
+                        else
+                        {
+                            currDigit = ChArrFill(i, i2, chr);
+
+                            if (!check(currDigit, prevDigit))
+                            {
+                                currDigit = intRecount(currDigit, prevDigit);
+
+                                char[] chrN = new char[chr.Length + currDigit.Length - prevDigit.Length];
+
+                                for (int i4 = 0; i4 < i; i4++)
+                                {
+                                    chrN[i4] = chr[i4];
+                                }
+
+                                for (int i4 = i; i4 < i2; i4++)
+                                {
+                                    chrN[i4] = chr[i4];
+                                }
+
+                                for (int i4 = i2; i4 <= lng; i4++)
+                                {
+                                    chrN[i4] = chr[i4];
+                                }
+
+                                result = charArrToInteger(chrN).ToString();
+                            }
+                            else
+                            {
+                                prevDigit = intToCharArr(charArrToInteger(currDigit));
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                return result;
+            }
+
+            static int charArrToInteger(char[] arr_)
+            {
+                int res = 0;
+                int i = 1;
+                for (int i2 = arr_.Length - 1; i2 >= 0; i2--)
+                {
+                    res += (int)(char.GetNumericValue(arr_[i2]) * i);
+                    i *= 10;
+                }
+
+                return res;
+            }
+
+            static char[] intToCharArr(int i_)
+            {
+                return i_.ToString().ToCharArray();
+            }
+
+            static char[] intRecount(char[] currDig_, char[] prevDigit_)
+            {
+                if (charArrToInteger(currDig_) == charArrToInteger(prevDigit_) + 1)
+                {
+                    return currDig_;
+                }
+                else
+                {
+                    return intToCharArr(charArrToInteger(prevDigit_) + 1);
+                }
+            }
+
+            static bool check(char[] currDig_, char[] prevDigit_)
+            {
+                if (charArrToInteger(currDig_) == charArrToInteger(prevDigit_) + 1)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            static char[] ChArrFill(int i_, int i2_, char[] chFrom_)
+            {
+                char[] chTo_ = new char[(i2_ - i_) + 1];
+
+                for (int i3_ = 0; i3_ <= (i2_ - i_); i3_++)
+                {
+                    chTo_[i3_] = chFrom_[i_ + i3_];
+                }
+
+                return chTo_;
+            }
+
+        }
+
+        public static class DigitSumm
+        {
+            public static void GO()
+            {
+                List<int> nums = new List<int>();
+                Random rnd = new Random();
+                for (int i = 0; i < 10; i++)
+                {
+                    nums.Add(rnd.Next(1, 100000));
+                }
+
+                nums.ForEach(s =>
+                {
+                    var sum = sumOfDigits(s);
+                    Trace.WriteLine($"digit: {s}; sum = {sum};");
+                });
+            }
+
+            static int sumOfDigits(int number)
+            {
+                int result = 0;
+                while (number != 0)
+                {
+                    result += number % 10;
+                    number /= 10;
+                }
+
+                return result;
+            }
+        }
+
+        public class BracketsChecker
+        {
+            public static void GO()
+            {
+                List<string> strsOK = new List<string>()
+                {
+                    "c * [ (a+b) / d]",
+                    "()[][()]",
+                    "([])[()]",
+                    "()",
+                    "[]"
+                };
+                List<string> strsNotOK = new List<string>()
+                {
+                    "(c * [a+b) / d]",
+                    ")[]",
+                    "]()",
+                    "[(())])",
+                    "(([[])"
+                };
+                var isOK = strsOK.Select(s => braketsCount(s)).All(s => s == true);
+                var isNotOK = strsNotOK.Select(s => braketsCount(s)).All(s => s == false);
+
+                var ok2 = strsOK.Select(s => bracketsCheck(s)).All(c => c == true);
+                var notOk = strsNotOK.Select(s => bracketsCheck(s)).All(c => c == false);
+
+            }
+
+            static Func<string, bool> braketsCount = (s) =>
+            {
+
+                Stack<char> brackets = new Stack<char>();
+
+                foreach (char i in s)
+                {
+                    if (brackets.Count == 0)
+                    {
+                        if (i == ')' || i == ']') { return false; }
+
+                        if (i == '(' || i == '[') { brackets.Push(i); }
+
+                        ;
+                    }
+                    else
+                    {
+                        if (i == ')')
+                        {
+                            if (brackets.Pop() != '(') { return false; }
+                        }
+
+                        if (i == ']')
+                        {
+                            if (brackets.Pop() != '[') { return false; }
+                        }
+
+                        if (i == '(' || i == '[') { brackets.Push(i); }
+
+                        ;
+                    }
+                }
+
+                return brackets.Count == 0;
+
+            };
+
+            public static bool bracketsCheck(string input)
+            {
+                List<char> opened = new List<char>() {'(', '[', '{'};
+                List<char> closed = new List<char>() {')', ']', '}'};
+                Stack<char> cntr = new Stack<char>();
+
+                if (string.IsNullOrEmpty(input) || input?.Any() != true) { return false; }
+
+                if (closed.Contains(input[0])) { return false; }
+
+                foreach (var ch in input)
+                {
+                    if (opened.Contains(ch)) { cntr.Push(ch); }
+
+                    if (closed.Contains(ch))
+                    {
+                        if (cntr.Count() <= 0) { return false; }
+
+                        var previous = cntr.Pop();
+                        if (opened.IndexOf(previous) != closed.IndexOf(ch)) { return false; }
+                    }
+                }
+
+                return cntr.Count() == 0;
+            }
+
+        }
+
+        public static class BalancedDelimeter
+        {
+
+            public static void GO()
+            {
+                Trace.WriteLine(
+                    $"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
+
+            }
+
+        }
+
+        public class HTTPserializeSave
+        {
+            public class Country
+            {
+                public string id { get; set; }
+                public string name { get; set; }
+            }
+
+            public static async Task<IEnumerable<Country>> GO()
+            {
+                var httpClient = new HttpClient();
+                var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
+                var content = await response.Content.ReadAsStringAsync();
+
+                var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
+                var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
+                var str = JsonSerializer.Serialize(filtered);
+
+                await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
+                return filtered;
+            }
+
+            public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
+            {
+                await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
+                    JsonSerializer.Serialize(
+                        JsonSerializer.Deserialize<IEnumerable<T>>(
+                            await new HttpClient()
+                                .GetAsync("https://api.worldremit.com/api/countries")?
+                                .Result
+                                .Content
+                                .ReadAsStringAsync()
+                        )
+                    )
+                );
+                return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content
+                    .ReadAsStringAsync());
+            }
+
+        }
+
+        //Kasper
+        public class StringCount
+        {
+            public static void GO(string input)
+            {
+                var inp = "aaabbcc";
+                inp = input;
+
+                //group by query
+                var counts = (
+                    from s in inp
+                    group s by new {s}
+                    into c
+                    select new {Key = c.Key, count = c.Count()}).ToList();
+
+
+                //group by API
+                var countsTwo = inp
+                    .GroupBy(p => p, (Key, g) => new {K = Key, C = g.Count()}).ToList();
+
+                //foreach with dictionary
+                Dictionary<char, int> result = new Dictionary<char, int>();
+                foreach (char ch in input)
+                {
+                    if (!result.ContainsKey(ch))
+                    {
+                        result.Add(ch, 1);
+                    }
+                    else
+                    {
+                        result[ch] += 1;
+                    }
+                }
+            }
+        }
+
+        //OZONe
+        public static class WordsCount
+        {
+            static List<string> input = new List<string>()
+            {
+                "ABC",
+                "ACB",
+                "ABCD",
+                "ABD",
+                "ABCE",
+                "CBA"
+            };
+
+            internal class Item
+            {
+                internal string itemRef { get; set; }
+                internal int count { get; set; }
+            }
+
+            static Dictionary<int, Item> items = new Dictionary<int, Item>();
+
+            public static void GO()
+            {
+
+                //foreach
+                foreach (var str in input)
+                {
+                    string newStr = new string(str.OrderBy(c => c).ToArray());
+                    var alg = SHA256.Create();
+                    byte[] hashBytes = alg.ComputeHash(Encoding.UTF8.GetBytes(newStr));
+                    int hashNew = BitConverter.ToInt32(hashBytes);
+
+                    if (!items.ContainsKey(hashNew))
+                    {
+                        items.Add(hashNew, new Item {itemRef = str, count = 1});
+                    }
+                    else
+                    {
+                        items[hashNew].count += 1;
+                    }
+                }
+
+                items.Select(s => new {s.Value.itemRef, s.Value.count})
+                    .ToList()
+                    .ForEach(s =>
+                        Trace.WriteLine($"Itme entry count: {s.itemRef} {s.count}")
+                    );
+
+            }
+
+        }
+
+        //chars
+        public class Convertions
+        {
+            //System.Security.Cryptography.SHA256.Create().ComputeHash
+            //byte[] => hash
+
+            //BitConverter.GetBytes
+            //Type !str => byte[]
+            //BitConverter.GetBytes
+            //byte[] => types|str
+
+            //Encoding.UTF8.GetBytes
+            //type => byte[]
+
+            //Convert.ToString()
+            //var -> totype
+
+            //System.Environment.CurrentDirectory
+            //Directory.GetCurrentDirectory()  
+
+            public static void GO()
+            {
+
+                var str = "abcdefg";
+
+                var hash = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
+
+                try
+                {
+                    string input = "abcd123";
+
+                    //computeHash
+                    byte[] bytes = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
+
+
+                    List<byte> bytesFromString = new List<byte>();
+                    foreach (char ch in input)
+                    {
+                        byte[] tempBytes = BitConverter.GetBytes(ch);
+                        bytesFromString.AddRange(tempBytes);
+                    }
+
+                    //converted bytes
+                    string result = new string(BitConverter.ToString(bytesFromString.ToArray()));
+
+                    //original chars
+                    List<char> charsFromByte =
+                        new List<char>(bytesFromString.ToList().Where(s => s != 0).Select(Convert.ToChar));
+
+                    //original string
+                    string resultOne = new string(charsFromByte.ToArray());
+
+                    //new string from converted bytes
+                    string[] byteString = result.Split("-");
+                    List<char> charsFromBiteString = new List<char>();
+                    foreach (string st in byteString)
+                    {
+                        byte bt;
+                        byte.TryParse(st, out bt);
+
+                        char ch = Convert.ToChar(bt);
+                        charsFromBiteString.Add(ch);
+                    }
+
+                    string resultTwo = new string(charsFromBiteString.ToArray());
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+
+            public void Bulk()
+            {
+                StreamWriter sw = new StreamWriter("output1.txt");
+
+                byte[] bites = {0X0000, 0X0001, 0X0002, 0X0003, 0X0003, 0X0061};
+                char[] charsFromBite = BitConverter.ToString(bites).ToCharArray();
+
+                char[] chars = {'\u0061', '\u0308'};
+
+                chars = chars.Union(charsFromBite).ToArray();
+                string str = new string(chars);
+
+                byte[] bytesFromChars = Encoding.UTF8.GetBytes(chars);
+                string stringFromByte = BitConverter.ToString(bytesFromChars);
+
+                sw.WriteLine(str);
+
+                sw.WriteLine($"Encoding.UTF8: {stringFromByte}");
+                sw.WriteLine($"Encoding.UTF32: {BitConverter.ToString(Encoding.UTF32.GetBytes(chars))}");
+                sw.WriteLine($"Encoding.Unicode: {BitConverter.ToString(Encoding.Unicode.GetBytes(chars))}");
+                sw.WriteLine($"Encoding UTF8: {BitConverter.ToString(bites)}");
+
+                StringBuilder sb = new StringBuilder();
+                int width = 0;
+                for (int i = 0; i < 65535; i++)
+                {
+                    try
+                    {
+                        char chnew = Convert.ToChar(i);
+                        char ch = Convert.ToChar(i);
+                        if (!char.IsDigit(chnew) && !char.IsHighSurrogate(chnew) && !char.IsLowSurrogate(chnew) &&
+                            !char.IsSurrogate(chnew))
+                        {
+                            sb.Append(Convert.ToChar(i));
+                            width += 1;
+                            if (width >= 50)
+                            {
+                                sb.Append(Environment.NewLine);
+                                width = 0;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
+                }
+
+                sw.WriteLine(Char.ConvertFromUtf32(0x1D160));
+                sw.WriteLine(sb.ToString());
+                sw.Close();
+            }
+
+        }
+
+        public static class Bites
+        {
+            public static void GO()
+            {
+                Trace.WriteLine(
+                    $"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
+                BitEncoding();
+                BitesTest();
+            }
+
+            public static void BitesTest()
+            {
+                byte bt = 0X80;
+                int a = 0X80;
+                int res = a & a;
+                var str0 = Convert.ToString(bt, 2);
+
+                byte[] bytes = {0X0001, 0X0011, 0XF1, 0, 1};
+                foreach (byte b in bytes)
+                {
+                    Trace.WriteLine(Convert.ToString(b, 2));
+                }
+
+                string str = "Value to bytes";
+
+                List<char> charsFromCharBits = new List<char>();
+                List<char> charsFromIntBits = new List<char>();
+
+                foreach (char ch in str)
+                {
+                    string str1 = char.ToString(ch);
+
+                    int intFromChar = Convert.ToInt32(ch);
+                    byte byteFromInt = Convert.ToByte(intFromChar);
+                    byte byteFromCh = Convert.ToByte(ch);
+
+                    byte[] btArrCh = BitConverter.GetBytes(ch);
+                    byte[] btArrInt = BitConverter.GetBytes(intFromChar);
+
+                    charsFromCharBits.Add(BitConverter.ToChar(btArrCh));
+                    charsFromIntBits.Add(BitConverter.ToChar(btArrInt));
+
+                    string byteStringRep = BitConverter.ToString(btArrCh);
+                }
+
+                string stringFromCharBits = new string(charsFromCharBits.ToArray());
+                string stringFromIntBits = new string(charsFromIntBits.ToArray());
+
+                bool eq0 = stringFromCharBits == stringFromIntBits;
+                bool eq1 = stringFromCharBits.Equals(stringFromIntBits);
+
+                List<char> charsFromStringOfBites = new List<char>();
+
+                string hexValue = "56 61 6C"; //"48 65 6C 6C 6F 20 57 6F 72 6C 64 21";
+                string[] hexValues = hexValue.Split(' ');
+                foreach (string hS in hexValues)
+                {
+
+                    try
+                    {
+                        int intFromString = Convert.ToInt32(hS, 16);
+                        byte byteFromString = Convert.ToByte(hS, 16);
+
+                        byte[] bytesFromInt = BitConverter.GetBytes(intFromString);
+                        byte bfs;
+
+                        byte.TryParse(hS, out bfs);
+                        charsFromStringOfBites.Add(BitConverter.ToChar(bytesFromInt));
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
+                }
+
+                string stringFromStringOfBytes = new string(charsFromStringOfBites.ToArray());
+
+            }
+
+            public static void BitEncoding()
+            {
+
+                string str = "string123";
+                List<byte> getBytes = str.Select(s => BitConverter.GetBytes(s))
+                    .Aggregate(new List<byte>(), (acc, i) =>
+                    {
+                        foreach (byte bt in i)
+                        {
+                            acc.Add(bt);
+                        }
+
+                        return acc;
+                    });
+                getBytes = getBytes.Except(getBytes.Where(s => s == 0)).ToList();
+                byte[] encBytes = Encoding.UTF8.GetBytes(str);
+
+                var hashFromStr = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(str));
+                var hashBytesBitconv = SHA256.Create().ComputeHash(getBytes.ToArray());
+
+
+                var hashesAreEqual = hashFromStr.SequenceEqual(hashBytesBitconv);
+
+                var strFromBitBytes = Encoding.UTF8.GetString(getBytes.ToArray());
+                var strFromEncBytes = Encoding.UTF8.GetString(encBytes);
+
+                var strnigsAreEqual = (str == strFromBitBytes) && (str == strFromEncBytes);
+
+            }
+        }
+
+        public class RoomNum
+        {
+            public int Section { get; set; }
+            public int RoomNumber { get; set; }
+        }
+
+        public class TrainRooms
+        {
+
+            public static List<RoomNum> rooms;
+
+            public static void GO()
+            {
+                init();
+
+                var section1 = rooms.Where(s => s.RoomNumber == 4).FirstOrDefault().Section;
+                var section2 = rooms.Where(s => s.RoomNumber == 52).FirstOrDefault().Section;
+            }
+
+            public static void init()
+            {
+                rooms = new List<RoomNum>();
+
+                int section = 1;
+
+                //fill rooms
+                for (int i = 1; i <= 36; i++)
+                {
+                    rooms.Add(new RoomNum() {Section = section, RoomNumber = i});
+                    if (i % 4 == 0) { section += 1; }
+                }
+
+                section = 1;
+                for (int i = 54; i >= 37; i--)
+                {
+                    rooms.Add(new RoomNum() {Section = section, RoomNumber = i});
+                    if (i % 2 == 0) { section += 1; }
+                }
+            }
+        }
+
+
+
+        public static int FactorialCount(int upperGap)
+        {
+            if (upperGap == 0) { return 0; }
+
+            int result = 1;
+            for (int i = 1; i <= upperGap; i++)
+            {
+                result *= i;
+            }
+
+            return result;
+        }
+
+        public int MaxUniqueSubstringLength(string str)
+        {
+
+            var cnt = 0;
+            var cntMax = 0;
+
+            List<char> chars = new List<char>();
+
+            foreach (var ch in str)
+            {
+
+                if (chars.Contains(ch))
+                {
+                    if (cnt > cntMax)
+                    {
+                        cntMax = cnt;
+                    }
+
+                    cnt = 1;
+                    chars = new List<char>();
+                    chars.Add(ch);
+                    continue;
+                }
+
+                if (!chars.Contains(ch))
+                {
+                    cnt += 1;
+                    chars.Add(ch);
+                }
+            }
+
+            if (cnt > cntMax)
+            {
+                cntMax = cnt;
+            }
+
+            return cntMax;
+        }
+
+        public static void InsertionSort(int[] arr)
+        {
+            for (int i = 1; i < arr.Length; i++)
+            {
+                var x = arr[i];
+                var j = i - 1;
+                while (j >= 0 && arr[j] > x)
+                {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
+
+                arr[j + 1] = x;
+            }
+        }
+
+        public static void ShellSort(int[] arr)
+        {
+            for (var n = arr.Length / 2; n > 0; n /= 2)
+            {
+                for (var i = n; i < arr.Length; i++)
+                {
+                    var x = arr[i];
+                    int j;
+                    for (j = i; j >= n && arr[j - n] > x; j -= n)
+                    {
+                        arr[j] = arr[j - n];
+                    }
+
+                    arr[j] = x;
+                }
+            }
+        }
+
+        public static void HeapSort(int[] arr)
+        {
+            for (int i = arr.Length / 2 - 1; i >= 0; i--)
+            {
+                heapify(arr, i, arr.Length);
+            }
+
+            for (int i = arr.Length - 1; i >= 0; i--)
+            {
+                swap(arr, 0, i);
+                heapify(arr, 0, i);
+            }
+        }
+
+        public static void heapify(int[] arr, int n, int len)
+        {
+            var l = n * 2 + 1;
+            var r = n * 2 + 2;
+            var lg = n;
+
+            if (l < len && arr[l] > arr[lg]) { lg = l; }
+
+            if (r < len && arr[r] > arr[lg]) { lg = r; }
+
+            if (lg != n)
+            {
+                swap(arr, lg, n);
+                heapify(arr, lg, len);
+            }
+        }
+
+        public static void swap(int[] arr, int l, int r)
+        {
+            var x = arr[l];
+            arr[l] = arr[r];
+            arr[r] = x;
+        }
+
+
     }
 }
 
