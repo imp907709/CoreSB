@@ -15,18 +15,22 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Algorithms;
+using CoreSB;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
+using LINQtoObjectsCheck;
 using MediaToolkit;
 using MediaToolkit.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NiL.JS.Statements;
 using VideoLibrary;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -4115,851 +4119,1003 @@ namespace TipsAndTricks
 }
 
 namespace Algorithms
+{
+     /*Collection for testing value collections */
+    public class TestListsStructs<T> where T : struct, IComparable
     {
-         /*Collection for testing value collections */
-        public class TestListsStructs<T> where T : struct, IComparable
-        {
-            public List<T> Arrange { get; set; }
-            public List<T> Expected { get; set; }
+        public List<T> Arrange { get; set; }
+        public List<T> Expected { get; set; }
 
-            public string MethodName { get; set; }
-            public long Elapsed { get; set; }
-            public bool result
+        public string MethodName { get; set; }
+        public long Elapsed { get; set; }
+        public bool result
+        {
+            get
             {
-                get
-                {
-                    if (this.Arrange == null || this.Expected == null) { return false; }
-                    return this.Arrange.SequenceEqual(this.Expected);
-                }
-                private set { value = false; }
+                if (this.Arrange == null || this.Expected == null) { return false; }
+                return this.Arrange.SequenceEqual(this.Expected);
             }
+            private set { value = false; }
         }
-        /*Collection for testing class collections */
-        public class TestListsClasses<T> where T : class, IComparable
+    }
+    /*Collection for testing class collections */
+    public class TestListsClasses<T> where T : class, IComparable
+    {
+        public List<T> Arrange { get; set; }
+        public List<T> Expected { get; set; }
+        public bool result
         {
-            public List<T> Arrange { get; set; }
-            public List<T> Expected { get; set; }
-            public bool result
+            get
             {
-                get
-                {
-                    if (this.Arrange == null || this.Expected == null) { return false; }
-                    return this.Arrange.SequenceEqual(this.Expected);
-                }
-                private set { value = false; }
+                if (this.Arrange == null || this.Expected == null) { return false; }
+                return this.Arrange.SequenceEqual(this.Expected);
             }
+            private set { value = false; }
         }
+    }
 
-        public class AlgorithmTest<T>
-            where T : struct, IComparable
+    public class AlgorithmTest<T>
+        where T : struct, IComparable
+    {
+        public AlgorithmTest(List<TestListsStructs<T>> testArr, SortingDelegate m)
         {
-            public AlgorithmTest(List<TestListsStructs<T>> testArr, SortingDelegate m)
+            this.TestLists = new List<TestListsStructs<T>>();
+
+            foreach (var item in testArr)
             {
-                this.TestLists = new List<TestListsStructs<T>>();
-
-                foreach (var item in testArr)
-                {
-                    this.TestLists.Add(new TestListsStructs<T>()
-                    { Arrange = item?.Arrange?.Select(c => c).ToList(), Expected = item?.Expected?.Select(c => c).ToList() }
-                    );
-                }
-                this.SortingMethod = m;
-                this.MethodName = $"{m.Method.DeclaringType.Name} {m.Method.Name}";
+                this.TestLists.Add(new TestListsStructs<T>()
+                { Arrange = item?.Arrange?.Select(c => c).ToList(), Expected = item?.Expected?.Select(c => c).ToList() }
+                );
             }
-
-            public List<TestListsStructs<T>> TestLists { get; set; }
-
-            public delegate IList<T> SortingDelegate(IList<T> arr);
-            public SortingDelegate SortingMethod { get; set; }
-            public string MethodName { get; set; }
-
+            this.SortingMethod = m;
+            this.MethodName = $"{m.Method.DeclaringType.Name} {m.Method.Name}";
         }
 
-        /// <summary>
-        /// Good for generic Sort(Array<T>) methods
-        /// not very clear and addaptive
-        /// </summary>
-        public class SortingTests
+        public List<TestListsStructs<T>> TestLists { get; set; }
+
+        public delegate IList<T> SortingDelegate(IList<T> arr);
+        public SortingDelegate SortingMethod { get; set; }
+        public string MethodName { get; set; }
+
+    }
+
+    /// <summary>
+    /// Good for generic Sort(Array<T>) methods
+    /// not very clear and addaptive
+    /// </summary>
+    public class Check
+    {
+        List<AlgorithmTest<int>> test;
+        Random rnd = new Random();
+
+        public static void GO()
         {
-            List<AlgorithmTest<int>> test;
-            Random rnd = new Random();
-
-            public static void GO()
-            {
-                SortingTests st = new SortingTests();
-                st.sampleIntCheck();
-                st.insertionSortTest();
-            }
-
-            List<TestListsStructs<int>> createGeneratedIntCollection()
-            {
-
-                List<int> longList = new List<int>(10000);
-                for (int i = 0; i < 10000; i++)
-                {
-                    longList.Add(rnd.Next(0, 10000));
-
-                }
-                List<int> longListSorted = longList.Select(s => s).ToList();
-                longListSorted.Sort();
-
-                return new List<TestListsStructs<int>>()
-                {
-                    getLongCollection(100,100)
-                    , getLongCollection(10000,10000)
-                    , getLongCollection(50000,50000)
-                    , getLongCollection(100000,100000)
-                };
-            }
-
-            List<TestListsStructs<int>> createManualIntCollection()
-            {
-
-                return new List<TestListsStructs<int>>(){
-                    new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2,1,3,1,2}, Expected = new List<int>(){1,1,1,2,2,3,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){1,3,3,2,1}, Expected = new List<int>{1,1,2,3,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2}, Expected = new List<int>{1,2,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){15,25,3,9,34,8,18,6,16}, Expected = new List<int>() {3,6,8,9,15,16,18,25,34}}
-                    , getLongCollection(100,100)
-                    , getLongCollection(500,500)
-                    , getLongCollection(1000,1000)
-                    , getLongCollection(10000,10000)
-                    , getLongCollection(30000,30000)
-                };
-            }
-
-            TestListsStructs<int> getLongCollection(int count, int maxRandomGap)
-            {
-                List<int> longList = new List<int>(count);
-                for (int i = 0; i < count; i++)
-                {
-                    longList.Add(rnd.Next(0, maxRandomGap));
-                }
-                List<int> longListSorted = longList.Select(s => s).ToList();
-                longListSorted.Sort();
-                return new TestListsStructs<int>() { Arrange = longList, Expected = longListSorted };
-            }
-            void insertionSortTest()
-            {
-                InsertionSort<int> insertionSort = new InsertionSort<int>();
-                QuickSort<int> quickSort = new QuickSort<int>();
-                HeapSort<int> heapSort = new HeapSort<int>();
-                MergeSort<int> mergeSort = new MergeSort<int>();
-
-                List<TestListsStructs<int>> lists = createManualIntCollection(); //createIntCollection();
-
-                test = new List<AlgorithmTest<int>>()
-                {
-                    new AlgorithmTest<int>(lists,quickSort.Sort),
-                    new AlgorithmTest<int>(lists,insertionSort.Sort),
-                    new AlgorithmTest<int>(lists,mergeSort.Sort),
-                    new AlgorithmTest<int>(lists,heapSort.Sort),
-                };
-
-                foreach (var t in test)
-                {
-                    foreach (var array in t.TestLists)
-                    {
-                        var watch = Stopwatch.StartNew();
-                        array.MethodName = t.MethodName;
-                        array.Arrange = t.SortingMethod(array.Arrange).ToList();
-                        watch.Stop();
-                        array.Elapsed = watch.ElapsedMilliseconds;
-
-                        Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
-                    }
-                }
-            }
-
-            void sampleIntCheck()
-            {
-                var initialArray = new int[] { 5, 1, 7, 3, 5, 9, 3, 5, 8 };
-                var sortedArr = initialArray.OrderBy(s => s).ToList();
-                
-                var shellToSortArr = new int[initialArray.Length];
-                Array.Copy(initialArray, shellToSortArr, initialArray.Length);
-                ShellSort.Sort(shellToSortArr);
-                var res = shellToSortArr.SequenceEqual(sortedArr);
-
-                var quickSortArr = new int[initialArray.Length];
-                Array.Copy(initialArray,quickSortArr,initialArray.Length);
-               
-                var res2 = sortedArr.ToList().SequenceEqual(quickSortArr);
-            }
+            Check st = new Check();
+            st.sampleIntCheck();
+            st.insertionSortTest();
         }
-        
-        public class InsertionSort<T> where T : struct, IComparable
+
+        List<TestListsStructs<int>> createGeneratedIntCollection()
         {
-            public IList<T> Sort(IList<T> arr)
+
+            List<int> longList = new List<int>(10000);
+            for (int i = 0; i < 10000; i++)
             {
-                IList<T> result = new List<T>();
-                if (arr == null || arr?.Count == 0)
-                {
-                    return result;
-                }
-                if (arr.Count == 1)
-                {
-                    result.Add(arr[0]);
-                }
+                longList.Add(rnd.Next(0, 10000));
 
-                return sort(arr);
             }
-            IList<T> sort(IList<T> arr)
+            List<int> longListSorted = longList.Select(s => s).ToList();
+            longListSorted.Sort();
+
+            return new List<TestListsStructs<int>>()
             {
-
-                for (int i = 1; i <= arr.Count - 1; i++)
-                {
-                    T pivot = arr[i];
-
-                    int j = i - 1;
-
-                    while (j >= 0 && Comparer<T>.Default.Compare(pivot, arr[j]) < 1)
-                    {
-                        arr[j + 1] = arr[j];
-                        j--;
-                    }
-                    arr[j + 1] = pivot;
-                }
-
-                return arr;
-            }
+                getLongCollection(100,100)
+                , getLongCollection(10000,10000)
+                , getLongCollection(50000,50000)
+                , getLongCollection(100000,100000)
+            };
         }
-        
 
-        public class ShellSort
+        List<TestListsStructs<int>> createManualIntCollection()
         {
-            public static void Sort(int[] arr)
+
+            return new List<TestListsStructs<int>>(){
+                new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2,1,3,1,2}, Expected = new List<int>(){1,1,1,2,2,3,3}},
+                new TestListsStructs<int>(){Arrange = new List<int>(){1,3,3,2,1}, Expected = new List<int>{1,1,2,3,3}},
+                new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2}, Expected = new List<int>{1,2,3}},
+                new TestListsStructs<int>(){Arrange = new List<int>(){15,25,3,9,34,8,18,6,16}, Expected = new List<int>() {3,6,8,9,15,16,18,25,34}}
+                , getLongCollection(100,100)
+                , getLongCollection(500,500)
+                , getLongCollection(1000,1000)
+                , getLongCollection(10000,10000)
+                , getLongCollection(30000,30000)
+            };
+        }
+
+        TestListsStructs<int> getLongCollection(int count, int maxRandomGap)
+        {
+            List<int> longList = new List<int>(count);
+            for (int i = 0; i < count; i++)
             {
-                var n = arr.Length;
-                for (var gap = n / 2; gap > 0; gap /= 2)
+                longList.Add(rnd.Next(0, maxRandomGap));
+            }
+            List<int> longListSorted = longList.Select(s => s).ToList();
+            longListSorted.Sort();
+            return new TestListsStructs<int>() { Arrange = longList, Expected = longListSorted };
+        }
+        void insertionSortTest()
+        {
+            InsertionSort<int> insertionSort = new InsertionSort<int>();
+            QuickSort<int> quickSort = new QuickSort<int>();
+            HeapSort<int> heapSort = new HeapSort<int>();
+            MergeSort<int> mergeSort = new MergeSort<int>();
+
+            List<TestListsStructs<int>> lists = createManualIntCollection(); //createIntCollection();
+
+            test = new List<AlgorithmTest<int>>()
+            {
+                new AlgorithmTest<int>(lists,quickSort.Sort),
+                new AlgorithmTest<int>(lists,insertionSort.Sort),
+                new AlgorithmTest<int>(lists,mergeSort.Sort),
+                new AlgorithmTest<int>(lists,heapSort.Sort),
+            };
+
+            foreach (var t in test)
+            {
+                foreach (var array in t.TestLists)
                 {
-                    for (var i = gap; i < arr.Length; i++)
-                    {
-                        var x = arr[i];
-                        int j;
-                        for (j = i; j >= gap && arr[j - gap] > x; j -= gap)
-                        {
-                            arr[j] = arr[j - gap];
-                        }
-                        arr[j] = x;
-                    }
+                    var watch = Stopwatch.StartNew();
+                    array.MethodName = t.MethodName;
+                    array.Arrange = t.SortingMethod(array.Arrange).ToList();
+                    watch.Stop();
+                    array.Elapsed = watch.ElapsedMilliseconds;
+
+                    Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
                 }
             }
         }
-      
+
+        void sampleIntCheck()
+        {
+            var initialArray = new int[] { 5, 1, 7, 3, 5, 9, 3, 5, 8 };
+            var sortedArr = initialArray.OrderBy(s => s).ToList();
+            
+            var shellToSortArr = new int[initialArray.Length];
+            Array.Copy(initialArray, shellToSortArr, initialArray.Length);
+            shellToSortArr = MergeSort.Sort(shellToSortArr);
+            var res = shellToSortArr.SequenceEqual(sortedArr);
+
+        }
+    }
     
-        public class QuickSortTest
+    public class InsertionSort<T> where T : struct, IComparable
+    {
+        public IList<T> Sort(IList<T> arr)
         {
-            public static void GO()
+            IList<T> result = new List<T>();
+            if (arr == null || arr?.Count == 0)
             {
-                QuickSortTest qt = new QuickSortTest();
-                qt.QuickSortGenericTest();
-            }
-
-            void QuickSortGenericTest()
-            {
-                QuickSort<int> qs = new QuickSort<int>();
-                List<TestListsStructs<int>> array = new List<TestListsStructs<int>>(){
-                    new TestListsStructs<int>(){Arrange =  new List<int>(){5,4,3,2,6}, Expected = new List<int>() { 2,3,4,5,6 } },
-                    new TestListsStructs<int>(){Arrange =  new List<int>(){1,5,3,4,2,7}, Expected = new List<int>() { 1, 2, 3, 4, 5, 7 } },
-                    new TestListsStructs<int>(){Arrange =  new List<int>(){15, 25, 3, 9, 34, 8, 18, 6, 16 }, Expected = new List<int>() { 3,6,8,9,15,16,18,25,34} }
-                };
-
-                foreach (var item in array)
-                {
-                    qs.Sort(item.Arrange);
-                }
-            }
-        }
-        public class QuickSort<T> where T : struct, IComparable
-        {
-            public IList<T> Sort(IList<T> arr)
-            {
-                return sort(arr, 0, arr.Count - 1);
-            }
-            IList<T> sort(IList<T> arr, int idxLw, int idxHg)
-            {
-                if (idxHg > 0 && idxLw < idxHg)
-                {
-                    int p = partition(arr, idxLw, idxHg);
-
-                    sort(arr, idxLw, p - 1);
-                    sort(arr, p + 1, idxHg);
-                }
-                return arr;
-            }
-            int partition(IList<T> arr, int idxLw, int idxHg)
-            {
-                T pivot = arr[idxHg];
-                int i = idxLw - 1;
-
-                for (int j = idxLw; j <= idxHg - 1; j++)
-                {
-                    if (Comparer<T>.Default.Compare(pivot, arr[j]) > 0)
-                    {
-                        i++;
-                        Swap(arr, i, j);
-                    }
-                }
-
-                i++;
-                Swap(arr, i, idxHg);
-                return i;
-            }
-            void Swap(IList<T> arr, int idxFt, int idxLt)
-            {
-                T item = arr[idxFt];
-                arr[idxFt] = arr[idxLt];
-                arr[idxLt] = item;
-            }
-        }
-
-     
-
-        //https://www.tutorialspoint.com/heap-sort-in-chash#:~:text=Heap%20Sort%20is%20a%20sorting,then%20the%20heap%20is%20reestablished.
-        public class HeapSortTest
-        {
-            protected class TestLists
-            {
-                public List<int> Arrange { get; set; }
-                public List<int> Expected { get; set; }
-                public bool result { get; set; } = false;
-            }
-
-            public static void GO()
-            {
-                HeapSortIntCheck();
-                HeapSortGenericCheckInt();
-                HeapSortGenericCheckChars();
-
-            }
-            static void HeapSortIntCheck()
-            {
-                HeapSortInt hs = new HeapSortInt();
-
-                List<TestLists> arrange = new List<TestLists>(){
-                    new TestLists(){ Arrange = new List<int>() { 4, 5, 3, 2, 1 }, Expected = new List<int>() { 5, 4, 3, 2, 1 }}
-                    ,new TestLists(){ Arrange = new List<int>() { 4, 10, 3, 5, 1 }, Expected = new List<int>() { 10, 5, 3, 4, 1 }}
-                    ,new TestLists(){ Arrange = new List<int>() {1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17}, Expected = new List<int>() {17,15,13,9,6,5,10,4,8,3,1}}
-                    };
-
-                foreach (var list in arrange)
-                {
-                    hs.Sort(list.Arrange);
-                    list.result = list.Arrange.SequenceEqual(list.Expected);
-                };
-
-            }
-
-            static void HeapSortGenericCheckInt()
-            {
-                HeapSort<int> hsInt = new HeapSort<int>();
-                List<TestListsStructs<int>> arrange = new List<TestListsStructs<int>>(){
-                    new TestListsStructs<int>(){Arrange = new List<int>(){4,5,3,2,1}, Expected = new List<int>(){1,2,3,4,5} }
-                    ,new TestListsStructs<int>(){ Arrange = new List<int>() { 4, 10, 3, 5, 1 }, Expected = new List<int>() {1,3,4,5,10 }}
-                    ,new TestListsStructs<int>(){ Arrange = new List<int>() {1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17}, Expected = new List<int>() {1,3,4,5,6,8,9,10,13,15,17}}
-                };
-
-                foreach (var list in arrange)
-                {
-                    hsInt.Sort(list.Arrange);
-                }
-
-            }
-            static void HeapSortGenericCheckChars()
-            {
-                HeapSort<char> hsInt = new HeapSort<char>();
-                List<TestListsStructs<char>> arrange = new List<TestListsStructs<char>>(){
-                    new TestListsStructs<char>(){Arrange = "adfbec".ToArray().ToList(), Expected = "abcdef".ToArray().ToList() }
-                };
-
-                foreach (var list in arrange)
-                {
-                    hsInt.Sort(list.Arrange);
-                }
-
-            }
-
-        }
-        public class HeapSortInt
-        {
-
-            public void Sort(List<int> arr)
-            {
-                int lastNotLeafNode = arr.Count / 2 - 1;
-
-                for (int i = lastNotLeafNode; i >= 0; i--)
-                {
-                    CheckChildsAndSwap(arr, i);
-                }
-            }
-            void CheckChildsAndSwap(List<int> arr, int i)
-            {
-                var maxChildIdx = GetMaxNodeIndex(arr, i * 2 + 1, i * 2 + 2);
-                if (maxChildIdx >= 0 && arr[maxChildIdx] > arr[i])
-                {
-                    Swap(arr, maxChildIdx, i);
-                    CheckChildsAndSwap(arr, maxChildIdx);
-                }
-            }
-            int GetMaxNodeIndex(List<int> arr, int idxSt, int idxFn)
-            {
-                int result = 0;
-                int idx = -1;
-                for (int i = idxSt; i <= idxFn; i++)
-                {
-                    if (i <= (arr.Count - 1) && arr[i] > result)
-                    {
-                        result = arr[i];
-                        idx = i;
-                    }
-                }
-                return idx;
-            }
-            void Swap(List<int> arr, int a, int b)
-            {
-                (arr[a], arr[b]) = (arr[b], arr[a]);
-            }
-        }
-        public class HeapSort<T> where T : struct, IComparable
-        {
-            private readonly int nodesPerLvlv = 2;
-
-            public IList<T> Sort(IList<T> arr)
-            {
-                for (int i = 0; i < arr.Count; i++)
-                {
-                    int newIdxHg = (arr.Count - i) - 1;
-                    heapify(arr, 0, newIdxHg);
-
-                    if (Comparer<T>.Default.Compare(arr[0], arr[newIdxHg]) > 0)
-                    {
-                        Swap(arr, 0, newIdxHg);
-                    }
-                }
-
-                return arr;
-            }
-            public IList<T> heapify(IList<T> arr, int idxLw, int idxHg)
-            {
-                if (arr != null && idxHg - idxLw >= 0)
-                {
-                    int lastNotLeafNodeIndex = (idxHg - idxLw) / nodesPerLvlv - 1;
-
-                    for (int i = lastNotLeafNodeIndex; i >= idxLw; i--)
-                    {
-                        siftDown(arr, i, idxHg);
-                    }
-
-                }
-                return arr;
-            }
-
-            void siftDown(IList<T> arr, int index, int maxBorder)
-            {
-                int maxParentOrChildIndex = GetMaxNodesIndex(arr, index, maxBorder);
-                if (maxParentOrChildIndex >= 0 && maxParentOrChildIndex > index)
-                {
-                    Swap(arr, maxParentOrChildIndex, index);
-                    siftDown(arr, maxParentOrChildIndex, maxBorder);
-                }
-            }
-            int GetMaxNodesIndex(IList<T> arr, int idx, int maxBorder)
-            {
-                int resultindex = -1;
-
-                if (
-                    idx < (arr.Count - 1)
-                    &&
-                    //There are childs in array with lowerbound index
-                    ((arr.Count - 1) - (idx * nodesPerLvlv + 1) > 0)
-                )
-                {
-                    int nodesLwInds = idx * nodesPerLvlv + 1;
-                    int nodesHgIdx = idx * (nodesPerLvlv) + nodesPerLvlv;
-                    nodesHgIdx = nodesHgIdx <= maxBorder ? nodesHgIdx : maxBorder;
-
-                    T tempResult = arr[idx];
-                    for (int nodesIndex = nodesLwInds; nodesIndex <= nodesHgIdx; nodesIndex++)
-                    {
-                        if (Comparer<T>.Default.Compare(arr[nodesIndex], tempResult) > 0)
-                        {
-                            tempResult = arr[nodesIndex];
-                            resultindex = nodesIndex;
-                        }
-                    }
-                }
-
-                return resultindex;
-            }
-            void Swap(IList<T> arr, int idxLw, int idxHg)
-            {
-                T item = arr[idxLw];
-                arr[idxLw] = arr[idxHg];
-                arr[idxHg] = item;
-            }
-
-        }
-
-        public class HeapSortArr
-        {
-            public void sort(int[] arr)
-            {
-                buildHeap(arr);
-            }
-
-            void buildHeap(int[] arr)
-            {
-                for (int i = arr.Length /2-1; i > 0; i--)
-                {
-                    heapify(arr,arr.Length,i);
-                }
-
-                for (int i = arr.Length - 1; i >= 0; i--)
-                {
-                    swap(arr,i,0);
-                    heapify(arr,i,0);
-                }
-            }
-
-            void heapify(int[] arr, int len, int idx)
-            {
-                var leftNodeIdx = idx * 2 + 1;
-                var rightNodeIdx = idx * 2 + 2;
-                var largest = idx;
-
-                if (leftNodeIdx < len && arr[largest] < arr[leftNodeIdx])
-                    largest = leftNodeIdx;
-
-                if (rightNodeIdx < len && arr[largest] < arr[rightNodeIdx])
-                    largest = rightNodeIdx;
-
-                if (largest != idx)
-                {
-                    swap(arr,largest,idx);
-                    heapify(arr,len, largest);
-                }
-            }
-
-            void swap(int[] arr, int l, int r)
-            {
-                (arr[l],arr[r])=(arr[r],arr[l]);
-            }
-        }
-
-        public class MergeSortTest
-        {
-            public static void GO()
-            {
-                MergeSortTest mst = new MergeSortTest();
-                mst.MergeSortIntTest();
-            }
-
-            void MergeSortIntTest()
-            {
-                List<TestListsStructs<int>> arr = new List<TestListsStructs<int>>()
-                {
-                    new TestListsStructs<int>(){Arrange = new List<int>(){ 7, 3, 5, 6, 1, 2, 4, 8 } ,Expected = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8 }}
-                    ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1 } ,Expected = new List<int>() { 1, 3 }}
-                    ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1,4,2 } ,Expected = new List<int>() { 1, 2, 3,4 }}
-                    ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1,2 } ,Expected = new List<int>() { 1, 2, 3 }}
-
-                };
-
-                MergeSort<int> ms = new MergeSort<int>();
-                foreach (var i in arr)
-                {
-                    i.Arrange = ms.Sort(i.Arrange).ToList();
-                }
-
-            }
-        }
-        public class MergeSort<T> where T : struct, IComparable
-        {
-            public IList<T> Sort(IList<T> arr)
-            {
-                IList<T> result = new List<T>(arr.Count);
-                if (arr?.Count == 1)
-                {
-                    return arr;
-                }
-                if (arr?.Count > 1)
-                {
-                    //result = split(arr, 0, arr.Count-1);
-                    result = splitNoConditions(arr, 0, arr.Count - 1);
-                }
                 return result;
             }
-
-            /* Conditional split  */
-            IList<T> split(IList<T> arr, int idxLw, int idxHg)
+            if (arr.Count == 1)
             {
-                IList<T> leftPart = new List<T>();
-                IList<T> rightPart = new List<T>();
-
-                /* Number of elements in array to split or compare */
-                int gap = idxHg - idxLw;
-
-                /* more then 2 elements in arr */
-                if (gap > 1)
-                {
-                    int idxNewHg = idxLw + (gap / 2);
-                    leftPart = split(arr, idxLw, idxNewHg);
-                    rightPart = split(arr, (idxNewHg + 1), idxHg);
-                }
-                /* one element in arr*/
-                if (gap == 0)
-                {
-                    return new List<T>() { arr[idxHg] };
-                }
-                /* two elements in arr */
-                if (gap == 1)
-                {
-                    if (compare(arr, idxLw, idxHg) > 0)
-                    {
-                        return swap(arr, idxLw, idxHg);
-                    }
-                    else
-                    {
-                        return arr.Skip(idxLw).Take((idxHg - idxLw) + 1).ToList();
-                    }
-                }
-
-                return sortArr(leftPart, rightPart);
+                result.Add(arr[0]);
             }
 
-            /* Less if switches, no swap and sorting down to arrays of 1 element*/
-            IList<T> splitNoConditions(IList<T> arr, int idxLw, int idxHg)
+            return sort(arr);
+        }
+        IList<T> sort(IList<T> arr)
+        {
+
+            for (int i = 1; i <= arr.Count - 1; i++)
             {
-                IList<T> result = new List<T>() { };
-                if (idxHg == idxLw)
-                {
-                    return arr.Skip(idxLw).Take(1).ToList();
-                }
-                if (idxHg > idxLw)
-                {
-                    int p = idxLw + (idxHg - idxLw) / 2;
-                    var left = splitNoConditions(arr, idxLw, p);
-                    var right = splitNoConditions(arr, p + 1, idxHg);
+                T pivot = arr[i];
 
-                    result = sortArr(left, right);
-                }
+                int j = i - 1;
 
-                return result;
+                while (j >= 0 && Comparer<T>.Default.Compare(pivot, arr[j]) < 1)
+                {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
+                arr[j + 1] = pivot;
             }
 
-            IList<T> sortArr(IList<T> arrA, IList<T> arrB)
+            return arr;
+        }
+    }
+    
+
+    public class ShellSort
+    {
+        public static void Sort(int[] arr)
+        {
+            var n = arr.Length;
+            for (var gap = n / 2; gap > 0; gap /= 2)
             {
-                IList<T> result = new List<T>();
-
-                int i = 0, i2 = 0;
-
-                while (i < arrA.Count && i2 < arrB.Count)
+                for (var i = gap; i < arr.Length; i++)
                 {
-
-                    if (Comparer<T>.Default.Compare(arrA[i], arrB[i2]) >= 0)
+                    var x = arr[i];
+                    int j;
+                    for (j = i; j >= gap && arr[j - gap] > x; j -= gap)
                     {
-                        result.Add(arrB[i2]);
-                        i2++;
+                        arr[j] = arr[j - gap];
                     }
-                    else if (Comparer<T>.Default.Compare(arrA[i], arrB[i2]) < 0)
-                    {
-                        result.Add(arrA[i]);
-                        i++;
-                    }
+                    arr[j] = x;
+                }
+            }
+        }
+    }
+  
 
+    public class QuickSortTest
+    {
+        public static void GO()
+        {
+            QuickSortTest qt = new QuickSortTest();
+            qt.QuickSortGenericTest();
+        }
+
+        void QuickSortGenericTest()
+        {
+            QuickSort<int> qs = new QuickSort<int>();
+            List<TestListsStructs<int>> array = new List<TestListsStructs<int>>(){
+                new TestListsStructs<int>(){Arrange =  new List<int>(){5,4,3,2,6}, Expected = new List<int>() { 2,3,4,5,6 } },
+                new TestListsStructs<int>(){Arrange =  new List<int>(){1,5,3,4,2,7}, Expected = new List<int>() { 1, 2, 3, 4, 5, 7 } },
+                new TestListsStructs<int>(){Arrange =  new List<int>(){15, 25, 3, 9, 34, 8, 18, 6, 16 }, Expected = new List<int>() { 3,6,8,9,15,16,18,25,34} }
+            };
+
+            foreach (var item in array)
+            {
+                qs.Sort(item.Arrange);
+            }
+        }
+    }
+    public class QuickSort<T> where T : struct, IComparable
+    {
+        public IList<T> Sort(IList<T> arr)
+        {
+            return sort(arr, 0, arr.Count - 1);
+        }
+        IList<T> sort(IList<T> arr, int idxLw, int idxHg)
+        {
+            if (idxHg > 0 && idxLw < idxHg)
+            {
+                int p = partition(arr, idxLw, idxHg);
+
+                sort(arr, idxLw, p - 1);
+                sort(arr, p + 1, idxHg);
+            }
+            return arr;
+        }
+        int partition(IList<T> arr, int idxLw, int idxHg)
+        {
+            T pivot = arr[idxHg];
+            int i = idxLw - 1;
+
+            for (int j = idxLw; j <= idxHg - 1; j++)
+            {
+                if (Comparer<T>.Default.Compare(pivot, arr[j]) > 0)
+                {
+                    i++;
+                    Swap(arr, i, j);
+                }
+            }
+
+            i++;
+            Swap(arr, i, idxHg);
+            return i;
+        }
+        void Swap(IList<T> arr, int idxFt, int idxLt)
+        {
+            T item = arr[idxFt];
+            arr[idxFt] = arr[idxLt];
+            arr[idxLt] = item;
+        }
+    }
+
+ 
+
+    //https://www.tutorialspoint.com/heap-sort-in-chash#:~:text=Heap%20Sort%20is%20a%20sorting,then%20the%20heap%20is%20reestablished.
+    public class HeapSortTest
+    {
+        protected class TestLists
+        {
+            public List<int> Arrange { get; set; }
+            public List<int> Expected { get; set; }
+            public bool result { get; set; } = false;
+        }
+
+        public static void GO()
+        {
+            HeapSortIntCheck();
+            HeapSortGenericCheckInt();
+            HeapSortGenericCheckChars();
+
+        }
+        static void HeapSortIntCheck()
+        {
+            HeapSortInt hs = new HeapSortInt();
+
+            List<TestLists> arrange = new List<TestLists>(){
+                new TestLists(){ Arrange = new List<int>() { 4, 5, 3, 2, 1 }, Expected = new List<int>() { 5, 4, 3, 2, 1 }}
+                ,new TestLists(){ Arrange = new List<int>() { 4, 10, 3, 5, 1 }, Expected = new List<int>() { 10, 5, 3, 4, 1 }}
+                ,new TestLists(){ Arrange = new List<int>() {1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17}, Expected = new List<int>() {17,15,13,9,6,5,10,4,8,3,1}}
+                };
+
+            foreach (var list in arrange)
+            {
+                hs.Sort(list.Arrange);
+                list.result = list.Arrange.SequenceEqual(list.Expected);
+            };
+
+        }
+
+        static void HeapSortGenericCheckInt()
+        {
+            HeapSort<int> hsInt = new HeapSort<int>();
+            List<TestListsStructs<int>> arrange = new List<TestListsStructs<int>>(){
+                new TestListsStructs<int>(){Arrange = new List<int>(){4,5,3,2,1}, Expected = new List<int>(){1,2,3,4,5} }
+                ,new TestListsStructs<int>(){ Arrange = new List<int>() { 4, 10, 3, 5, 1 }, Expected = new List<int>() {1,3,4,5,10 }}
+                ,new TestListsStructs<int>(){ Arrange = new List<int>() {1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17}, Expected = new List<int>() {1,3,4,5,6,8,9,10,13,15,17}}
+            };
+
+            foreach (var list in arrange)
+            {
+                hsInt.Sort(list.Arrange);
+            }
+
+        }
+        static void HeapSortGenericCheckChars()
+        {
+            HeapSort<char> hsInt = new HeapSort<char>();
+            List<TestListsStructs<char>> arrange = new List<TestListsStructs<char>>(){
+                new TestListsStructs<char>(){Arrange = "adfbec".ToArray().ToList(), Expected = "abcdef".ToArray().ToList() }
+            };
+
+            foreach (var list in arrange)
+            {
+                hsInt.Sort(list.Arrange);
+            }
+
+        }
+
+    }
+    public class HeapSortInt
+    {
+
+        public void Sort(List<int> arr)
+        {
+            int lastNotLeafNode = arr.Count / 2 - 1;
+
+            for (int i = lastNotLeafNode; i >= 0; i--)
+            {
+                CheckChildsAndSwap(arr, i);
+            }
+        }
+        void CheckChildsAndSwap(List<int> arr, int i)
+        {
+            var maxChildIdx = GetMaxNodeIndex(arr, i * 2 + 1, i * 2 + 2);
+            if (maxChildIdx >= 0 && arr[maxChildIdx] > arr[i])
+            {
+                Swap(arr, maxChildIdx, i);
+                CheckChildsAndSwap(arr, maxChildIdx);
+            }
+        }
+        int GetMaxNodeIndex(List<int> arr, int idxSt, int idxFn)
+        {
+            int result = 0;
+            int idx = -1;
+            for (int i = idxSt; i <= idxFn; i++)
+            {
+                if (i <= (arr.Count - 1) && arr[i] > result)
+                {
+                    result = arr[i];
+                    idx = i;
+                }
+            }
+            return idx;
+        }
+        void Swap(List<int> arr, int a, int b)
+        {
+            (arr[a], arr[b]) = (arr[b], arr[a]);
+        }
+    }
+    public class HeapSort<T> where T : struct, IComparable
+    {
+        private readonly int nodesPerLvlv = 2;
+
+        public IList<T> Sort(IList<T> arr)
+        {
+            for (int i = 0; i < arr.Count; i++)
+            {
+                int newIdxHg = (arr.Count - i) - 1;
+                heapify(arr, 0, newIdxHg);
+
+                if (Comparer<T>.Default.Compare(arr[0], arr[newIdxHg]) > 0)
+                {
+                    Swap(arr, 0, newIdxHg);
+                }
+            }
+
+            return arr;
+        }
+        public IList<T> heapify(IList<T> arr, int idxLw, int idxHg)
+        {
+            if (arr != null && idxHg - idxLw >= 0)
+            {
+                int lastNotLeafNodeIndex = (idxHg - idxLw) / nodesPerLvlv - 1;
+
+                for (int i = lastNotLeafNodeIndex; i >= idxLw; i--)
+                {
+                    siftDown(arr, i, idxHg);
                 }
 
-                while (i < arrA.Count)
+            }
+            return arr;
+        }
+
+        void siftDown(IList<T> arr, int index, int maxBorder)
+        {
+            int maxParentOrChildIndex = GetMaxNodesIndex(arr, index, maxBorder);
+            if (maxParentOrChildIndex >= 0 && maxParentOrChildIndex > index)
+            {
+                Swap(arr, maxParentOrChildIndex, index);
+                siftDown(arr, maxParentOrChildIndex, maxBorder);
+            }
+        }
+        int GetMaxNodesIndex(IList<T> arr, int idx, int maxBorder)
+        {
+            int resultindex = -1;
+
+            if (
+                idx < (arr.Count - 1)
+                &&
+                //There are childs in array with lowerbound index
+                ((arr.Count - 1) - (idx * nodesPerLvlv + 1) > 0)
+            )
+            {
+                int nodesLwInds = idx * nodesPerLvlv + 1;
+                int nodesHgIdx = idx * (nodesPerLvlv) + nodesPerLvlv;
+                nodesHgIdx = nodesHgIdx <= maxBorder ? nodesHgIdx : maxBorder;
+
+                T tempResult = arr[idx];
+                for (int nodesIndex = nodesLwInds; nodesIndex <= nodesHgIdx; nodesIndex++)
+                {
+                    if (Comparer<T>.Default.Compare(arr[nodesIndex], tempResult) > 0)
+                    {
+                        tempResult = arr[nodesIndex];
+                        resultindex = nodesIndex;
+                    }
+                }
+            }
+
+            return resultindex;
+        }
+        void Swap(IList<T> arr, int idxLw, int idxHg)
+        {
+            T item = arr[idxLw];
+            arr[idxLw] = arr[idxHg];
+            arr[idxHg] = item;
+        }
+
+    }
+
+    public class HeapSortArr
+    {
+        public void sort(int[] arr)
+        {
+            buildHeap(arr);
+        }
+
+        void buildHeap(int[] arr)
+        {
+            for (int i = arr.Length /2-1; i > 0; i--)
+            {
+                heapify(arr,arr.Length,i);
+            }
+
+            for (int i = arr.Length - 1; i >= 0; i--)
+            {
+                swap(arr,i,0);
+                heapify(arr,i,0);
+            }
+        }
+
+        void heapify(int[] arr, int len, int idx)
+        {
+            var leftNodeIdx = idx * 2 + 1;
+            var rightNodeIdx = idx * 2 + 2;
+            var largest = idx;
+
+            if (leftNodeIdx < len && arr[largest] < arr[leftNodeIdx])
+                largest = leftNodeIdx;
+
+            if (rightNodeIdx < len && arr[largest] < arr[rightNodeIdx])
+                largest = rightNodeIdx;
+
+            if (largest != idx)
+            {
+                swap(arr,largest,idx);
+                heapify(arr,len, largest);
+            }
+        }
+
+        void swap(int[] arr, int l, int r)
+        {
+            (arr[l],arr[r])=(arr[r],arr[l]);
+        }
+    }
+
+    public class MergeSortTest
+    {
+        public static void GO()
+        {
+            MergeSortTest mst = new MergeSortTest();
+            mst.MergeSortIntTest();
+        }
+
+        void MergeSortIntTest()
+        {
+            List<TestListsStructs<int>> arr = new List<TestListsStructs<int>>()
+            {
+                new TestListsStructs<int>(){Arrange = new List<int>(){ 7, 3, 5, 6, 1, 2, 4, 8 } ,Expected = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8 }}
+                ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1 } ,Expected = new List<int>() { 1, 3 }}
+                ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1,4,2 } ,Expected = new List<int>() { 1, 2, 3,4 }}
+                ,new TestListsStructs<int>(){Arrange = new List<int>(){ 3,1,2 } ,Expected = new List<int>() { 1, 2, 3 }}
+
+            };
+
+            MergeSort<int> ms = new MergeSort<int>();
+            foreach (var i in arr)
+            {
+                i.Arrange = ms.Sort(i.Arrange).ToList();
+            }
+
+        }
+    }
+    public class MergeSort<T> where T : struct, IComparable
+    {
+        public IList<T> Sort(IList<T> arr)
+        {
+            IList<T> result = new List<T>(arr.Count);
+            if (arr?.Count == 1)
+            {
+                return arr;
+            }
+            if (arr?.Count > 1)
+            {
+                //result = split(arr, 0, arr.Count-1);
+                result = splitNoConditions(arr, 0, arr.Count - 1);
+            }
+            return result;
+        }
+
+        /* Conditional split  */
+        IList<T> split(IList<T> arr, int idxLw, int idxHg)
+        {
+            IList<T> leftPart = new List<T>();
+            IList<T> rightPart = new List<T>();
+
+            /* Number of elements in array to split or compare */
+            int gap = idxHg - idxLw;
+
+            /* more then 2 elements in arr */
+            if (gap > 1)
+            {
+                int idxNewHg = idxLw + (gap / 2);
+                leftPart = split(arr, idxLw, idxNewHg);
+                rightPart = split(arr, (idxNewHg + 1), idxHg);
+            }
+            /* one element in arr*/
+            if (gap == 0)
+            {
+                return new List<T>() { arr[idxHg] };
+            }
+            /* two elements in arr */
+            if (gap == 1)
+            {
+                if (compare(arr, idxLw, idxHg) > 0)
+                {
+                    return swap(arr, idxLw, idxHg);
+                }
+               
+                    return arr.Skip(idxLw).Take((idxHg - idxLw) + 1).ToList();
+                
+            }
+
+            return sortArr(leftPart, rightPart);
+        }
+
+        /* Less if switches, no swap and sorting down to arrays of 1 element*/
+        IList<T> splitNoConditions(IList<T> arr, int idxLw, int idxHg)
+        {
+            IList<T> result = new List<T>() { };
+            if (idxHg == idxLw)
+            {
+                return arr.Skip(idxLw).Take(1).ToList();
+            }
+            if (idxHg > idxLw)
+            {
+                int p = idxLw + (idxHg - idxLw) / 2;
+                var left = splitNoConditions(arr, idxLw, p);
+                var right = splitNoConditions(arr, p + 1, idxHg);
+
+                result = sortArr(left, right);
+            }
+
+            return result;
+        }
+
+        IList<T> sortArr(IList<T> arrA, IList<T> arrB)
+        {
+            IList<T> result = new List<T>();
+
+            int i = 0, i2 = 0;
+
+            while (i < arrA.Count && i2 < arrB.Count)
+            {
+
+                if (Comparer<T>.Default.Compare(arrA[i], arrB[i2]) >= 0)
+                {
+                    result.Add(arrB[i2]);
+                    i2++;
+                }
+                else if (Comparer<T>.Default.Compare(arrA[i], arrB[i2]) < 0)
                 {
                     result.Add(arrA[i]);
                     i++;
                 }
 
-                while (i2 < arrB.Count)
+            }
+
+            while (i < arrA.Count)
+            {
+                result.Add(arrA[i]);
+                i++;
+            }
+
+            while (i2 < arrB.Count)
+            {
+                result.Add(arrB[i2]);
+                i2++;
+            }
+
+            return result;
+        }
+        int compare(IList<T> arr, int idxLw, int idxHg)
+        {
+            return Comparer<T>.Default.Compare(arr[idxLw], arr[idxHg]);
+        }
+        IList<T> swap(IList<T> arr, int idxLw, int idxHg)
+        {
+            return new List<T>() { arr[idxHg], arr[idxLw] };
+        }
+
+    }
+    public class MergeSort
+    {
+        private static MergeSort instance = new MergeSort();
+
+        public static int[] Sort(int[] arr)
+        {
+            return instance.sort(arr);
+        }
+
+        int[] sort(int[] arr)
+        {
+          return split(arr);
+        }
+
+        public int[] split(int[] arr)
+        {
+            var result = arr;
+
+            if (arr.Length > 2)
+            {
+                var idxLeft = (arr.Length / 2)-1;
+                var idxRight = idxLeft+1;
+                var idxFn = arr.Length - 1;
+                
+                var left = copyTo(arr, 0, idxLeft);
+                var right = copyTo(arr, idxRight, idxFn);
+
+                left = split(left);
+                right = split(right);
+                
+                result = compareConcat(left,right);
+            } else if (arr.Length == 2)
+            {
+                compareNswap(arr,0,1);
+            }
+  
+            return result;
+        }
+
+        void compareNswap(int[] arr,int st,int fn)
+        {
+            if (arr[st] > arr[fn])
+            {
+                (arr[st], arr[fn]) = (arr[fn], arr[st]);
+            }
+        }
+        int[] compareConcat(int[] left,int[] right)
+        {
+            int[] result = new int[(left.Length+right.Length)];
+            int idx = 0;
+            int i = 0, i2 = 0;
+            while (i < left.Length && i2 < right.Length)
+            {
+                if (left[i] <= right[i2])
                 {
-                    result.Add(arrB[i2]);
+                    result[idx] = left[i];
+                    i++;
+                    idx++;
+                }
+
+                if (i < left.Length && right[i2] <= left[i])
+                {
+                    result[idx] = right[i2];
                     i2++;
+                    idx++;
                 }
-
-                return result;
-            }
-            int compare(IList<T> arr, int idxLw, int idxHg)
-            {
-                return Comparer<T>.Default.Compare(arr[idxLw], arr[idxHg]);
-            }
-            IList<T> swap(IList<T> arr, int idxLw, int idxHg)
-            {
-                return new List<T>() { arr[idxHg], arr[idxLw] };
             }
 
+            while (i < left.Length)
+            {
+                result[idx] = left[i];
+                i++;
+                idx++;
+            }
+            while (i2 < right.Length)
+            {
+                result[idx] = right[i2];
+                i2++;
+                idx++;
+            }
+
+            return result;
         }
 
-        public class MergeSortArr
+        int[] copyTo(int[] arr,int st, int fn)
         {
-            public void sort(int[] arr)
+            int[] result = new int[(fn-st)+1];
+            var idx = 0;
+            for (int i = st; i <= fn; i++)
             {
-                Task t;
-            }
-        }
-        
-        public class LinkedListSortTest
-        {
-            public static void GO()
-            {
-                LinkedListSortTest ls = new LinkedListSortTest();
-                ls.ReverseAndPrintCheck();
+                result[idx] = arr[i];
+                idx++;
             }
 
-            void ReverseAndPrintCheck()
-            {
-                var node0 = new Node<int>() { Id = 1, Value = 'a', Previous = null, Next = null };
-                var node1 = new Node<int>() { Id = 2, Value = 'b', Previous = node0, Next = null };
-                var node2 = new Node<int>() { Id = 3, Value = 'c', Previous = node1, Next = null };
-                var node3 = new Node<int>() { Id = 4, Value = 'c', Previous = node2, Next = null };
-                var node4 = new Node<int>() { Id = 5, Value = 'b', Previous = node3, Next = null };
-                var node5 = new Node<int>() { Id = 6, Value = 'a', Previous = node4, Next = null };
-
-                node0.Next = node1;
-                node1.Next = node2;
-                node2.Next = node3;
-                node3.Next = node4;
-                node4.Next = node5;
-
-                List<Node<int>> LkdList = new List<Node<int>>(){
-                    node0,node1,node2,node3,node4,node5
-                };
-
-                LinkedListSort<int> ls = new LinkedListSort<int>();
-
-                ls.PrintLine(LkdList);
-                ls.Reverse(LkdList);
-                ls.PrintLine(LkdList);
-
-
-
-
-                var pn0 = new Node<int>() { Id = 1, Value = 'a', Previous = null, Next = null };
-                var pn1 = new Node<int>() { Id = 2, Value = 'b', Previous = pn0, Next = null };
-                var pn2 = new Node<int>() { Id = 3, Value = 'b', Previous = pn1, Next = null };
-                var pn3 = new Node<int>() { Id = 4, Value = 'b', Previous = pn2, Next = null };
-                var pn4 = new Node<int>() { Id = 5, Value = 'a', Previous = pn3, Next = null };
-
-                pn0.Next = pn1;
-                pn1.Next = pn2;
-                pn2.Next = pn3;
-                pn3.Next = pn4;
-
-                List<Node<int>> LkdListp = new List<Node<int>>(){
-                    pn0,pn1,pn2,pn3,pn4
-                };
-
-
-                bool isPolindrome = ls.PolindromeCheck(LkdListp);
-                ls.PrintLine(LkdListp);
-                ls.Reverse(LkdListp);
-                ls.PrintLine(LkdListp);
-                bool isPolindromeAfter = ls.PolindromeCheck(LkdListp);
-            }
-        }
-        public class Node<T> where T : struct, IComparable
-        {
-            public T Id { get; set; }
-            public char Value { get; set; }
-
-            public Node<T> Previous { get; set; }
-            public Node<T> Next { get; set; }
-        }
-        public class LinkedListSort<T> where T : struct, IComparable
-        {
-
-            public static void GO()
-            {
-
-            }
-
-            public void Sort()
-            {
-
-            }
-
-            public void Reverse(IList<Node<T>> list)
-            {
-                foreach (Node<T> node in list)
-                {
-                    Node<T> prev = node.Previous;
-                    node.Previous = node.Next;
-                    node.Next = prev;
-                }
-            }
-
-            public bool PolindromeCheck(IList<Node<T>> list)
-            {
-                Node<T> st = list.Where(s => s.Previous == null).FirstOrDefault();
-                Node<T> fn = list.Where(s => s.Next == null).FirstOrDefault();
-
-                while (fn != null)
-                {
-                    if (st.Value != fn.Value) { return false; }
-
-                    if (st != fn.Previous && fn != st.Next)
-                    {
-                        st = st.Next;
-                        fn = fn.Previous;
-                    }
-                    else
-                    {
-                        fn = null;
-                    }
-
-                }
-
-                return true;
-            }
-
-            public void Print(IList<Node<T>> list)
-            {
-                foreach (Node<T> node in list)
-                {
-                    Trace.WriteLine($"Node: {node.Id}; In reference: {node.Previous?.Id}-{node.Id}->{node.Next?.Id};");
-                }
-            }
-            public string PrintLine(IList<Node<T>> list)
-            {
-
-                string result = String.Empty;
-                Node<T> item = list.Where(s => s.Previous == null).FirstOrDefault();
-
-                while (item != null)
-                {
-                    result += $"-{item?.Id}-";
-                    item = item.Next;
-                }
-                Trace.WriteLine(result);
-                return result;
-            }
-            public string PrintValue(IList<Node<T>> list)
-            {
-
-                string result = String.Empty;
-                Node<T> item = list.Where(s => s.Previous == null).FirstOrDefault();
-
-                while (item != null)
-                {
-                    result += $"-{item?.Value}-";
-                    item = item.Next;
-                }
-                Trace.WriteLine(result);
-                return result;
-            }
+            return result;
         }
     }
 
+    public class LinkedListSortTest
+    {
+        public static void GO()
+        {
+            LinkedListSortTest ls = new LinkedListSortTest();
+            ls.ReverseAndPrintCheck();
+        }
+
+        void ReverseAndPrintCheck()
+        {
+            var node0 = new Node<int>() { Id = 1, Value = 'a', Previous = null, Next = null };
+            var node1 = new Node<int>() { Id = 2, Value = 'b', Previous = node0, Next = null };
+            var node2 = new Node<int>() { Id = 3, Value = 'c', Previous = node1, Next = null };
+            var node3 = new Node<int>() { Id = 4, Value = 'c', Previous = node2, Next = null };
+            var node4 = new Node<int>() { Id = 5, Value = 'b', Previous = node3, Next = null };
+            var node5 = new Node<int>() { Id = 6, Value = 'a', Previous = node4, Next = null };
+
+            node0.Next = node1;
+            node1.Next = node2;
+            node2.Next = node3;
+            node3.Next = node4;
+            node4.Next = node5;
+
+            List<Node<int>> LkdList = new List<Node<int>>(){
+                node0,node1,node2,node3,node4,node5
+            };
+
+            LinkedListSort<int> ls = new LinkedListSort<int>();
+
+            ls.PrintLine(LkdList);
+            ls.Reverse(LkdList);
+            ls.PrintLine(LkdList);
+
+
+
+
+            var pn0 = new Node<int>() { Id = 1, Value = 'a', Previous = null, Next = null };
+            var pn1 = new Node<int>() { Id = 2, Value = 'b', Previous = pn0, Next = null };
+            var pn2 = new Node<int>() { Id = 3, Value = 'b', Previous = pn1, Next = null };
+            var pn3 = new Node<int>() { Id = 4, Value = 'b', Previous = pn2, Next = null };
+            var pn4 = new Node<int>() { Id = 5, Value = 'a', Previous = pn3, Next = null };
+
+            pn0.Next = pn1;
+            pn1.Next = pn2;
+            pn2.Next = pn3;
+            pn3.Next = pn4;
+
+            List<Node<int>> LkdListp = new List<Node<int>>(){
+                pn0,pn1,pn2,pn3,pn4
+            };
+
+
+            bool isPolindrome = ls.PolindromeCheck(LkdListp);
+            ls.PrintLine(LkdListp);
+            ls.Reverse(LkdListp);
+            ls.PrintLine(LkdListp);
+            bool isPolindromeAfter = ls.PolindromeCheck(LkdListp);
+        }
+    }
+    public class Node<T> where T : struct, IComparable
+    {
+        public T Id { get; set; }
+        public char Value { get; set; }
+
+        public Node<T> Previous { get; set; }
+        public Node<T> Next { get; set; }
+    }
+    public class LinkedListSort<T> where T : struct, IComparable
+    {
+
+        public static void GO()
+        {
+
+        }
+
+        public void Sort()
+        {
+
+        }
+
+        public void Reverse(IList<Node<T>> list)
+        {
+            foreach (Node<T> node in list)
+            {
+                Node<T> prev = node.Previous;
+                node.Previous = node.Next;
+                node.Next = prev;
+            }
+        }
+
+        public bool PolindromeCheck(IList<Node<T>> list)
+        {
+            Node<T> st = list.Where(s => s.Previous == null).FirstOrDefault();
+            Node<T> fn = list.Where(s => s.Next == null).FirstOrDefault();
+
+            while (fn != null)
+            {
+                if (st.Value != fn.Value) { return false; }
+
+                if (st != fn.Previous && fn != st.Next)
+                {
+                    st = st.Next;
+                    fn = fn.Previous;
+                }
+                else
+                {
+                    fn = null;
+                }
+
+            }
+
+            return true;
+        }
+
+        public void Print(IList<Node<T>> list)
+        {
+            foreach (Node<T> node in list)
+            {
+                Trace.WriteLine($"Node: {node.Id}; In reference: {node.Previous?.Id}-{node.Id}->{node.Next?.Id};");
+            }
+        }
+        public string PrintLine(IList<Node<T>> list)
+        {
+
+            string result = String.Empty;
+            Node<T> item = list.Where(s => s.Previous == null).FirstOrDefault();
+
+            while (item != null)
+            {
+                result += $"-{item?.Id}-";
+                item = item.Next;
+            }
+            Trace.WriteLine(result);
+            return result;
+        }
+        public string PrintValue(IList<Node<T>> list)
+        {
+
+            string result = String.Empty;
+            Node<T> item = list.Where(s => s.Previous == null).FirstOrDefault();
+
+            while (item != null)
+            {
+                result += $"-{item?.Value}-";
+                item = item.Next;
+            }
+            Trace.WriteLine(result);
+            return result;
+        }
+    }
+
+
+    public class InterpolationSearchCheck
+    {
+        private static InterpolationSearchCheck inst = new InterpolationSearchCheck();
+
+        public static void GO()
+        {
+            inst.go();
+        }
+
+        void go()
+        {
+            List<int> arr = new () {1,3,4,7,9,13,18,21,22,23,30};
+            InterpolationSearch i = new InterpolationSearch();
+            var idx = i.Search(arr, 22);
+            var b0 = idx == 8;
+
+        }
+    }
+    public class InterpolationSearch
+    {
+        static int idx = 0;
+        public int Search(IList<int> arr, int v)
+        {
+            search(arr, 0, arr.Count - 1, v);
+            return idx;
+        }
+
+        private void search(IList<int> arr, int lo, int hi, int v)
+        {
+            if (lo < 0 || lo >= arr.Count || hi >= arr.Count)
+            {
+                idx = -1;
+                return;
+            }
+            
+            idx  = pos(arr, lo, arr.Count - 1 , v);
+
+            if (idx < 0 || arr[idx] == v)
+                return;
+
+            if (v < arr[idx])
+            {
+                search(arr, lo, idx -1, v);
+            }
+            else if (v > arr[idx])
+            {
+                search(arr, idx+1, hi, v);
+            }
+
+        }
+        private int pos(IList<int> arr, int lo, int hi, int v)
+            => lo + (v - arr[lo]) / (arr[hi] - arr[lo]) * (hi - lo);
+
+    }
+}
+
 namespace Miscellaneous
 {
+
     public class Miscellaneous
     {
-    
+
+        public class Check
+        {
+            private static long iterations = 0;
+            public static void go()
+            {
+                Algorithms.Check.GO();
+                
+                LinqCheck.GO();
+            }
+        }
+
         public class Singletone
         {
             private static Singletone _instance;
@@ -5080,15 +5236,16 @@ namespace Miscellaneous
                 }
             }
 
-
         }
+        
         
         public class MergeList
         {
             private static MergeList i = new MergeList();
-            
+           
             public static void GO()
             {
+                
                 i.go();
             }
 

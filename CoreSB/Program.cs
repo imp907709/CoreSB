@@ -9,10 +9,8 @@ namespace CoreSB
     {
         public static async Task Main(string[] args)
         {
-            Miscellaneous.Miscellaneous.MergeList.GO();
-            
-            LinqCheck.GO();
-
+            Miscellaneous.Miscellaneous.Check.go();
+ 
             CreateHostBuilder(args).Build().Run();
         }
 
