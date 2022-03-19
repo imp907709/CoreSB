@@ -5207,6 +5207,7 @@ namespace Miscellaneous
 
             public static void go()
             {
+               
                 Z.GO();
                 Algorithms.Check.GO();
                 LinqCheck.GO();
@@ -5214,6 +5215,7 @@ namespace Miscellaneous
 
             public static async Task GO_async()
             {
+                await LoadUrlsFromText(@"C:\\files\\test\\youtubeURLs.txt");
                 await Task.Delay(1);
             }
         }
@@ -5449,6 +5451,14 @@ namespace Miscellaneous
         }
 
 
+        public static async Task LoadUrlsFromText(string urlsFilePath)
+        {
+            var urls = await File.ReadAllLinesAsync(urlsFilePath);
+            foreach (var u in urls)
+            {
+                await loadUrlFromYoutubeAsync(u);
+            }
+        }
         private static async Task loadUrlFromYoutubeAsync(string url)
         {
             var destFolder = "C:\\files\\test";

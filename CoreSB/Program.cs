@@ -7,10 +7,9 @@ namespace CoreSB
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public async static Task Main(string[] args)
         {
-            Miscellaneous.Miscellaneous.Check.go();
- 
+            await Miscellaneous.Miscellaneous.Check.GO_async();
             CreateHostBuilder(args).Build().Run();
         }
 

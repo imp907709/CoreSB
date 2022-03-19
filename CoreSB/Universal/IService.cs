@@ -1,8 +1,7 @@
 ﻿
 namespace CoreSB.Universal
 {
-
-
+    
     public interface IService
     {
         IRepository GetRepositoryRead();
@@ -18,6 +17,5 @@ namespace CoreSB.Universal
     {
         public string Message { get; set; }
     }
-
 
 }
