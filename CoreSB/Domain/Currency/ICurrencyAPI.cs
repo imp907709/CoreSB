@@ -34,9 +34,8 @@ namespace CoreSB.Domain.Currency
         public bool IsMain { get; set; }
     }
 
-    public interface ICurrencyUpdateAPI
+    public interface ICurrencyUpdateAPI : ICurrencyAPI
     {
-        public string IsoCode { get; set; }
     }
 
 

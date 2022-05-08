@@ -27,6 +27,8 @@
         public static string MsSQlCoreSBConnection => "MsSQlCoreSBConnection";
         public static string DockerMsSQlCoreSBConnection => "DockerMsSQlCoreSBConnection";
         public static string PgSQlCoreSBConnection => "PgSQlCoreSBConnection";
+        
+        public static string ServiceInited => "Inited";
     }
   
     

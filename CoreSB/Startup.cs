@@ -22,8 +22,7 @@ namespace CoreSB
 {
     public class Startup
     {
-        
-  
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -74,6 +73,8 @@ namespace CoreSB
             }
 
             ConfigureFluentValidation(services);
+
+            ConfigureMainServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -174,6 +175,11 @@ namespace CoreSB
 
             return autofacContainer;
         }
-       
+
+        public void ConfigureMainServices(IServiceCollection services)
+        {
+            services.AddScoped<IRepository, Repository>();
+            services.AddScoped<IService, Service>();
+        }
     }
 }

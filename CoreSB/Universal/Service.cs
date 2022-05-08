@@ -29,7 +29,7 @@ namespace CoreSB.Universal
             _validator = validator;
             _logger = logger;
 
-            _status = new ServiceStatus();
+            _status = new ServiceStatus(){ Message = StartupConfig.Variables.ServiceInited };
 
         }
         public Service(IRepository repositoryWrite, IMapper mapper = null, IValidatorCustom validator = null, ILoggerCustom logger = null)
@@ -56,7 +56,6 @@ namespace CoreSB.Universal
         internal void statusChangeAndLog(IServiceStatus newStatus, string message)
         {
             this._status = newStatus;
-            var rtTp = this._status.GetType();
             this._status.Message = message;
             _logger.Information(this._status.Message);
         }

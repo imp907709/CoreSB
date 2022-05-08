@@ -1,4 +1,5 @@
-﻿using InfrastructureCheckers;
+﻿using System.Threading.Tasks;
+using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -6,9 +7,9 @@ namespace CoreSB
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public async static Task Main(string[] args)
         {
-            RepoAndUOWCheck.GO();
+            //await Miscellaneous.Miscellaneous.Check.GO_async();
             CreateHostBuilder(args).Build().Run();
         }
 
