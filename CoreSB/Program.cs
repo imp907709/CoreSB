@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using KATAS;
 using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
@@ -7,9 +8,9 @@ namespace CoreSB
 {
     public class Program
     {
-        public async static Task Main(string[] args)
+        static void Main(string[] args)
         {
-            //await Miscellaneous.Miscellaneous.Check.GO_async();
+            //Miscellaneous.InsertionSortInt.GO();
             CreateHostBuilder(args).Build().Run();
         }
 
