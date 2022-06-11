@@ -13,8 +13,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using AngleSharp.Common;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
@@ -217,7 +219,34 @@ namespace NetPlatformCheckers
             var t4 = (dn1 * dn2).ToString();
             var t5 = (dn1 / dn2).ToString();
         }
+        
+    }
+    
+    public static class ExtensionsDIY
+    {
+        public static void GO()
+        {
+            IEnumerable<int> listUT = new List<int>(){1,2,3};
+            var listAdded = listUT.ForEachCustom(s=> s + 1);
+        }
+        public static IEnumerable<T> ForEachCustom<T>(this IEnumerable<T> items, 
+            Func<T,T> exp)
+        {
+            var cnt = items.Count();
+            if (cnt <= 0)
+                return items;
 
+            IEnumerable<T> result = new List<T>();
+            
+            for (int i = 0; i < cnt; i++)
+            {
+                var item = items.GetItemByIndex(i);
+                var res = exp.Invoke(item);
+                result = result.Append(res);
+            }
+
+            return result;
+        }
     }
 
     /* strings concatenation check */
@@ -291,7 +320,7 @@ namespace NetPlatformCheckers
         }
     }
 
-    /* String and object ==, equals, referenceequals check */
+    /* String and object ==, equals, reference equals check */
     public static class StringObjectEquality
     {
         public static void GO()
@@ -329,6 +358,7 @@ namespace NetPlatformCheckers
                          && (ob1 == dr) && (dr == d0) && (d0 == d1);
             var isFalse = (st2 == obr) && (ob0 == ob2) && (ob2 == dr) && (dr == d2);
 
+            //true, equals by val
             var eqB = st0.Equals(st3);
             var eqObb = obr.Equals(ob2);
 
@@ -507,7 +537,7 @@ namespace NetPlatformCheckers
     }
 
 
-    //Ienumerable Ienumerator 
+    //IEnumerable IEnumerator 
     public class Person
     {
         public string Name;
@@ -568,7 +598,7 @@ namespace NetPlatformCheckers
     }
 
 
-    /*PatternMatching check */
+    /* PatternMatching check */
 
     /*--------------------------------------------- */
     public static class PatternMatching
@@ -618,7 +648,7 @@ namespace NetPlatformCheckers
         }
     }
 
-    /*Abstract class initialization check */
+    /* Abstract class initialization check */
 
     /*--------------------------------------------- */
     public abstract class ABS
@@ -3202,14 +3232,6 @@ namespace LINQtoObjectsCheck
             var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
             var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
 
-            var sm20 = items1.SelectMany(s => s.properties, (l, r) =>
-              new
-              {
-                  nl = l.Name,
-                  na = l.Amount,
-                  rp = r.Name
-              });
-
             var sm0 = items1.SelectMany(s
                 => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtl = l.Amount }).ToList();
             var sm1 = items2.SelectMany(s
@@ -3239,6 +3261,24 @@ namespace LINQtoObjectsCheck
                     lp = l.prop,
                     r = r?.amtr
                 });
+            
+            //left join
+            var leftGroupJoin = props1.GroupJoin(
+                    props2,
+                    lk => lk.Name,
+                    rk => rk.Name,
+                    (l, r) => new {l.Id, l.Name, r})
+                //critical
+                .SelectMany(p => p?.r?.DefaultIfEmpty(),
+                    (l, r) => new {l.Id, l.Name, rName = r?.Name ?? string.Empty })
+                .ToList();
+            
+            //not any
+            var propsNotExist = props1.Where(c => !props2.Any(x => x.Name == c.Name))
+                .ToList();
+            //not all
+            var propsNotExistAll = props1.Where(c => props2.All(x => x.Name != c.Name))
+                .ToList();
 
             //0 4
             var intersect = propsCol2.Intersect(propsCol1).ToList();
@@ -3872,8 +3912,6 @@ namespace TipsAndTricks
 
 namespace KATAS
 {
-    //custom linq
-
 
     public class TNine
     {
@@ -5568,24 +5606,36 @@ namespace KATAS
 
     public class HTTPserializeSave
     {
+        //get
+        //https://catfact.ninja/facts
+        //https://api.worldremit.com/api/countries
+        // https://catfact.ninja/fact
+        // https://api.coindesk.com/v1/bpi/currentprice.json
+        // https://api.nationalize.io/?name=lilu
+        // https://datausa.io/api/data?drilldowns=Nation&measures=Population
+        
+        //C:\files\test
+
+        public class FactItem
+        {
+            public string Fact { get; set; }
+            public int Length { get; set; }
+        }
+        
+        public class DataPaging<T>
+        {
+            public IEnumerable<T> Data { get; set; }
+        }
+
         public class Country
         {
             public string id { get; set; }
             public string name { get; set; }
         }
 
-        public static async Task<IEnumerable<Country>> GO()
+        public static async Task GO()
         {
-            var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync("https://api.worldremit.com/api/countries");
-            var content = await response.Content.ReadAsStringAsync();
-
-            var countries = JsonSerializer.Deserialize<IEnumerable<Country>>(content);
-            var filtered = countries.Where(s => s.name != "Austria").OrderBy(s => s.name);
-            var str = JsonSerializer.Serialize(filtered);
-
-            await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\countries.json", str);
-            return filtered;
+            
         }
 
         public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
@@ -5601,7 +5651,8 @@ namespace KATAS
                     )
                 )
             );
-            return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient().GetAsync("")?.Result.Content.ReadAsStringAsync());
+            return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient()
+                .GetAsync("")?.Result.Content.ReadAsStringAsync());
         }
 
     }
@@ -5868,7 +5919,8 @@ namespace KATAS
             arr[r] = x;
         }
 
-
+        
+        
     }
 
 }

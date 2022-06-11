@@ -8,9 +8,15 @@ namespace CoreSB
 {
     public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            KATAS.BracketsChecker.GO();
+            //await KATAS.HTTPserializeSave.GO();
+            //NetPlatformCheckers.ExtensionsDIY.GO();
+            //NetPlatformCheckers.StringObjectEquality.GO();
+            //LINQtoObjectsCheck.LinqCheck.GO();
             //Miscellaneous.InsertionSortInt.GO();
+            await Task.Delay(1);
             CreateHostBuilder(args).Build().Run();
         }
 
