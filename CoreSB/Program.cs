@@ -9,6 +9,7 @@ namespace CoreSB
     {
         static async Task Main(string[] args)
         {
+            Overall.Algorithms.SortingTests.GO();
             await Task.Delay(1);
             CreateHostBuilder(args).Build().Run();
         }

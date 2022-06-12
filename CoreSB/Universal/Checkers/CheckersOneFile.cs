@@ -25,6 +25,7 @@ using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Extensions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -4977,14 +4978,18 @@ namespace Overall
     public class Algorithms
     {
         
-        /*Collection for testing value collections */
+        /* Collection for testing value collections */
         public class TestListsStructs<T> where T : struct, IComparable
         {
+            //test list
             public List<T> Arrange { get; set; }
+            //expected sorted list
             public List<T> Expected { get; set; }
-
+            //sorting method SUT
             public string MethodName { get; set; }
+            //sorting time 
             public long Elapsed { get; set; }
+            //checks sequence equality of arrange and expected
             public bool result
             {
                 get
@@ -4995,7 +5000,7 @@ namespace Overall
                 private set { value = false; }
             }
         }
-        /*Collection for testing class collections */
+        /* Collection for testing class collections */
         public class TestListsClasses<T> where T : class, IComparable
         {
             public List<T> Arrange { get; set; }
@@ -5011,29 +5016,100 @@ namespace Overall
             }
         }
 
+        
+        // Delegate for sorting method
+        public delegate IList<T> SortingDelegate<T>(IList<T> arr);
+
         public class AlgorithmTest<T>
             where T : struct, IComparable
         {
-            public AlgorithmTest(List<TestListsStructs<T>> testArr, SortingDelegate m)
-            {
-                this.TestLists = new List<TestListsStructs<T>>();
 
-                foreach (var item in testArr)
-                {
-                    this.TestLists.Add(new TestListsStructs<T>()
-                    { Arrange = item?.Arrange?.Select(c => c).ToList(), Expected = item?.Expected?.Select(c => c).ToList() }
-                    );
-                }
-                this.SortingMethod = m;
-                this.MethodName = $"{m.Method.DeclaringType.Name} {m.Method.Name}";
+            private Stat stat = new Stat();
+            
+            public AlgorithmTest(List<List<T>> testArr, List<SortingDelegate<T>> methods)
+            {
+                BindItems(testArr, methods);
             }
 
-            public List<TestListsStructs<T>> TestLists { get; set; }
+            // Lists under test
+            public List<TestListsStructs<T>> Results { get; set; }
+            // Property for sorting method
+            public IEnumerable<SortingDelegate<T>> MethodsUT { get; set; }
+            // Lists under test
+            public List<List<T>> CollectionsUT { get; set; }
 
-            public delegate IList<T> SortingDelegate(IList<T> arr);
-            public SortingDelegate SortingMethod { get; set; }
-            public string MethodName { get; set; }
+            
+            public void RunTests()
+            {
+                Results = new List<TestListsStructs<T>>();
 
+                foreach (var m in MethodsUT)
+                {
+                    foreach (var t in CollectionsUT)
+                    {
+                        var item = new TestListsStructs<T>();
+
+                        item.MethodName = m.Method.Name;
+                        item.Arrange = t.OrderBy(s=>s).ToList();
+                        
+                        var watch = Stopwatch.StartNew();
+                        //test run
+                            item.Expected = m.Invoke(item.Arrange).ToList();
+                        watch.Stop();
+                        
+                        item.Elapsed = watch.ElapsedMilliseconds;
+
+                        Results.Add(item);
+                        stat.ToStat($"{m.GetMethodInfo().DeclaringType} {m.Method.Name }: {item.Arrange.Count} : {item.Elapsed} : {item.result}");
+                        
+                    }
+                }
+                
+                stat.Export();
+            }
+
+            public void BindItems(
+                List<List<T>> lists,
+                IEnumerable<SortingDelegate<T>> methods)
+            {
+                if (lists?.Any() == true)
+                    CollectionsUT = lists;
+                
+                if (methods?.Any() == true)
+                    this.MethodsUT = methods;
+            }
+
+
+        
+        }
+
+        public class Stat
+        {
+            private ExportType export = ExportType.File;
+            private StringBuilder sb = new StringBuilder();
+
+            public void ToStat(string input)
+            {
+                sb.AppendSafeWithNewLine(input);
+            }
+
+            public void Export()
+            {
+                var output = sb.ToString();
+                if (export == ExportType.Console)
+                    Trace.WriteLine(output);
+
+                if (export == ExportType.File)
+                {
+                    File.WriteAllText(@"C:\files\test\algRes.txt",output);
+                }
+            }
+
+            enum ExportType
+            {
+                Console,
+                File
+            }
         }
 
         /// <summary>
@@ -5042,16 +5118,31 @@ namespace Overall
         /// </summary>
         public class SortingTests
         {
-            List<AlgorithmTest<int>> test;
+            AlgorithmTest<int> test;
             Random rnd = new Random();
 
             public static void GO()
             {
                 SortingTests st = new SortingTests();
-                st.insertionSortTest();
+                st.SortingTestsArrangeAndRun();
             }
+            
+            /// <summary>
+            /// Create collections of ints bettwen ranges
+            /// </summary>
+            List<int> getLongCollection(int count, int maxRandomGap)
+            {
+                List<int> longList = new List<int>(count);
+                for (int i = 0; i < count; i++)
+                {
+                    longList.Add(rnd.Next(0, maxRandomGap));
 
-            List<TestListsStructs<int>> createGeneratedIntCollection()
+                }
+                return longList;
+            }
+            
+            //generated collection
+            List<List<int>> createGeneratedIntCollection()
             {
 
                 List<int> longList = new List<int>(10000);
@@ -5060,10 +5151,8 @@ namespace Overall
                     longList.Add(rnd.Next(0, 10000));
 
                 }
-                List<int> longListSorted = longList.Select(s => s).ToList();
-                longListSorted.Sort();
-
-                return new List<TestListsStructs<int>>()
+      
+                return new List<List<int>>()
                 {
                     getLongCollection(100,100)
                     , getLongCollection(10000,10000)
@@ -5071,15 +5160,15 @@ namespace Overall
                     , getLongCollection(100000,100000)
                 };
             }
-
-            List<TestListsStructs<int>> createManualIntCollection()
+            
+            //manual collection tests
+            List<List<int>> createManualIntCollection()
             {
-
-                return new List<TestListsStructs<int>>(){
-                    new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2,1,3,1,2}, Expected = new List<int>(){1,1,1,2,2,3,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){1,3,3,2,1}, Expected = new List<int>{1,1,2,3,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){3,1,2}, Expected = new List<int>{1,2,3}},
-                    new TestListsStructs<int>(){Arrange = new List<int>(){15,25,3,9,34,8,18,6,16}, Expected = new List<int>() {3,6,8,9,15,16,18,25,34}}
+                return new List<List<int>>(){
+                    new List<int>(){3,1,2,1,3,1,2},
+                    new List<int>{1,1,2,3,3},
+                    new List<int>{1,2,3},
+                    new List<int>(){15,25,3,9,34,8,18,6,16}
                     , getLongCollection(100,100)
                     , getLongCollection(500,500)
                     , getLongCollection(1000,1000)
@@ -5087,50 +5176,35 @@ namespace Overall
                     , getLongCollection(30000,30000)
                 };
             }
-
-            TestListsStructs<int> getLongCollection(int count, int maxRandomGap)
-            {
-                List<int> longList = new List<int>(count);
-                for (int i = 0; i < count; i++)
-                {
-                    longList.Add(rnd.Next(0, maxRandomGap));
-
-                }
-                List<int> longListSorted = longList.Select(s => s).ToList();
-                longListSorted.Sort();
-                return new TestListsStructs<int>() { Arrange = longList, Expected = longListSorted };
-            }
-            void insertionSortTest()
+            
+            
+            
+            void SortingTestsArrangeAndRun()
             {
                 InsertionSort<int> insertionSort = new InsertionSort<int>();
                 QuickSort<int> quickSort = new QuickSort<int>();
                 HeapSort<int> heapSort = new HeapSort<int>();
                 MergeSort<int> mergeSort = new MergeSort<int>();
+                MergeSortInt mergeSortInt = new MergeSortInt();
+                HeapSortInt heapSortInt = new HeapSortInt();
 
-                List<TestListsStructs<int>> lists = createManualIntCollection(); //createIntCollection();
-
-                test = new List<AlgorithmTest<int>>()
+                var  lists = createManualIntCollection(); //createIntCollection();
+                //var  lists = createGeneratedIntCollection();
+                var methods = new List<SortingDelegate<int>>()
                 {
-                    new AlgorithmTest<int>(lists,quickSort.Sort),
-                    new AlgorithmTest<int>(lists,insertionSort.Sort),
-                    new AlgorithmTest<int>(lists,mergeSort.Sort),
-                    new AlgorithmTest<int>(lists,heapSort.Sort),
+                    // insertionSort.Sort,
+                    // quickSort.Sort,
+                  
+                    mergeSort.Sort,
+                    mergeSortInt.Sort,
+                    
+                    heapSort.Sort,
+                    heapSortInt.Sort
+                    
                 };
-
-                foreach (var t in test)
-                {
-                    foreach (var array in t.TestLists)
-                    {
-                        var watch = Stopwatch.StartNew();
-                        array.MethodName = t.MethodName;
-                        array.Arrange = t.SortingMethod(array.Arrange).ToList();
-                        watch.Stop();
-                        array.Elapsed = watch.ElapsedMilliseconds;
-
-                        Trace.WriteLine($"{array.MethodName}: {array.Arrange.Count} : {array.Elapsed} : {array.result}");
-                    }
-
-                }
+                var alg = new AlgorithmTest<int>(lists, methods);
+                
+                alg.RunTests();
             }
 
             void sampleIntCheck()
@@ -5397,14 +5471,16 @@ namespace Overall
         public class HeapSortInt
         {
 
-            public void Sort(List<int> arr)
+            public IList<int> Sort(IList<int> arr)
             {
                 int lastNotLeafNode = arr.Count / 2 - 1;
 
                 for (int i = lastNotLeafNode; i >= 0; i--)
                 {
-                    CheckChildsAndSwap(arr, i);
+                    CheckChildsAndSwap(arr.ToList(), i);
                 }
+
+                return arr;
             }
             void CheckChildsAndSwap(List<int> arr, int i)
             {
@@ -5664,43 +5740,6 @@ namespace Overall
                 return result;
             }
 
-            /* Conditional split  */
-            IList<T> split(IList<T> arr, int idxLw, int idxHg)
-            {
-                IList<T> leftPart = new List<T>();
-                IList<T> rightPart = new List<T>();
-
-                /* Number of elements in array to split or compare */
-                int gap = idxHg - idxLw;
-
-                /* more then 2 elements in arr */
-                if (gap > 1)
-                {
-                    int idxNewHg = idxLw + (gap / 2);
-                    leftPart = split(arr, idxLw, idxNewHg);
-                    rightPart = split(arr, (idxNewHg + 1), idxHg);
-                }
-                /* one element in arr*/
-                if (gap == 0)
-                {
-                    return new List<T>() { arr[idxHg] };
-                }
-                /* two elements in arr */
-                if (gap == 1)
-                {
-                    if (compare(arr, idxLw, idxHg) > 0)
-                    {
-                        return swap(arr, idxLw, idxHg);
-                    }
-                    else
-                    {
-                        return arr.Skip(idxLw).Take((idxHg - idxLw) + 1).ToList();
-                    }
-                }
-
-                return sortArr(leftPart, rightPart);
-            }
-
             /* Less if switches, no swap and sorting down to arrays of 1 element*/
             IList<T> splitNoConditions(IList<T> arr, int idxLw, int idxHg)
             {
@@ -5757,17 +5796,72 @@ namespace Overall
 
                 return result;
             }
-            int compare(IList<T> arr, int idxLw, int idxHg)
+
+        }
+        
+        public class MergeSortInt
+        {
+
+            public IList<int> Sort(IList<int> arr)
             {
-                return Comparer<T>.Default.Compare(arr[idxLw], arr[idxHg]);
+                return split(arr, 0, arr.Count);
             }
-            IList<T> swap(IList<T> arr, int idxLw, int idxHg)
+
+            public IList<int> split(IList<int> arr, int lwIdx, int hgIdx)
             {
-                return new List<T>() { arr[idxHg], arr[idxLw] };
+                if (hgIdx == lwIdx)
+                {
+                    arr = arr.Skip(lwIdx).Take(1).ToList();;
+                } 
+                if (hgIdx > lwIdx)
+                {
+                    var middle = (hgIdx-lwIdx)/2;
+                    
+                    var left = split(arr, lwIdx, (lwIdx+middle));
+                    var right = split(arr, (lwIdx+middle) + 1 , hgIdx);
+                    arr = merge(left, right);
+                }
+                return arr;
+            }
+
+            private IList<int> merge(IList<int> l, IList<int> r)
+            {
+                var result = new List<int>(l.Count() + r.Count());
+                int i = 0;
+                int i2 = 0;
+
+                while (i < l.Count() && i2 < r.Count())
+                {
+                    if (i < l.Count() && i2 < r.Count()
+                                      && l.GetItemByIndex(i) <= r.GetItemByIndex(i2))
+                    {
+                        result.Add(l.GetItemByIndex(i));
+                        i++;
+                    }
+                    if (i < l.Count() && i2 < r.Count()
+                                      && l.GetItemByIndex(i) > r.GetItemByIndex(i2))
+                    {
+                        result.Add(r.GetItemByIndex(i2));
+                        i2++;
+                    }
+                }
+
+                while (i < l.Count())
+                {
+                    result.Add(l.GetItemByIndex(i));
+                    i++;
+                }
+
+                while (i2 < r.Count())
+                {
+                    result.Add(r.GetItemByIndex(i2));
+                    i2++;
+                }
+
+                return result;
             }
 
         }
-
 
 
         public class LinkedListSortTest
