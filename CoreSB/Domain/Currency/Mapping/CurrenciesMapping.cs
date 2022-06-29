@@ -23,14 +23,14 @@ namespace CoreSB.Domain.Currency.Mapping
                    .ForMember(d => d.Name, m => m.MapFrom(src => src.Name))
                    .ReverseMap().ForAllOtherMembers(o => o.Ignore());
 
-                cfg.CreateMap<ICurrencyRateAdd, CurrencyRatesDAL>()
+                cfg.CreateMap<ICurrencyRateAddAPI, CurrencyRatesDAL>()
                     .ForMember(d => d.Date, m => m.MapFrom(src => src.Date))
                     .ForMember(d => d.Rate, m => m.MapFrom(src => src.Value))
                     .ReverseMap().ForAllOtherMembers(o => o.Ignore());
 
 
 
-                cfg.CreateMap<CurrencyRatesDAL, ICurrencyRateAdd>()
+                cfg.CreateMap<CurrencyRatesDAL, ICurrencyRateAddAPI>()
                     .ForMember(d => d.Date, m => m.MapFrom(src => src.Date))
                     .ForMember(d => d.Value, m => m.MapFrom(src => src.Rate))
                     .ForMember(d => d.FromCurrency, m => m.MapFrom(src => src.CurrencyFrom.IsoCode))

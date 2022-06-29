@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,14 +18,22 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp.Common;
+using AutoFixture;
+using CoreSB;
 using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
+using CoreSB.Universal.Framework;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Extensions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -59,6 +68,28 @@ namespace coreSB
 
 
     }
+
+    public static class ImportExport
+    {
+        public static string defaultPath => "C:\\files\\test";
+        
+        public static async Task<string> GetAsync(string url)
+        {
+            return await new HttpClient().GetAsync(url).Result.Content.ReadAsStringAsync();
+        }
+
+        public static async Task ParseExport<T>(List<T> items, string path)
+        {
+            var str = JsonSerializer.Serialize(items);
+            await File.WriteAllTextAsync(path, str);
+        }
+
+        public static async Task<T> Import<T>(string path)
+        {
+            var str = await File.ReadAllTextAsync(path);
+            return JsonSerializer.Deserialize<T>(str, new JsonSerializerOptions() {PropertyNameCaseInsensitive = true});
+        }
+    }
 }
 
 namespace InfrastructureCheckers
@@ -71,38 +102,124 @@ namespace InfrastructureCheckers
         public static string PgSQlCoreSBConnection =>  "Host=localhost;Port=5433;Database=coreSB;Username=postgres;Password=postgres";
     }
 
-    public static class RepoAndUOWCheck
+    public class HostBuilder
     {
+        public static IHost Build()
+        {
+            var host = Host.CreateDefaultBuilder().ConfigureWebHostDefaults(builder =>
+            {
+                builder.ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    var env = hostingContext.HostingEnvironment;
+                    env.ContentRootPath = Directory.GetCurrentDirectory();
+                    env.EnvironmentName = "Development";
+                });
+
+                builder.UseStartup<Startup>();
+            }).Build();
+            
+            return host;
+        }
+    }
+    
+    public class SQLrepositoriesCheck
+    {
+        private SQLrepositoriesCheck _nested;
+        
         static string connectionStringSQL = ConnectionStrings.MsSQlCoreSBConnection;
         static string connectionStringSQLnewOrder = ConnectionStrings.MsSQlCoreSBConnection;
-        public static void GO()
+        
+        static IConfiguration conf { get; set; }
+        static ConnectionStringsOption cso;
+
+        static SQLrepositoriesCheck()
         {
-            DbWithRepoReinitCheck();
+            var host = HostBuilder.Build();
+            conf = host.Services.GetService<IConfiguration>();
+            cso = new ConnectionStringsOption();
+            conf.GetSection(cso.ConnectionStrings).Bind(cso);
+        }
+        
+        public static async Task GO()
+        {
+            await DbWithRepoReinitCheck();
         }
 
-        public static void DbWithRepoReinitCheck()
+        public static async Task DbWithRepoReinitCheck()
         {
+            Fixture _f = new Fixture();
+            _f.Behaviors.Remove(new ThrowingRecursionBehavior());
+            _f.Behaviors.Add(new OmitOnRecursionBehavior());
 
             using (CurrencyContextWrite context = new CurrencyContextWrite(
                 new DbContextOptionsBuilder<CurrencyContextWrite>()
-                    .UseSqlServer(connectionStringSQL).Options))
+                    .UseSqlServer(cso.DockerMsSQlCoreSBConnection).Options))
             {
                 RepositoryEF repo = new RepositoryEF(context);
 
-                List<CurrencyRatesDAL> currencies = repo.QueryByFilter<CurrencyRatesDAL>(s => s.Id != 0).ToList();
-                repo.DeleteRange(currencies);
-                repo.Save();
+                repo.ReInitialize();
+                
+                List<CurrencyDAL> items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
+                if (items?.Any() == true)
+                {
+                    repo.DeleteRange(items);
+                    await repo.SaveAsync();
+                }
+
+        
+                var rates = _f.CreateMany<CurrencyDAL>(10).ToList();
+                foreach (var r in rates)
+                {
+                    r.CurRatesFrom = null;
+                    r.CurRatesTo = null;
+                    r.Id = 0;
+                }
+                await repo.AddRangeAsync(rates);
+                await repo.SaveAsync();
+                
+                items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
+
+                if (items?.Any() == true)
+                {
+                    repo.DeleteRange(items);
+                    await repo.SaveAsync();
+                }
 
                 repo.ReInitialize();
             }
 
-            using (ContextNewOrder newOrderContext = new ContextNewOrder(new DbContextOptionsBuilder<ContextNewOrder>().UseSqlServer(connectionStringSQLnewOrder).Options))
+            using (ContextNewOrder newOrderContext = 
+                new ContextNewOrder(new DbContextOptionsBuilder<ContextNewOrder>()
+                    .UseSqlServer(cso.DockerMsSQlNewOrderConnection).Options))
             {
                 RepositoryEF repo = new RepositoryEF(newOrderContext);
 
-                var addresses = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
-                repo.DeleteRange(addresses);
-                repo.Save();
+                repo.ReInitialize();
+                
+                var items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
+                if (items?.Any() == true)
+                {
+                    repo.DeleteRange(items);
+                    repo.Save();
+                }
+
+                items = _f.CreateMany<AddressDAL>(10).ToList();
+                foreach (var i in items)
+                {
+                    i.Id = 0;
+                }
+
+                await repo.AddRangeAsync(items);
+                await repo.SaveAsync();    
+                
+                items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
+
+                if (items?.Any() == true)
+                {
+                    repo.DeleteRange(items);
+                    repo.Save();
+                }
+
 
                 NewOrderServiceEF service = new NewOrderServiceEF(repo);
                 service.ReInitialize();
@@ -648,6 +765,29 @@ namespace NetPlatformCheckers
                 _ => "default"
             };
         }
+
+        //Extended property pattern
+        public static void MatchParam(ParentParameter input)
+        {
+            var a = input switch
+            {
+                {param.Name : "Name1"} => input.param.Id * 1,
+                {param.Name : "Name3"} => input.param.Id *3,
+                _ => input.param.Id * 2
+            };
+            
+        }
+    }
+
+    public class ParentParameter
+    {
+        public NestedParameter param { get; set; }
+    }
+
+    public class NestedParameter
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 
     /* Abstract class initialization check */
@@ -1439,7 +1579,7 @@ namespace NetPlatformCheckers
 
     /*events*/
     /*--------------------------------------------- */
-    /*event argument classes */
+    /* event argument classes */
     public class SpeedChangedEventArgs : EventArgs { public float speed { get; set; } }
     public class EngineBrokeEventArgs : EventArgs { public bool broken { get; set; } }
 
@@ -1527,7 +1667,7 @@ namespace NetPlatformCheckers
 
 
 
-    /*event emitter class */
+    /* event emitter class */
     public class Car
     {
 
@@ -2798,15 +2938,28 @@ namespace LINQtoObjectsCheck
         public int Id { get; set; }
         public string Name { get; set; }
         public int Amount { get; set; }
+        
+        public TimeSpan? Duration { get; set; }
+        
 
         public List<Property1> properties { get; set; }
 
         public List<int> Items1Ids { get; set; }
     }
 
+    public record struct r(string name, int id);
+
+    public struct st
+    {
+        public string name { get; set; }
+        public int id { get; set; }
+    }
+    
+    
     public class LinqCheck
     {
-
+      
+        
         public static List<Racer> racers = new List<Racer>();
         public static List<Cup> cups = new List<Cup>();
 
@@ -2814,6 +2967,25 @@ namespace LINQtoObjectsCheck
 
         public static void GO()
         {
+            r r0 = new ("a", 1);
+            r r1 = new ("a", 1);
+
+            var rer = r0 == r1;
+            r1 = new ("st2",2);
+            var r3 = r0 with {name = "b"};
+            var r4 = r3 with {name = "c", id = 2};
+            var r5 = r3 with {name = "d", id = 5};
+
+            st st0 = new st() {name = "a", id = 1};
+            st st1 = new st() {name = "a", id = 1};
+
+            var st2 = st0 with {name = "b", id = 3};
+            
+            var ses = st0.Equals(st1);
+            st0.id = 2;
+
+            string intStr = "123";
+
 
             Trace.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}.{MethodBase.GetCurrentMethod().Name}----------");
 
@@ -3234,36 +3406,12 @@ namespace LINQtoObjectsCheck
             var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
             var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
 
+            
             var sm0 = items1.SelectMany(s
                 => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtl = l.Amount }).ToList();
             var sm1 = items2.SelectMany(s
                 => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtr = l.Amount }).ToList();
 
-            var joinSm = sm0.GroupJoin(sm1,
-                l => new { l.item, l.prop },
-                r => new { r.item, r.prop },
-                (l, r) => new
-                {
-                    li = l.item,
-                    lp = l.prop,
-                    r = r.DefaultIfEmpty()
-                }).SelectMany(s => s.r, (l, r) => new
-                {
-                    li = l.li,
-                    lp = l.lp,
-                    amt = r?.amtr
-                }).ToList();
-
-            var jnGp = sm0.Join(sm1,
-                l => new { l.item, l.prop },
-                r => new { r.item, r.prop },
-                (l, r) => new
-                {
-                    li = l.item,
-                    lp = l.prop,
-                    r = r?.amtr
-                });
-            
             //left join
             var leftGroupJoin = props1.GroupJoin(
                     props2,
@@ -3981,15 +4129,12 @@ namespace Overall
             Array.Sort(sorted);
 
             Array.Copy(unsorted, arrTosort, unsorted.Length);
-            InsertionSort(arrTosort);
             var b0 = arrTosort.SequenceEqual(sorted);
 
             Array.Copy(unsorted, arrTosort, unsorted.Length);
-            ShellSort(arrTosort);
             var b1 = arrTosort.SequenceEqual(sorted);
 
             Array.Copy(unsorted, arrTosort, unsorted.Length);
-            HeapSort(arrTosort);
             var b2 = arrTosort.SequenceEqual(sorted);
 
             var hs = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes("string"));
@@ -4729,66 +4874,8 @@ namespace Overall
                 }
                 return result;
             }
-
-
-
-        }
-
-
-        public class HTTPserializeSave
-        {
-            //get
-            //https://catfact.ninja/facts
-            //https://api.worldremit.com/api/countries
-            // https://catfact.ninja/fact
-            // https://api.coindesk.com/v1/bpi/currentprice.json
-            // https://api.nationalize.io/?name=lilu
-            // https://datausa.io/api/data?drilldowns=Nation&measures=Population
             
-            //C:\files\test
-
-            public class FactItem
-            {
-                public string Fact { get; set; }
-                public int Length { get; set; }
-            }
-            
-            public class DataPaging<T>
-            {
-                public IEnumerable<T> Data { get; set; }
-            }
-
-            public class Country
-            {
-                public string id { get; set; }
-                public string name { get; set; }
-            }
-
-            public static async Task GO()
-            {
-                
-            }
-
-            public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
-            {
-                await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
-                    JsonSerializer.Serialize(
-                        JsonSerializer.Deserialize<IEnumerable<T>>(
-                            await new HttpClient()
-                            .GetAsync("https://api.worldremit.com/api/countries")?
-                            .Result
-                            .Content
-                            .ReadAsStringAsync()
-                        )
-                    )
-                );
-                return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient()
-                    .GetAsync("")?.Result.Content.ReadAsStringAsync());
-            }
-
-        }
-
-        public class BracketsChecker
+               public class BracketsChecker
         {
             public static void GO()
             {
@@ -4907,72 +4994,269 @@ namespace Overall
 
         }
 
-        public static void InsertionSort(int[] arr)
+        public class DelimeterChecker
         {
-            for (int i = 1; i < arr.Length; i++)
-            {
-                var x = arr[i];
-                var j = i - 1;
-                while (j >= 0 && arr[j] > x)
-                {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-                arr[j + 1] = x;
-            }
-        }
 
-        public static void ShellSort(int[] arr)
-        {
-            for (var n = arr.Length / 2; n > 0; n /= 2)
+            public static void GO()
             {
-                for (var i = n; i < arr.Length; i++)
+                var nums = new List<int>()
                 {
-                    var x = arr[i];
-                    int j;
-                    for (j = i; j >= n && arr[j - n] > x; j -= n)
+                    Convert.ToInt32("01000000", 2),
+                    Convert.ToInt32("010", 2),
+                    Convert.ToInt32("0100100010", 2),
+                    Convert.ToInt32("010010001", 2),
+                    Convert.ToInt32("01001", 2),
+                };
+
+                var results = new List<int>();
+                foreach (var n in nums)
+                {
+                    results.Add(Count(n));
+                }
+            }
+            public static int Count(int i)
+            {
+                var binary = Convert.ToString(i, 2);
+
+                int max = 0;
+                int cnt = 0;
+                foreach (var b in binary)
+                {
+                    if (b == '0')
                     {
-                        arr[j] = arr[j - n];
+                        cnt++;
                     }
-                    arr[j] = x;
+
+                    if (b != '0' && cnt > max)
+                    {
+                        max = cnt;
+                        cnt = 0;
+                    }
+                }
+                
+                // if (max == 0)
+                //     max = cnt;
+
+                return max;
+            }
+        }
+
+        public class FurryRoad
+        {
+
+            public static void GO()
+            {
+                var sut = new FurryRoad();
+                var roads = new List<string>() {"ASAASS", "ASAA",  "SSA", "SSSSAAA"};
+
+                var results = new List<int>();
+
+                foreach (var road in roads)
+                {
+                    var result = sut.solution(road);
+                    results.Add(result);
                 }
             }
-        }
-
-        public static void HeapSort(int[] arr)
-        {
-            for (int i = arr.Length / 2 - 1; i >= 0; i--)
+            
+            public int solution(string R)
             {
-                heapify(arr, i, arr.Length);
+                var result = 0;
+                var res = 0;
+                var sRes = 0;
+                var fRes = 0;
+
+                var time = 0;
+                if (string.IsNullOrEmpty(R))
+                    return 0;
+
+                var Acnt = R.Count(s => s == 'A');
+                var Scnt = R.Count(s => s == 'S');
+
+                var idx = 0;
+                
+                var fr = footRes(R.ToList());
+                var sr = scooterRes(R.ToList());
+
+                if (fr < sr)
+                    return fr;
+
+             
+                for (int i = 0; i < R.Length; i++)
+                {
+
+                    if (R[i] == 'A')
+                    {
+                        res += 5;
+                    }
+                    else
+                    {
+                        var stayed = R.Skip(i).Take(R.Length -(i));
+                        
+                        sr = scooterRes(stayed.ToList());
+                        fr = footRes(stayed.ToList());
+
+                        if (fr < sr)
+                        {
+                            res += fr;
+                            break;
+                        }
+                        else
+                        {
+                            res += 40;
+                        }
+                    }
+                   
+                }
+
+                return res;
             }
 
-            for (int i = arr.Length - 1; i >= 0; i--)
+            int scooterRes(List<char> list)
             {
-                swap(arr, 0, i);
-                heapify(arr, 0, i);
+                var Ascnt = list.Count(s => s == 'A');
+                var Sscnt = list.Count(s => s == 'S');
+                return ((Ascnt * 5) + (Sscnt * 40));
             }
-        }
-        public static void heapify(int[] arr, int n, int len)
-        {
-            var l = n * 2 + 1;
-            var r = n * 2 + 2;
-            var lg = n;
-
-            if (l < len && arr[l] > arr[lg]) { lg = l; }
-            if (r < len && arr[r] > arr[lg]) { lg = r; }
-            if (lg != n)
+            int footRes(List<char> list)
             {
-                swap(arr, lg, n);
-                heapify(arr, lg, len);
+                var Ascnt = list.Count(s => s == 'A');
+                var Sscnt = list.Count(s => s == 'S');
+                return ((Ascnt * 20) + (Sscnt * 30));
             }
-        }
-        public static void swap(int[] arr, int l, int r)
-        {
-            var x = arr[l];
-            arr[l] = arr[r];
-            arr[r] = x;
         }
         
+        public class RotateArray
+        {
+            internal class Suts
+            {
+                 public int[] arrays { get; set; }
+                 public int rotate { get; set; }
+            }
+            
+            public static void GO()
+            {
+                var sut = new RotateArray();
+                var results = new List<int[]>();
+                
+                var arrays = new List<Suts>()
+                {
+                    new Suts() { arrays = new List<int>().ToArray(), rotate = 7},
+                    new Suts() { arrays = new int[]{1,2,3}, rotate = 7},
+                    new Suts() { arrays = new int[]{1,2,3,4,5,6}, rotate = 2},
+                    new Suts() { arrays = new int[]{1,2,3,4,5,6}, rotate = 3},
+                    new Suts() { arrays = new int[]{1,2,3,4,5,6,7,8,9}, rotate = 3}
+                };
+
+                foreach (var a in arrays)
+                {
+                    var r = sut.Rotate(a.arrays, a.rotate);
+                    results.Add(r);
+                }
+            }
+            public int[] Rotate(int[] A, int K)
+            {
+                if (K == A.Length || A.Length <=0)
+                    return A;
+
+                if (K > A.Length)
+                    K = (  K % A.Length);
+                
+                var result = new int[A.Length];
+
+                for (int i = A.Length-1; i > (A.Length-1) - K; i--)
+                {
+                    result[(i+1)-(A.Length-(K-1))] = A[i];
+                }
+
+                for (int i = 0; i < A.Length - K; i++)
+                {
+                    result[i+K] = A[i];
+                }
+
+                return result;
+            }
+            
+        }
+        
+        public class ReadWrite
+        {
+
+            public static async Task GO()
+            {
+                var _fixture = new Fixture();
+                var item = new ReadWrite();
+                var path = "C:\\files\\test\\fs.txt";
+                
+                if(File.Exists(path))
+                    File.Delete(path);
+                
+                var str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+                Random rnd = new Random();
+
+                int len = 15;
+                int offset = 3;
+
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i <= len; i++)
+                {
+                    sb.Append(str[rnd.Next(0, str.Length)]);
+                }
+
+                var inf = sb.ToString();
+                
+                var bt = Encoding.UTF8.GetBytes(inf);
+
+                for (int i = 0; i < len; i += offset)
+                {
+                    await item.Write(path, bt, i, offset);
+                }
+            }
+            public async Task Write(string path, byte[] arr, int offset, int count)
+            {
+                using FileStream fs = File.OpenWrite(path);
+                
+                await fs.WriteAsync(arr,offset,count);
+            }
+            
+            
+        }
+        }
+
+
+        public class HTTPserializeSave
+        {
+
+            // get
+            // https://catfact.ninja/facts
+            // https://api.worldremit.com/api/countries
+            // https://catfact.ninja/fact
+            // https://api.coindesk.com/v1/bpi/currentprice.json
+            // https://api.nationalize.io/?name=lilu
+            // https://datausa.io/api/data?drilldowns=Nation&measures=Population
+
+            //C:\files\test
+
+            public static async Task<IEnumerable<T>> HttpReqSaveSinglelineSyntax<T>()
+            {
+                await File.WriteAllTextAsync($"{Directory.GetCurrentDirectory()}\\slExp.json",
+                    JsonSerializer.Serialize(
+                        JsonSerializer.Deserialize<IEnumerable<T>>(
+                            await new HttpClient()
+                            .GetAsync("https://api.worldremit.com/api/countries")?
+                            .Result
+                            .Content
+                            .ReadAsStringAsync()
+                        )
+                    )
+                );
+                return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient()
+                    .GetAsync("")?.Result.Content.ReadAsStringAsync());
+            }
+
+        }
+
+     
     }
 
     public class Algorithms
@@ -5826,19 +6110,18 @@ namespace Overall
 
             private IList<int> merge(IList<int> l, IList<int> r)
             {
-                var result = new List<int>(l.Count() + r.Count());
-                int i = 0;
-                int i2 = 0;
+                var result = new List<int>(l.Count + r.Count);
+                int i = 0, i2 = 0;
 
-                while (i < l.Count() && i2 < r.Count())
+                while (i < l.Count && i2 < r.Count)
                 {
-                    if (i < l.Count() && i2 < r.Count()
+                    if (i < l.Count && i2 < r.Count
                                       && l.GetItemByIndex(i) <= r.GetItemByIndex(i2))
                     {
                         result.Add(l.GetItemByIndex(i));
                         i++;
                     }
-                    if (i < l.Count() && i2 < r.Count()
+                    if (i < l.Count && i2 < r.Count
                                       && l.GetItemByIndex(i) > r.GetItemByIndex(i2))
                     {
                         result.Add(r.GetItemByIndex(i2));
@@ -5846,13 +6129,13 @@ namespace Overall
                     }
                 }
 
-                while (i < l.Count())
+                while (i < l.Count)
                 {
                     result.Add(l.GetItemByIndex(i));
                     i++;
                 }
 
-                while (i2 < r.Count())
+                while (i2 < r.Count)
                 {
                     result.Add(r.GetItemByIndex(i2));
                     i2++;

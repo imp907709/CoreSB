@@ -7,7 +7,8 @@ using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
-using CoreSB.Universal.Infrastructure.IoC;
+using CoreSB.Universal.Registrations;
+using CoreSB.Universal.Registrations.IoC;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -35,10 +36,8 @@ namespace CoreSB
         {
 
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CoreSB", Version = "v1" });
-            });
+            
+            services.RegisterSwagger();
             
             /*SignalR registration*/
             services.AddSignalR();
@@ -60,21 +59,9 @@ namespace CoreSB
             
             AutofacConfig.ConfigureAutofac(services);
 
-            //If config is SQL scope
-            if (Configuration.GetSection("RegistrationSettings").Get<RegistrationSettings>().ContextType ==
-                ContextType.SQL)
-            {
-                //MS SQL conenciton exist
-                if (!string.IsNullOrEmpty(Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>()
-                    .MsSQlCoreSBConnection))
-                {
-                    ConfigureAutofacDbContexts(services, AutofacConfig.GetContainer());
-                }
-            }
+            Configurations.RegisterSQL(services, Configuration);
 
-            ConfigureFluentValidation(services);
-
-            ConfigureMainServices(services);
+            RegistrationsIoC.ConfigureMainServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -107,79 +94,6 @@ namespace CoreSB
         public void ConfigureFluentValidation(IServiceCollection services)
         {
             services.AddMvc().AddFluentValidation();
-        }
-        
-         /* Db context registration with sql server for connection strings from appsettings.json */
-        public ContainerBuilder ConfigureAutofacDbContexts(IServiceCollection services, ContainerBuilder autofacContainer)
-        {
-
-            /*
-            * Registering multiple IRepository clones with different connections trings
-            * For multiple SQL DBs in one project
-            */
-            var connection = Configuration.GetSection(Variables.ConnectionStrings)
-                .Get<ConnectionStrings>()
-                .MsSQlCoreSBConnection;
-            if (!string.IsNullOrEmpty(connection))
-            {
-                autofacContainer.RegisterType<RepositoryNewOrderRead>()
-                    .WithParameter(Variables.context,
-                        new ContextNewOrderRead(new DbContextOptionsBuilder<ContextNewOrderRead>()
-                            .UseSqlServer(Configuration.GetConnectionString(Variables.MsSQlCoreSBConnection)).Options))
-                    .As<IRepositoryEFRead>().AsSelf()
-                    .InstancePerLifetimeScope();
-            }
-            
-            ////--------
-          
-            autofacContainer.RegisterType<RepositoryNewOrderWrite>()
-            .WithParameter(Variables.context,
-                new ContextNewOrderWrite(new DbContextOptionsBuilder<ContextNewOrderWrite>()
-                .UseSqlServer(Configuration.GetConnectionString(Variables.MsSQlCoreSBConnection)).Options))
-            .As<IRepositoryEFWrite>().AsSelf()
-            .InstancePerLifetimeScope();
-            
-            autofacContainer.RegisterType<RepositoryCurrencyRead>()
-            .WithParameter(Variables.context,
-                new CurrencyContextRead(new DbContextOptionsBuilder<CurrencyContextRead>()
-                .UseSqlServer(Configuration.GetConnectionString(Variables.MsSQlCoreSBConnection)).Options))
-            .As<IRepositoryEFRead>().AsSelf()
-            .InstancePerLifetimeScope();
-            autofacContainer.RegisterType<RepositoryCurrencyWrite>()
-            .WithParameter(Variables.context,
-                new CurrencyContextWrite(new DbContextOptionsBuilder<CurrencyContextWrite>()
-                .UseSqlServer(Configuration.GetConnectionString(Variables.MsSQlCoreSBConnection)).Options))
-            .As<IRepositoryEFWrite>().AsSelf()
-            .InstancePerLifetimeScope();
-
-            autofacContainer.Register(ctx => new NewOrderServiceEF(
-                ctx.Resolve<RepositoryNewOrderRead>(),
-                ctx.Resolve<RepositoryNewOrderWrite>(),
-                ctx.Resolve<IMapper>(),
-                ctx.Resolve<IValidatorCustom>()
-                ))
-            .As<INewOrderServiceEF>()
-            .AsSelf()
-            .InstancePerLifetimeScope();
-
-            autofacContainer.Register(ctx => new CurrencyServiceEF(
-                ctx.Resolve<RepositoryCurrencyRead>(),
-                ctx.Resolve<RepositoryCurrencyWrite>(),
-                ctx.Resolve<IMapper>(),
-                ctx.Resolve<IValidatorCustom>(),
-                ctx.Resolve<ILoggerCustom>()
-                ))
-            .As<ICurrencyServiceEF>()
-            .AsSelf()
-            .InstancePerLifetimeScope();
-
-            return autofacContainer;
-        }
-
-        public void ConfigureMainServices(IServiceCollection services)
-        {
-            services.AddScoped<IRepository, Repository>();
-            services.AddScoped<IService, Service>();
         }
     }
 }

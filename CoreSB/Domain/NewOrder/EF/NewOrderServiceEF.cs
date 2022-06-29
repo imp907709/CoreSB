@@ -40,12 +40,18 @@ namespace CoreSB.Domain.NewOrder.EF
         {
             _repositoryWrite = repositoryWrite;
         }
+
         public void ReInitialize()
         {
 
             _repositoryWrite.ReInitialize();
-            _repositoryRead.ReInitialize();
+            _repositoryRead?.ReInitialize();
+        }
+        
+        public void ReGenerate()
+        {
 
+            _repositoryWrite.ReInitialize();
             List<AddressDAL> addresses = new List<AddressDAL>();
 
             for (int i = 0; i < 10; i++)

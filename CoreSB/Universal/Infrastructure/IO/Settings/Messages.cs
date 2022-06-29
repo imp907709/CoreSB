@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using CoreSB.Universal;
 
 
 namespace CoreSB.Infrastructure.IO.Settings
@@ -49,30 +50,37 @@ namespace CoreSB.Infrastructure.IO.Settings
     /// </summary>
     public class MessagesInitialization
     {
-        public static MessagesInitialization _this;
-        static JSONNewtonsoft serialization = new JSONNewtonsoft();
+        public static MessagesInitialization _messages;
+        static ISerialization _serializer;
         public static _variables Variables = new _variables();
+        
         string path = $"{Directory.GetCurrentDirectory()}\\variables.json";
-        public static void Init()
+   
+        MessagesInitialization(ISerialization serializer)
         {
-            _this = new MessagesInitialization();
+            _serializer = serializer;
         }
-        public MessagesInitialization()
-        {
 
+        public void Init()
+        {
+            _messages = new MessagesInitialization(_serializer);
+        }
+        
+        void NestedInit()
+        {
             if (File.Exists(path))
             {
                 string text = File.ReadAllText(path);
-                Variables = serialization.DeSerialize<_variables>(text);
+                Variables = _serializer.DeSerialize<_variables>(text);
             }
             else
             {
-                init();
-                File.WriteAllText($"{Directory.GetCurrentDirectory()}\\variables.json", serialization.Serialize(Variables));
+                VariablesInit();
+                File.WriteAllText($"{Directory.GetCurrentDirectory()}\\variables.json", _serializer.Serialize(Variables));
             }
         }
 
-        void init()
+        void VariablesInit()
         {
             Variables.Messages.SrviceMessages.TestMessage = @"inited test message";
             Variables.Messages.SrviceMessages.ServiceIsNull = @"service is null";

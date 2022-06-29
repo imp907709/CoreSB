@@ -24,7 +24,7 @@ namespace CoreSB.Domain.Currency.Validation
     }
 
     public class AddCurrencyRateValidation
-       : AbstractValidator<ICurrencyRateAdd>
+       : AbstractValidator<ICurrencyRateAddAPI>
     {
         public AddCurrencyRateValidation()
         {

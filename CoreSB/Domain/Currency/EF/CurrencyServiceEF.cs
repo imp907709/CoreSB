@@ -115,9 +115,9 @@ namespace CoreSB.Domain.Currency.EF
         }
 
 
-        public async Task<ICurrencyRateAdd> AddCurrencyRateQuerry(ICurrencyRateAdd query)
+        public async Task<ICurrencyRateAddAPI> AddCurrencyRateQuerry(ICurrencyRateAddAPI query)
         {
-            ICurrencyRateAdd result = null;
+            ICurrencyRateAddAPI result = null;
 
             var isValid = _validator.isValid(query);
             if (!isValid)
@@ -146,7 +146,7 @@ namespace CoreSB.Domain.Currency.EF
                 return null;
             }
 
-            var crossRateToAdd = _mapper.Map<ICurrencyRateAdd, CurrencyRatesDAL>(query);
+            var crossRateToAdd = _mapper.Map<ICurrencyRateAddAPI, CurrencyRatesDAL>(query);
             crossRateToAdd.CurrencyFromId = currencyFrom.Id;
             crossRateToAdd.CurrencyToId = currencyTo.Id;
 
@@ -160,7 +160,7 @@ namespace CoreSB.Domain.Currency.EF
             await _repositoryWrite.AddAsync<CurrencyRatesDAL>(crossRateToAdd);
             await _repositoryWrite.SaveAsync();
 
-            result = _mapper.Map<CurrencyRatesDAL, ICurrencyRateAdd>(crossRateToAdd);
+            result = _mapper.Map<CurrencyRatesDAL, ICurrencyRateAddAPI>(crossRateToAdd);
 
             return result;
         }

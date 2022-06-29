@@ -4,7 +4,7 @@ using System;
 
 namespace CoreSB.Domain.Currency
 {
-    public interface ICurrencyRateAdd
+    public interface ICurrencyRateAddAPI
     {
         public string FromCurrency { get; set; }
         public string ToCurrency { get; set; }

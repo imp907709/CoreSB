@@ -3,7 +3,7 @@
 namespace CoreSB.Domain.Currency
 {
 
-    public class CurrencyRateAdd : ICurrencyRateAdd
+    public class CurrencyRateAdd : ICurrencyRateAddAPI
     {
         public string FromCurrency { get; set; }
         public string ToCurrency { get; set; }
