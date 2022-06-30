@@ -142,7 +142,13 @@ namespace CoreSB.Universal.Infrastructure.EF
                 this.SaveIdentity(p.Name);
             }
         }
-
+        
+        
+        public async Task<int> QueryRaw(string sqlRaw)
+        {
+              return await this._context.Database.ExecuteSqlRawAsync(sqlRaw);
+        }
+        
         /*Provides identity column manual insert while testing */
         public void SaveIdentity(string tableFullName)
         {

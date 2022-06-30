@@ -14,6 +14,7 @@ namespace CoreSB.Universal.Infrastructure.EF
 {
     public interface IRepositoryEF : IRepository
     {
+        Task<int> QueryRaw(string sqlRaw);
         void SaveIdentity(string command);
         void SaveIdentity<T>() where T : class;
 

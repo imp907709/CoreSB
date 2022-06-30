@@ -1,4 +1,12 @@
 ﻿
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
 namespace CoreSB.Universal
 {
     using AutoMapper;
@@ -42,8 +50,42 @@ namespace CoreSB.Universal
             _status = new ServiceStatus();
         }
 
+        public async Task<int> AddOne<T>(T item)
+            where T: EntityIntIdDAL
+        {
+            _repositoryWrite.Add(item);
+            await _repositoryWrite.SaveAsync();
 
+            return item.Id;
+        }
+        
+        public async Task<T> GetById<T>(int id)
+            where T: EntityIntIdDAL
+        {
+            return await _repositoryRead.QueryByFilter<T>(s=>s.Id == id).FirstOrDefaultAsync();
+        }
+        
+        public IQueryable<T> Filter<T>(Expression<Func<T,bool>> filter)
+            where T: EntityIntIdDAL
+        {
+            return _repositoryRead.QueryByFilter(filter);
+        }
 
+        public async Task Delete<T>(int id)
+            where T: EntityIntIdDAL
+        {
+            var item = await GetById<T>(id);
+            _repositoryWrite.Delete(item);
+        }
+        
+        public async Task Delete<T>(ICollection<int> ids)
+            where T: EntityIntIdDAL
+        {
+            var items = await Filter<T>(s=>ids.Contains(s.Id)).ToListAsync();
+            _repositoryWrite.DeleteRange(items);
+        }
+        
+        
         public IRepository GetRepositoryRead()
         {
             return this._repositoryRead;
