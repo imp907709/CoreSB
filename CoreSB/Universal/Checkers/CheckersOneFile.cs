@@ -275,7 +275,7 @@ namespace InfrastructureCheckers
             var dbs = await client.ListDatabases().ToListAsync();
             var db = client.GetDatabase(mcso.DatabaseName);
 
-            var collection = db.GetCollection<CoreSBEntityDAL>("CoreSB");
+            var collection = db.GetCollection<CoreSBEntityDAL>(mcso.CollectionName);
 
             var items = _f.CreateMany<CoreSBEntityDAL>(10);
             await collection.InsertManyAsync(items);
