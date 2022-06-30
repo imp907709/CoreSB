@@ -270,8 +270,7 @@ namespace InfrastructureCheckers
 
         private static async Task MongoInit()
         {
-            //var client = new MongoClient(mcso.ConnectionString);
-            var client = new MongoClient("mongodb://admin:mongoadmin@localhost:27017");
+            var client = new MongoClient(mcso.ConnectionString);
             
             var dbs = await client.ListDatabases().ToListAsync();
             var db = client.GetDatabase(mcso.DatabaseName);
@@ -282,8 +281,18 @@ namespace InfrastructureCheckers
             await collection.InsertManyAsync(items);
 
             var exist = await collection.Find(s => s.Id != null).ToListAsync();
-            await collection.DeleteManyAsync(s => exist.Exists(c => c.Id == s.Id));
+
+            var filterDef = new FilterDefinitionBuilder<CoreSBEntityDAL>();
+            var filter = filterDef.In(s => s.Id, exist.Select(s => s.Id));
             
+            var filterConcat = Builders<CoreSBEntityDAL>.Filter.And(
+                filter,
+                Builders<CoreSBEntityDAL>.Filter.In(s => s.Id, exist.Select(s => s.Id))
+            );
+            
+            //filterConcat || filter
+            await collection.DeleteManyAsync(filterConcat);
+
         }
     }
 
