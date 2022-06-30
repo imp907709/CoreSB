@@ -21,6 +21,9 @@ dotnet add package Microsoft.EntityFrameworkCore.Analyzers
 dotnet add package Microsoft.EntityFrameworkCore.InMemory 
 dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore 
 dotnet add package Serilog.AspNetCore
+dotnet add package MongoDB.Bson --version 2.16.1
+dotnet add package MongoDB.Driver --version 2.16.1
+dotnet add package MongoDB.Driver.Core --version 2.16.1
 
 dotnet add package xunit 
 dotnet add package xunit.runner.visualstudio

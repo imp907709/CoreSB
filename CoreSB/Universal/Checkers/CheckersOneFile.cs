@@ -24,6 +24,7 @@ using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
+using CoreSB.Universal;
 using CoreSB.Universal.Framework;
 using CoreSB.Universal.Infrastructure.Bus;
 using CoreSB.Universal.Infrastructure.EF;
@@ -34,9 +35,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Extensions;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Driver.Core;
 
 namespace coreSB
 {
@@ -125,19 +130,28 @@ namespace InfrastructureCheckers
     public class SQLrepositoriesCheck
     {
         private SQLrepositoriesCheck _nested;
-        
-        static string connectionStringSQL = ConnectionStrings.MsSQlCoreSBConnection;
-        static string connectionStringSQLnewOrder = ConnectionStrings.MsSQlCoreSBConnection;
-        
-        static IConfiguration conf { get; set; }
-        static ConnectionStringsOption cso;
 
+        static IConfiguration conf { get; set; }
+        
+        static ConnectionStringsOption cso;
+        private static MongoConnectionStringOption mcso;
+        
+        static Fixture _f = new Fixture();
+        
         static SQLrepositoriesCheck()
         {
             var host = HostBuilder.Build();
             conf = host.Services.GetService<IConfiguration>();
+            
+            //SQL connection strings
             cso = new ConnectionStringsOption();
-            conf.GetSection(cso.ConnectionStrings).Bind(cso);
+            conf.GetSection(cso.ConfigString).Bind(cso);
+
+            mcso = new MongoConnectionStringOption();
+            conf.GetSection(mcso.ConfigString).Bind(mcso);
+            
+            _f.Behaviors.Remove(new ThrowingRecursionBehavior());
+            _f.Behaviors.Add(new OmitOnRecursionBehavior());
         }
         
         public static async Task GO()
@@ -147,84 +161,129 @@ namespace InfrastructureCheckers
 
         public static async Task DbWithRepoReinitCheck()
         {
-            Fixture _f = new Fixture();
-            _f.Behaviors.Remove(new ThrowingRecursionBehavior());
-            _f.Behaviors.Add(new OmitOnRecursionBehavior());
-
+            
             using (CurrencyContextWrite context = new CurrencyContextWrite(
                 new DbContextOptionsBuilder<CurrencyContextWrite>()
                     .UseSqlServer(cso.DockerMsSQlCoreSBConnection).Options))
             {
-                RepositoryEF repo = new RepositoryEF(context);
-
-                repo.ReInitialize();
-                
-                List<CurrencyDAL> items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
-                if (items?.Any() == true)
-                {
-                    repo.DeleteRange(items);
-                    await repo.SaveAsync();
-                }
-
-        
-                var rates = _f.CreateMany<CurrencyDAL>(10).ToList();
-                foreach (var r in rates)
-                {
-                    r.CurRatesFrom = null;
-                    r.CurRatesTo = null;
-                    r.Id = 0;
-                }
-                await repo.AddRangeAsync(rates);
-                await repo.SaveAsync();
-                
-                items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
-
-                if (items?.Any() == true)
-                {
-                    repo.DeleteRange(items);
-                    await repo.SaveAsync();
-                }
-
-                repo.ReInitialize();
+                await CurrencyRegenerate(context);
             }
 
+            using (CurrencyContextWrite context = new CurrencyContextWrite(
+                new DbContextOptionsBuilder<CurrencyContextWrite>()
+                    .UseNpgsql(cso.DockerPgSQlCoreSBConnection,
+                        options => options.UseAdminDatabase("postgres")).Options))
+            {
+                await CurrencyRegenerate(context);
+            }
+            
+            
+            
             using (ContextNewOrder newOrderContext = 
                 new ContextNewOrder(new DbContextOptionsBuilder<ContextNewOrder>()
                     .UseSqlServer(cso.DockerMsSQlNewOrderConnection).Options))
             {
-                RepositoryEF repo = new RepositoryEF(newOrderContext);
-
-                repo.ReInitialize();
-                
-                var items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
-                if (items?.Any() == true)
-                {
-                    repo.DeleteRange(items);
-                    repo.Save();
-                }
-
-                items = _f.CreateMany<AddressDAL>(10).ToList();
-                foreach (var i in items)
-                {
-                    i.Id = 0;
-                }
-
-                await repo.AddRangeAsync(items);
-                await repo.SaveAsync();    
-                
-                items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
-
-                if (items?.Any() == true)
-                {
-                    repo.DeleteRange(items);
-                    repo.Save();
-                }
-
-
-                NewOrderServiceEF service = new NewOrderServiceEF(repo);
-                service.ReInitialize();
+                await NewOrderRegenerate(newOrderContext);
+            }
+            
+            using (ContextNewOrder newOrderContext = 
+                new ContextNewOrder(new DbContextOptionsBuilder<ContextNewOrder>()
+                    .UseNpgsql(cso.DockerPgSQlNewOrderConnection, 
+                        options => options.UseAdminDatabase("postgres")).Options))
+            {
+                await NewOrderRegenerate(newOrderContext);
             }
 
+            await MongoInit();
+        }
+        
+        private static async Task CurrencyRegenerate(DbContext context)
+        {
+            RepositoryEF repo = new RepositoryEF(context);
+
+            var conn = repo.GetConnectionString();
+            repo.ReInitialize();
+            
+            List<CurrencyDAL> items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
+            if (items?.Any() == true)
+            {
+                repo.DeleteRange(items);
+                await repo.SaveAsync();
+            }
+
+    
+            var rates = _f.CreateMany<CurrencyDAL>(10).ToList();
+            foreach (var r in rates)
+            {
+                r.CurRatesFrom = null;
+                r.CurRatesTo = null;
+                r.Id = 0;
+            }
+            await repo.AddRangeAsync(rates);
+            await repo.SaveAsync();
+            
+            items = repo.QueryByFilter<CurrencyDAL>(s => s.Id != 0).ToList();
+
+            if (items?.Any() == true)
+            {
+                repo.DeleteRange(items);
+                await repo.SaveAsync();
+            }
+
+            repo.ReInitialize();
+        }
+
+        private static async Task NewOrderRegenerate(DbContext context)
+        {
+            RepositoryEF repo = new RepositoryEF(context);
+            var conn = repo.GetConnectionString();
+            repo.ReInitialize();
+            
+            var items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
+            if (items?.Any() == true)
+            {
+                repo.DeleteRange(items);
+                repo.Save();
+            }
+
+            items = _f.CreateMany<AddressDAL>(10).ToList();
+            foreach (var i in items)
+            {
+                i.Id = 0;
+            }
+
+            await repo.AddRangeAsync(items);
+            await repo.SaveAsync();    
+            
+            items = repo.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
+
+            if (items?.Any() == true)
+            {
+                repo.DeleteRange(items);
+                repo.Save();
+            }
+
+
+            NewOrderServiceEF service = new NewOrderServiceEF(repo);
+            service.ReInitialize();
+        }
+
+        private static async Task MongoInit()
+        {
+            //var client = new MongoClient(mcso.ConnectionString);
+            var client = new MongoClient("mongodb://admin:mongoadmin@localhost:27017");
+            
+            var dbs = await client.ListDatabases().ToListAsync();
+            var db = client.GetDatabase(mcso.DatabaseName);
+
+            var collection = db.GetCollection<CoreSBEntityDAL>("CoreSB");
+
+            var items = _f.CreateMany<CoreSBEntityDAL>(10);
+            await collection.InsertManyAsync(items);
+
+            var exist = await collection.Find(s => s.Id != null).ToListAsync();
+            await collection.DeleteManyAsync(s => exist.Exists(c => c.Id == s.Id));
+            
         }
     }
 

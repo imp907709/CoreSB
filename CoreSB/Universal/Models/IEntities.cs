@@ -2,6 +2,10 @@
 /// <summary>
 /// Interfaces for generic IRepository entities
 /// </summary>
+
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace CoreSB.Universal
 {
     using System;
@@ -26,6 +30,15 @@ namespace CoreSB.Universal
     {
         DateTime DateFrom { get; set; }
         DateTime DateTo { get; set; }
+    }
+    
+    
+    
+    public interface IMongoDAL
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        string? Id { get; set; }
     }
 
 }

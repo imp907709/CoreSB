@@ -31,4 +31,9 @@ namespace CoreSB.Universal
         public DateTime DateFrom { get; set; }
         public DateTime DateTo { get; set; }
     }
+
+    public class CoreSBEntityDAL : IMongoDAL
+    {
+        public string? Id { get; set; }
+    }
 }
