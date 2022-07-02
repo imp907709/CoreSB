@@ -5289,6 +5289,310 @@ namespace Overall
             
             
         }
+
+        public class HackerRank
+        {
+            public static void GO()
+            {
+                var _f = new Fixture();
+                var words = _f.CreateMany<string>(5).ToList();
+                
+                var words0 = new List<string> {"a","aa","aab","aac","aacd"};
+                var words1 = new List<string> {"aab", "defgab", "abcde", /**/"aabcde", "bbbbbbbbbb", "jabjjjad"};
+                var words2 = new List<string> {"aab", "aac", /**/"aacghgh", "aabghgh"};
+                var words3 = new List<string> {"aab", "aac", "aaghgh" ,/**/"aac"};
+                var words4 = new List<string> {"abe","de","abc","abcde","def"};
+                var words5 = new List<string> {"abe","deq","abcde","abc","def"};
+
+                Trie trie = new Trie();
+
+                TireSecond tireSecond = new TireSecond();
+
+                var result = "";
+                var res = false;
+                foreach (var w in words5)
+                {
+                    if (tireSecond.SearchAndAdd(w) && !res)
+                    {
+                        res = true;
+                        result = w;
+                        break;
+                    }
+                }
+                
+                if(!res)
+                    Console.WriteLine("GOOD SET");
+                
+                if (res)
+                    Console.WriteLine("BAD SET" + "\r\n" + result);
+                
+                foreach (var w in words)
+                {
+                    var index = trie.Traverse(w);
+                    if (!index.OK)
+                    {
+                        trie._nodes = trie.Build(index.NodeIndex.Index, w, index.NodeIndex.Nodes).ToList();
+                    }
+                    var newIdx = trie.Traverse(w);
+                }
+               
+                
+                NoPrefix(words3);
+            }
+
+            public static void NoPrefix(List<string> words)
+            {
+                var items = words;
+
+                bool toContinue = true;
+                bool isBad = false;
+             
+
+                if (items.Count == 1)
+                {
+                    toContinue = false;
+                    Console.WriteLine("GOOD SET");
+                }
+
+                if (items?.Any()!=true)
+                {
+                    toContinue = false;
+                    Console.WriteLine("BAD SET");
+                }
+                var i = 0;
+                var j = i+1;
+                
+                while (toContinue && j<items.Count())
+                {
+                    i = 0;
+                    //new input
+                    while (i < j && toContinue)
+                    {
+     
+                        var contains = true;
+                        var len = items[i].Length > items[j].Length ? items[j].Length : items[i].Length;
+
+                        //compare i j exclude i 
+                        for (var c = 0; c < len; c++)
+                        {
+                            if (items[j][c] != items[i][c])
+                            {
+                                contains = false;
+                            }
+
+                            c += 1;
+                        }
+
+                        if (contains)
+                        {
+                            var longestBadItem = items[i].Length > items[j].Length ? items[i] : items[j];
+                            Console.WriteLine("BAD SET" + "\r\n" + items[j]);
+                            toContinue = false;
+                            isBad = true;
+                            break;
+                        }
+
+                        i += 1;
+                    }
+
+                    j += 1;
+                }
+
+                if(!isBad)
+                    Console.WriteLine("GOOD SET");
+            }
+            
+        }
+        
+        
+        
+        //tire treee first version
+
+        public class TrieNode
+        {
+            public TrieNode(char ch)
+            {
+                CH = ch;
+            }
+            public char CH { get; set; }
+
+            public List<TrieNode> Childs { get; set; } = new List<TrieNode>();
+        }
+        
+        public class Result
+        {
+            public bool OK { get; set; }
+            
+            public NodeIndex NodeIndex { get; set; }
+        }
+        public class NodeIndex
+        {
+            public int Index { get; set; }
+            public IEnumerable<TrieNode> Nodes { get; set; }
+        }
+        public class Trie
+        {
+            public List<TrieNode> _nodes { get; set; } = new List<TrieNode>();
+            
+            public TrieNode AddParent(IEnumerable<TrieNode> nodes, char ch)
+            {
+                var result = new TrieNode(ch);
+                nodes.ToList().Add(result);
+                return result;
+            }
+            
+            public TrieNode AddChild(TrieNode node, char ch)
+            {
+                var result = new TrieNode(ch);
+                node.Childs.Add(result);
+                return result;
+            }
+
+            public IEnumerable<TrieNode> GetParents(IEnumerable<TrieNode> nodes, char ch)
+            {
+                return nodes.Where(s => s.CH == ch);
+            }
+            public IEnumerable<TrieNode> GetByChilds(IEnumerable<TrieNode> nodes, char ch)
+            {
+                return nodes.Where(s => s.Childs.Any(c=>c.CH == ch));
+            }
+            public IEnumerable<TrieNode> GetChilds(IEnumerable<TrieNode> nodes, char ch)
+            {
+                return nodes.SelectMany(p=>p.Childs)
+                    .Where(s => s.CH== ch);
+            }
+            
+            public IEnumerable<TrieNode> TraverseAndBuild(string str)
+            {
+                IEnumerable<TrieNode> nds = _nodes;
+                if (string.IsNullOrEmpty(str))
+                    return null;
+
+                var parent = GetParents(_nodes, str[0]);
+                if (parent?.Any() != true)
+                {
+                    AddParent(_nodes,str[0]);
+                }
+                
+                if (str.Length == 1)
+                    return parent;
+
+                nds = parent;
+                int i = 1;
+                while (i < str.Length)
+                {
+                    var ch = str[i];
+                    var childs = GetByChilds(nds, ch);
+                    
+                    //build
+                    if (childs?.Any() != true)
+                    {
+                        nds = Build(i, str, nds);
+                        break;
+                    }
+
+                    nds = childs;
+                    i++;
+                }
+
+                return nds;
+            }
+
+            public Result Traverse(string str)
+            {
+                IEnumerable<TrieNode> nds = _nodes;
+                if (string.IsNullOrEmpty(str))
+                    return null;
+
+                var parent = GetParents(_nodes, str[0]);
+                if (parent?.Any() != true)
+                {
+                    return new Result() {OK = false, NodeIndex = new NodeIndex() {Index = 0, Nodes = _nodes}};
+                }
+                
+                for (int i = 1; i < str.Length; i++)
+                {
+                    var ch = str[i];
+                    nds = parent.SelectMany(p => p.Childs);
+                    if (nds?.Any() != true)
+                    {
+                        return new Result() {OK = false, NodeIndex = new NodeIndex() {Index = 1, Nodes = parent}};
+                    }
+                }
+                return new Result() {OK = true, NodeIndex = new NodeIndex() {Index = str.Length, Nodes = nds}};
+            }
+
+            public List<TrieNode> Build(int index, string str, IEnumerable<TrieNode> nodes)
+            {
+                var nds = nodes;
+                for (int i = index; i < str.Length; i++)
+                {
+                    var ch = str[i];
+                    var parent = AddParent(nds, ch);
+                    nds = parent.Childs;
+                }
+
+                return nodes.ToList();
+            }
+        }
+        
+        
+        
+        //tire tree naive
+        public class TireNode
+        {
+            public TireNode(char ch){ Value = ch; }
+
+            public char Value {get;set;}
+            public List<TireNode> Childs {get;set;} = new List<TireNode>();
+            public bool End {get;set;} = true;
+        }
+
+        public class TireSecond
+        {
+            public List<TireNode> _nodes { get; set; } = new List<TireNode>();
+            
+            public bool SearchAndAdd(string str)
+            {
+                var nds = _nodes;
+                TireNode parent = null;
+                TireNode newNode = null;
+                var result = false;
+
+                for (var i = 0; i < str.Length; i++)
+                {
+
+                    var ch = str[i];
+                    if (parent?.Childs?.Any() == true)
+                    {
+                        parent.End = false;
+                    }
+                    parent = nds.FirstOrDefault(s => s.Value == ch);
+                    
+                    if (parent != null)
+                    {
+                        if (parent.End)
+                            result = true;
+
+                        nds = parent.Childs;
+                    }
+                    else
+                    {
+                        if (newNode != null)
+                            newNode.End = false;
+                        
+                        //add
+                        newNode = new TireNode(ch);
+                        nds.Add(newNode);
+                        nds = newNode.Childs;
+                    }
+                    
+                }
+                
+                return result;
+            }
+        }
+
         }
 
 

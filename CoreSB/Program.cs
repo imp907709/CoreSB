@@ -10,6 +10,7 @@ namespace CoreSB
     {
         static async Task Main(string[] args)
         {
+            Overall.KATAS.Miscellaneous.HackerRank.GO();
             await SQLrepositoriesCheck.GO();
             await Task.Delay(1);
             CreateHostBuilder(args).Build().Run();
