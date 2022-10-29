@@ -4,7 +4,7 @@ using FluentValidation;
 namespace CoreSB.Domain.Currency.Validation
 {
     public class CurrenciesValidation
-        : AbstractValidator<ICurrencyAPI>
+        : AbstractValidator<ICurrencyBL>
     {
         public CurrenciesValidation()
         {
@@ -15,7 +15,7 @@ namespace CoreSB.Domain.Currency.Validation
     }
 
     public class CurrencyUpdatevalidation
-        : AbstractValidator<ICurrencyUpdateAPI>
+        : AbstractValidator<ICurrencyUpdateBL>
     {
         public CurrencyUpdatevalidation()
         {
@@ -60,10 +60,10 @@ namespace CoreSB.Domain.Currency.Validation
             bool isValid = false;
             switch (item)
             {
-                case CurrencyUpdateAPI b:
+                case CurrencyUpdateBL b:
                     isValid = cvUpdate.Validate(b).IsValid;
                     break;
-                case CurrencyAPI a:
+                case CurrencyBL a:
                     isValid = cv.Validate(a).IsValid;
                     break;
                 case CurrencyRateAdd c:

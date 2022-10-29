@@ -1,4 +1,6 @@
 ﻿
+using AutoMapper;
+
 namespace CoreSB.Universal
 {
 

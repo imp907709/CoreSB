@@ -18,9 +18,9 @@ namespace CoreSB.Universal
         IRepository _repositoryRead;
         IRepository _repositoryWrite;
 
-        IMapper _mapper;
-        IValidatorCustom _validator;
-        ILoggerCustom _logger;
+        internal IMapper _mapper { get; set; }
+        internal IValidatorCustom _validator;
+        internal ILoggerCustom _logger;
 
         public IServiceStatus _status { get; set; }
         //public ServiceStatus _status { get { return _status; } set { status = value; } }

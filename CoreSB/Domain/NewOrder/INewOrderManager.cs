@@ -8,7 +8,7 @@ namespace CoreSB.Domain.NewOrder
 {
     public interface INewOrderManager : IDomainManager
     {
-        Task<ICurrencyAPI> AddCurrency(ICurrencyAPI currency);
+        Task<ICurrencyBL> AddCurrency(ICurrencyBL currency);
         Task<IList<ICrossCurrenciesAPI>> GetCurrencyCrossRatesAsync(IGetCurrencyCommand command);
     }
 }

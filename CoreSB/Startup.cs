@@ -44,24 +44,20 @@ namespace CoreSB
             
             /*Automapper Register */
             services.AddAutoMapper(typeof(Startup));
-            
             /*Mapper initialize with Instance API initialization */
-            var config = ConfigureAutoMapper();
-            IMapper mapper = new Mapper(config);
-            
-            /*Autofac registrations */
+            ConfigureAutoMapper();
+ 
             //autofacContainer.Populate(services);
             AutofacConfig.config(services);
-
-            /*Registration of automapper with autofac Instance API */
-            //autofacContainer.RegisterInstance(mapper).As<IMapper>();
-            AutofacConfig.GetContainer().RegisterInstance(mapper).As<IMapper>();
-            
             AutofacConfig.ConfigureAutofac(services);
 
-            Configurations.RegisterSQL(services, Configuration);
+            // !!> autofac naming context registrations ignored by DI 
+            // Configurations.RegisterSQL(services, Configuration);
 
             RegistrationsIoC.ConfigureMainServices(services);
+            
+            // Domain registration
+            Registration.ConfigureCurrencyServices(services, Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -86,9 +82,12 @@ namespace CoreSB
             });
         }
         
-        public MapperConfiguration ConfigureAutoMapper()
+        public void ConfigureAutoMapper()
         {
-            return CurrenciesMapping.config();
+            var cfg = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<CurrenciesMapping>();
+            });
         }
         
         public void ConfigureFluentValidation(IServiceCollection services)

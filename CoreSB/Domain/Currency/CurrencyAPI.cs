@@ -27,23 +27,25 @@ namespace CoreSB.Domain.Currency
         public decimal Rate { get; set; }
     }
 
-    public class CurrencyAPI : ICurrencyAPI
+    public class CurrencyBL : ICurrencyBL
     {
         public string Name { get; set; }
-        public string IsoCode { get; set; }
+        public string IsoName{ get; set; }
+        public int IsoCode { get; set; }
         public bool IsMain { get; set; }
     }
 
-    public class CurrencyUpdateAPI : ICurrencyUpdateAPI
+    public class CurrencyUpdateBL : ICurrencyUpdateBL
     {
         public string Name { get; set; }
-        public string IsoCode { get; set; }
+        public string IsoName{ get; set; }
+        public int IsoCode { get; set; }
         public bool IsMain { get; set; }
     }
 
     public class CurrencyCommand
     {
         public string commandType { get; set; }
-        public CurrencyAPI payload { get; set; }
+        public CurrencyBL payload { get; set; }
     }
 }

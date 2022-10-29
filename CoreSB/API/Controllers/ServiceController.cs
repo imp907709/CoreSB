@@ -8,7 +8,7 @@ namespace CoreSB.API.Controllers
     [Route("[Controller]")]
     public class ServiceController : ControllerBase
     {
-        private IService _service;
+        internal IService _service;
         
         public ServiceController(IService service)
         {

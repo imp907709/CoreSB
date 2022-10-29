@@ -31,7 +31,7 @@ namespace CoreSB.Universal.Registrations
             if (configuration.GetSection("RegistrationSettings").Get<RegistrationSettings>().ContextType ==
                 ContextType.SQL)
             {
-                //MS SQL conenciton exist
+                //MS SQL connection exist
                 if (!string.IsNullOrEmpty(configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>()
                     .MsSQlCoreSBConnection))
                 {

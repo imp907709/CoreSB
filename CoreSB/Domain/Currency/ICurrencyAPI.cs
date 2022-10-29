@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 
 namespace CoreSB.Domain.Currency
 {
@@ -27,20 +25,27 @@ namespace CoreSB.Domain.Currency
         DateTime Date { get; set; }
     }
 
-    public interface ICurrencyAPI
+    public interface ICurrencyBL
     {
         public string Name { get; set; }
-        public string IsoCode { get; set; }
+        public string IsoName { get; set; }
+        public int IsoCode { get; set; }
         public bool IsMain { get; set; }
     }
 
-    public interface ICurrencyUpdateAPI : ICurrencyAPI
+    public interface ICurrencyUpdateBL : ICurrencyBL
     {
     }
 
 
-    public interface ICommandType { }
-    public interface IPayload { }
+    public interface ICommandType
+    {
+    }
+
+    public interface IPayload
+    {
+    }
+
     public interface ICommand
     {
         public ICommandType commandType { get; set; }
@@ -52,10 +57,16 @@ namespace CoreSB.Domain.Currency
         public ICommandType commandType { get; set; }
         public IPayload payload { get; set; }
     }
-    public class CreateCommand : ICommandType { }
-    public class UpdateCommand : ICommandType { }
-    public class DeleteCommand : ICommandType { }
 
+    public class CreateCommand : ICommandType
+    {
+    }
 
+    public class UpdateCommand : ICommandType
+    {
+    }
+
+    public class DeleteCommand : ICommandType
+    {
+    }
 }
-

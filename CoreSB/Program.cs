@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using InfrastructureCheckers;
+using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Overall;
@@ -10,9 +11,10 @@ namespace CoreSB
     {
         static async Task Main(string[] args)
         {
-            Overall.KATAS.Miscellaneous.HackerRank.GO();
+            // LINQcheck.GO();
+            
             await SQLrepositoriesCheck.GO();
-            await Task.Delay(1);
+            // await Task.Delay(1);
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -20,7 +22,6 @@ namespace CoreSB
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    var d = 0.1m;
                     webBuilder.UseStartup<Startup>();
                 });
     }

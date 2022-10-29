@@ -384,8 +384,7 @@ namespace NetPlatformCheckers
 
 
             public override string ToString() => $"{_numenator}/{_denumenator}";
-
-
+            
             public int _numenator { get; set; }
             public int _denumenator { get; set; }
         }
@@ -463,6 +462,7 @@ namespace NetPlatformCheckers
 
         public static void StringCharIntConcatCheck()
         {
+
             var strAndChar = "1" + '2'; // str 12
             var charAndStr = '1' + "2"; // str 12
 
@@ -3026,7 +3026,6 @@ namespace LINQtoObjectsCheck
     
     public class LinqCheck
     {
-      
         
         public static List<Racer> racers = new List<Racer>();
         public static List<Cup> cups = new List<Cup>();
@@ -3391,7 +3390,6 @@ namespace LINQtoObjectsCheck
             DeferredCheck();
         }
 
-
         static void NewOverallCasesCheck()
         {
             var props2 = new List<Property2>() {
@@ -3474,12 +3472,43 @@ namespace LINQtoObjectsCheck
             var propsCol2 = new List<Property1>() { props1[0], props1[3], props1[4] };
             var propsToUpdate = new List<Property1>() { props1[2], props1[3] };
 
-            
             var sm0 = items1.SelectMany(s
                 => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtl = l.Amount }).ToList();
             var sm1 = items2.SelectMany(s
                 => s.properties, (l, r) => new { item = l.Name, prop = r.Name, amtr = l.Amount }).ToList();
 
+            var il = items1.SelectMany(k => k.properties, (l, r) => new {l, propName = r.Name});
+            var ir = items2.SelectMany(k => k.properties, (l, r) => new {l, propName= r.Name});
+
+
+            var itemsLeft = new List<Item1>()
+            {
+                new Item1(){ Id = 0, Name = "Name1"},
+                new Item1(){ Id = 1, Name = "Name2"},
+                new Item1(){ Id = 2, Name = "Name3"},
+                new Item1(){ Id = 7, Name = ""},
+                new Item1(){ Id = 8, Name = null},
+            };
+            
+            var itemsRight = new List<Item1>()
+            {
+                new Item1(){ Id = 4, Name = ""},
+                new Item1(){ Id = 5, Name = null},
+                new Item1(){ Id = 6, Name = "Name3"}
+            };
+            var lj0 = itemsLeft.Join(itemsRight, lk => lk.Name, rk => rk.Name, (l,r) => new
+            {
+                lName = l.Name, lid= l.Id,
+                rName = r.Name,rId= r.Id
+            }).ToList();
+
+            var lj = itemsLeft
+                .GroupJoin(itemsRight, lk => lk.Name, rk => rk.Name,
+                    (l, r) => new {lName = l.Name, lid = l.Id, r = r.DefaultIfEmpty()}).SelectMany(k => k.r,
+                    (l, r) => new {l.lName, l.lid, rName = r?.Name ?? "Not found"}).ToList();
+
+            File.WriteAllText(@"C:\files\test\leftJoin.json", JsonSerializer.Serialize(lj));
+            
             //left join
             var leftGroupJoin = props1.GroupJoin(
                     props2,
@@ -4242,6 +4271,7 @@ namespace Overall
                 }
 
             }
+
             //class for test  cases usage
             public class CaseList
             {
@@ -5406,7 +5436,7 @@ namespace Overall
         
         
         
-        //tire treee first version
+        //tire tree first version
 
         public class TrieNode
         {
@@ -5625,11 +5655,10 @@ namespace Overall
                 return JsonSerializer.Deserialize<IEnumerable<T>>(await new HttpClient()
                     .GetAsync("")?.Result.Content.ReadAsStringAsync());
             }
-
+            
         }
 
-     
-    }
+     }
 
     public class Algorithms
     {

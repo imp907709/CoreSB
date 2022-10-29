@@ -8,7 +8,8 @@ namespace CoreSB.Domain.Currency
     public class CurrencyDAL : EntityIntIdDAL
     {
         public string Name { get; set; }
-        public string IsoCode { get; set; }
+        public string IsoName { get; set; }
+        public int IsoCode { get; set; }
         public bool IsMain { get; set; }
 
         public List<CurrencyRatesDAL> CurRatesFrom { get; set; }
