@@ -4,8 +4,8 @@ namespace CoreSB.Domain.Currency
 {
     public interface ICurrencyRateAddAPI
     {
-        public string FromCurrency { get; set; }
-        public string ToCurrency { get; set; }
+        public int FromCurrency { get; set; }
+        public int ToCurrency { get; set; }
         public DateTime Date { get; set; }
         public decimal Value { get; set; }
     }
@@ -15,6 +15,22 @@ namespace CoreSB.Domain.Currency
         string From { get; set; }
         string To { get; set; }
         decimal Rate { get; set; }
+    }
+
+    public interface ICrossCurrencyValidateAPI
+    {
+        DateTime From { get; set; }
+        DateTime To{ get; set; }
+        int CurrencyFrom { get; set; }
+        int CurrencyTo { get; set; }
+    }
+    
+    public interface ICrossCurrencyValidateCommand
+    {
+        DateTime From { get; set; }
+        DateTime To{ get; set; }
+        int CurrencyFrom { get; set; }
+        int CurrencyTo { get; set; }
     }
 
     public interface IGetCurrencyCommand

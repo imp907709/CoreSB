@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Infrastructure.IO.Settings;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace CoreSB.Domain.Currency.EF
 {
@@ -140,7 +142,7 @@ namespace CoreSB.Domain.Currency.EF
         }
 
 
-        public async Task<ICurrencyRateAddAPI> AddCurrencyRateQuerry(ICurrencyRateAddAPI query)
+        public async Task<ICurrencyRateAddAPI> AddCurrencyRateQuery(ICurrencyRateAddAPI query)
         {
             ICurrencyRateAddAPI result = null;
 
@@ -153,7 +155,7 @@ namespace CoreSB.Domain.Currency.EF
                 return null;
             }
 
-            var currencyFrom = await _repositoryWrite.QueryByFilter<CurrencyDAL>(s => s.IsoName == query.FromCurrency)
+            var currencyFrom = await _repositoryWrite.QueryByFilter<CurrencyDAL>(s => s.IsoCode == query.FromCurrency)
                 .FirstOrDefaultAsync();
             if (currencyFrom == null)
             {
@@ -163,7 +165,7 @@ namespace CoreSB.Domain.Currency.EF
                 return null;
             }
 
-            var currencyTo = await _repositoryWrite.QueryByFilter<CurrencyDAL>(s => s.IsoName == query.ToCurrency)
+            var currencyTo = await _repositoryWrite.QueryByFilter<CurrencyDAL>(s => s.IsoCode == query.ToCurrency)
                 .FirstOrDefaultAsync();
             if (currencyTo == null)
             {
@@ -173,12 +175,14 @@ namespace CoreSB.Domain.Currency.EF
                 return null;
             }
 
+            var dtExp = CompareByDateExp(query.Date, ExpressionType.Equal, DateComparisonRange.Day);
             var currencyCrossRate = await _repositoryWrite.QueryByFilter<CurrencyRatesDAL>(s =>
-                    s.CurrencyFromId == currencyFrom.Id && s.CurrencyToId == currencyTo.Id
-                                                        && s.Date.Year == query.Date.Year &&
-                                                        s.Date.Month == query.Date.Month &&
-                                                        s.Date.Day == query.Date.Day)
+                    s.CurrencyFromId == currencyFrom.Id 
+                    && s.CurrencyToId == currencyTo.Id
+                    && dtExp.Compile().Invoke(s)
+                    )
                 .FirstOrDefaultAsync();
+
             if (currencyCrossRate != null)
             {
                 base.statusChangeAndLog(new Failure(),
@@ -206,6 +210,72 @@ namespace CoreSB.Domain.Currency.EF
             result = _mapper.Map<CurrencyRatesDAL, ICurrencyRateAddAPI>(crossRateToAdd);
 
             return result;
+        }
+
+        public async Task<IList<CrossCurrenciesAPI>> ValidateCrossRates(ICrossCurrencyValidateCommand command)
+        {
+            List<CrossCurrenciesAPI> result = new List<CrossCurrenciesAPI>();
+            List<CurrencyRatesDAL> created = new List<CurrencyRatesDAL>();
+
+            var rateFrom = await _repositoryWrite
+                .QueryByFilter<CurrencyRatesDAL>(s =>
+                s.Date <= command.To
+                && s.Date >= command.From
+                && s.CurrencyFromId == command.CurrencyFrom
+                && s.CurrencyToId == command.CurrencyTo).ToListAsync();
+
+            var rateTo = await _repositoryWrite
+                .QueryByFilter<CurrencyRatesDAL>(s =>
+                    s.Date <= command.To
+                    && s.Date >= command.From
+                    && s.CurrencyFromId == command.CurrencyTo 
+                    && s.CurrencyToId == command.CurrencyFrom).ToListAsync();
+
+            if (rateFrom.Count != rateTo.Count)
+            {
+                // select from exceed
+                var fromExceeded = rateFrom
+                    .Where(s => rateTo.Any(c => c.Date != s.Date))
+                    .ToList();
+
+                if (fromExceeded?.Any() == true)
+                {
+                    var added = await exceededCrossRateAdd(fromExceeded);
+                    created.AddRange(added);
+                }
+
+                // select to exceed
+                var toExceeded = rateTo 
+                    .Where(s => rateFrom.Any(c => c.Date != s.Date))
+                    .ToList();
+
+                if (toExceeded?.Any() == true)
+                {
+                    var added = await exceededCrossRateAdd(toExceeded);
+                    created.AddRange(added);
+                }
+            }
+
+            result = _mapper.Map<List<CrossCurrenciesAPI>>(created);
+            return result;
+        }
+
+        async Task<List<CurrencyRatesDAL>> exceededCrossRateAdd(IList<CurrencyRatesDAL> exceed)
+        {
+            if (exceed?.Any() == true)
+            {
+                var toAdd = new List<CurrencyRatesDAL>();
+                    
+                foreach (var from in exceed)
+                {
+                    toAdd.Add(new CurrencyRatesDAL() { CurrencyFrom = from.CurrencyTo, CurrencyTo = from.CurrencyFrom, Date = from.Date, Rate = 1 / from.Rate});
+                }
+                await _repositoryWrite.AddRangeAsync(toAdd);
+                await _repositoryWrite.SaveAsync();
+                return toAdd;
+            }
+
+            return new List<CurrencyRatesDAL>();
         }
 
         public async Task<IList<ICrossCurrenciesAPI>> GetCurrencyCrossRatesAsync(IGetCurrencyCommand command)
@@ -283,6 +353,8 @@ namespace CoreSB.Domain.Currency.EF
 
             return result.Cast<ICrossCurrenciesAPI>().ToList();
         }
+        
+     
 
 
         public void ReInitialize()
@@ -290,79 +362,15 @@ namespace CoreSB.Domain.Currency.EF
             _repositoryRead.ReInitialize();
             _repositoryWrite.ReInitialize();
 
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 1, Name = "USD", IsoName = "USD"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 2, Name = "EUR", IsoName = "EUR"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 3, Name = "GBP", IsoName = "GBP"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 4, Name = "RUB", IsoName = "RUB"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 5, Name = "JPY", IsoName = "JPY"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 6, Name = "AUD", IsoName = "AUD"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 7, Name = "CAD", IsoName = "CAD"});
-            _repositoryWrite.Add<CurrencyDAL>(new CurrencyDAL() {Id = 8, Name = "CHF", IsoName = "CHF"});
+            _repositoryWrite.AddRange(InitialPreloadData.initialCurrencies);
             try { _repositoryWrite.SaveIdentity<CurrencyDAL>(); }
             catch (Exception e)
             {
                 throw;
             }
 
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 4,
-                CurrencyFromId = 1,
-                CurrencyToId = 4,
-                Rate = 63.18M,
-                Date = new DateTime(2019, 07, 23)
-            });
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 5,
-                CurrencyFromId = 2,
-                CurrencyToId = 4,
-                Rate = 70.64M,
-                Date = new DateTime(2019, 07, 23)
-            });
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 6,
-                CurrencyFromId = 3,
-                CurrencyToId = 4,
-                Rate = 78.67M,
-                Date = new DateTime(2019, 07, 23)
-            });
-
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 7,
-                CurrencyFromId = 2,
-                CurrencyToId = 5,
-                Rate = 85.2M,
-                Date = new DateTime(2019, 07, 23)
-            });
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 8,
-                CurrencyFromId = 3,
-                CurrencyToId = 5,
-                Rate = 95.2M,
-                Date = new DateTime(2019, 07, 23)
-            });
-
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 9,
-                CurrencyFromId = 2,
-                CurrencyToId = 6,
-                Rate = 15M,
-                Date = new DateTime(2019, 07, 23)
-            });
-            _repositoryWrite.Add<CurrencyRatesDAL>(new CurrencyRatesDAL()
-            {
-                Id = 10,
-                CurrencyFromId = 6,
-                CurrencyToId = 3,
-                Rate = 0.25M,
-                Date = new DateTime(2019, 07, 23)
-            });
-
+            _repositoryWrite.AddRange(InitialPreloadData.CrossCurrencies_2019);
+            _repositoryWrite.AddRange(InitialPreloadData.CrossCurrencies_2022);
             try { _repositoryWrite.SaveIdentity<CurrencyRatesDAL>(); }
             catch (Exception e)
             {

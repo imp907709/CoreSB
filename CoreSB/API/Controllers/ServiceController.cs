@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using AutoMapper;
 using CoreSB.Universal;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,16 @@ namespace CoreSB.API.Controllers
     public class ServiceController : ControllerBase
     {
         internal IService _service;
-        
-        public ServiceController(IService service)
+        internal IMapper _mapper;
+        internal IValidatorCustom _validator;
+        internal ILoggerCustom _logger;
+
+        public ServiceController(IService service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger)
         {
             _service = service;
+            _mapper = mapper;
+            _validator = validator;
+            _logger = logger;
         }
 
         [HttpGet]

@@ -16,7 +16,8 @@ namespace CoreSB.Domain.Currency
         IServiceStatus DeleteCurrency(ICurrencyUpdateBL currency);
 
 
-        Task<ICurrencyRateAddAPI> AddCurrencyRateQuerry(ICurrencyRateAddAPI query);
+        Task<ICurrencyRateAddAPI> AddCurrencyRateQuery(ICurrencyRateAddAPI query);
+        Task<IList<CrossCurrenciesAPI>> ValidateCrossRates(ICrossCurrencyValidateCommand command);
         Task<IList<ICrossCurrenciesAPI>> GetCurrencyCrossRatesAsync(IGetCurrencyCommand command);
 
         void ReInitialize();

@@ -1,4 +1,6 @@
 ﻿
+using System;
+using System.Linq.Expressions;
 using AutoMapper;
 
 namespace CoreSB.Universal
@@ -7,6 +9,9 @@ namespace CoreSB.Universal
 
     public interface IService
     {
+        Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
+            Service.DateComparisonRange compareBy);
+        
         IRepository GetRepositoryRead();
         IRepository GetRepositoryWrite();
 

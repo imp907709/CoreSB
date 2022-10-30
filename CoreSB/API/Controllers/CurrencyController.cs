@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Domain.Currency;
 using CoreSB.Universal;
@@ -8,15 +9,16 @@ namespace CoreSB.API.Controllers
 {
     public class CurrencyController : ServiceController
     {
-        private ICurrencyServiceEF _service;
-        public CurrencyController(ICurrencyServiceEF service) : base(service)
+        private new ICurrencyServiceEF _service;
+
+        public CurrencyController(ICurrencyServiceEF service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) : base(service, mapper, validator,logger)
         {
             _service = service;
         }
 
         [HttpGet]
         [Route("Reinitialize")]
-        public async Task<ActionResult>Reinitialize()
+        public async Task<ActionResult> Reinitialize()
         {
             _service.CleanUp();
             _service.ReInitialize();
@@ -32,6 +34,15 @@ namespace CoreSB.API.Controllers
                 IsMain = false, IsoCode = 840, IsoName = "USD", Name = "United States dollar"
             });
             return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("ValidateCrossRates")]
+        public async Task<IList<CrossCurrenciesAPI>> ValidateCrossRates(ICrossCurrencyValidateAPI request)
+        {
+            var command = _mapper.Map<ICrossCurrencyValidateCommand>(request);
+            var result = await _service.ValidateCrossRates(command);
+            return result;
         }
     }
 }

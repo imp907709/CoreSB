@@ -5,8 +5,8 @@ namespace CoreSB.Domain.Currency
 
     public class CurrencyRateAdd : ICurrencyRateAddAPI
     {
-        public string FromCurrency { get; set; }
-        public string ToCurrency { get; set; }
+        public int FromCurrency { get; set; }
+        public int ToCurrency { get; set; }
         public DateTime Date { get; set; }
         public decimal Value { get; set; }
     }

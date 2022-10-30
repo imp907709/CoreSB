@@ -13,7 +13,7 @@ namespace CoreSB
         {
             // LINQcheck.GO();
             
-            await SQLrepositoriesCheck.GO();
+            // await SQLrepositoriesCheck.GO();
             // await Task.Delay(1);
             CreateHostBuilder(args).Build().Run();
         }
