@@ -1,4 +1,4 @@
-﻿namespace StartupConfig
+﻿namespace CoreSB.Universal.StartupConfigs
 {
     public class ConnectionStrings
     {

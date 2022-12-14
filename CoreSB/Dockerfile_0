@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS base
+WORKDIR /CoreSB
+
+# Copy everything
+COPY . . 
+RUN ls
+
+#FROM base AS publish
+RUN dotnet publish --framework net7.0 -c Development -o published
+
+#FROM base AS final
+#FROM mcr.microsoft.com/dotnet/aspnet:7.0
+#WORKDIR /CoreSB
+#COPY --from=base published .
+ENTRYPOINT ["dotnet", "CoreSB.dll"]

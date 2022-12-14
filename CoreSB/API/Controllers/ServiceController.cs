@@ -25,7 +25,7 @@ namespace CoreSB.API.Controllers
         [HttpGet]
         public ActionResult<string> GetStatus()
         {
-            return _service._status.Message;
+            return $"Service: {_service.GetType()} {_service._status.Message}" ;
         }
     }
 }

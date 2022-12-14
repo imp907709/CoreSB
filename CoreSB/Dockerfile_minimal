@@ -1,0 +1,14 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS base
+WORKDIR /CoreSB
+EXPOSE 80
+
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . ./
+RUN dotnet publish "CoreSB.csproj" -c Development -o published
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
+WORKDIR /CoreSB
+COPY --from=base /CoreSB/published .
+ENTRYPOINT ["dotnet", "CoreSB.dll"]

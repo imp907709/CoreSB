@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using CoreSB.Universal.StartupConfigs;
 using Microsoft.EntityFrameworkCore;
 
 namespace CoreSB.Universal
@@ -37,7 +38,7 @@ namespace CoreSB.Universal
             _validator = validator;
             _logger = logger;
 
-            _status = new ServiceStatus() {Message = StartupConfig.Variables.ServiceInited};
+            _status = new ServiceStatus() {Message = Variables.ServiceInited};
         }
 
         public Service(IRepository repositoryWrite, IMapper mapper = null, IValidatorCustom validator = null,

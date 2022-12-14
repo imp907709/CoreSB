@@ -11,10 +11,7 @@ namespace CoreSB
     {
         static async Task Main(string[] args)
         {
-            // LINQcheck.GO();
-            
-            // await SQLrepositoriesCheck.GO();
-            // await Task.Delay(1);
+            Algorithms.AlgCheck.GO();    
             CreateHostBuilder(args).Build().Run();
         }
 

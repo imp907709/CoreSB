@@ -1,9 +1,9 @@
 ﻿using CoreSB.Domain.Currency.EF;
 using CoreSB.Universal.Infrastructure.EF;
+using CoreSB.Universal.StartupConfigs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StartupConfig;
 
 namespace CoreSB.Domain.Currency
 {

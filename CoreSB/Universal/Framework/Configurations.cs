@@ -6,11 +6,11 @@ using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
 using CoreSB.Universal.Infrastructure.EF;
 using CoreSB.Universal.Registrations.IoC;
+using CoreSB.Universal.StartupConfigs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using StartupConfig;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace CoreSB.Universal.Registrations
