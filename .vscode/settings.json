@@ -1,6 +1,0 @@
-{
-    "terminal.integrated.copyOnSelection": true,
-    "ConnectionStrings": {
-        "LocalDbConnection": "Server=(localdb);Database=testDb;Trusted_Connection=True;"
-    }
-}
