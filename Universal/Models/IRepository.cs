@@ -34,6 +34,9 @@ namespace CoreSB.Universal
 
         void Save();
 
+        Task DropDB();
+        Task CreateDB();
+
         void ReInitialize();
         void CleanUp();
         string GetDatabaseName();

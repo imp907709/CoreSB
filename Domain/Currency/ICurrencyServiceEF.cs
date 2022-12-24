@@ -3,10 +3,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoreSB.Universal;
+using CoreSB.Universal.Infrastructure.EF;
 
 namespace CoreSB.Domain.Currency
 {
-    public interface ICurrencyServiceEF : IService
+    public interface ICurrencyServiceEF : IServiceEF
     {
         Task<ICurrencyBL> AddCurrency(ICurrencyBL currency);
 
@@ -20,7 +21,12 @@ namespace CoreSB.Domain.Currency
         Task<IList<CrossCurrenciesAPI>> ValidateCrossRates(ICrossCurrencyValidateCommand command);
         Task<IList<ICrossCurrenciesAPI>> GetCurrencyCrossRatesAsync(IGetCurrencyCommand command);
 
+
+        void Initialize();
         void ReInitialize();
         void CleanUp();
+        
+        
+        Task ValidateCrudTest();
     }
 }

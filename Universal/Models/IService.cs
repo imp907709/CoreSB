@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using AutoMapper;
 
 namespace CoreSB.Universal
@@ -9,15 +10,20 @@ namespace CoreSB.Universal
 
     public interface IService
     {
-        Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
+        public Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
             Service.DateComparisonRange compareBy);
+
+        public IRepository GetRepositoryRead();
+        public IRepository GetRepositoryWrite();
+
+        Task DropDB();
+        Task CreateDB();
         
-        IRepository GetRepositoryRead();
-        IRepository GetRepositoryWrite();
+        string GetConnectionString();
+        
+        public string actualStatus { get; }
 
-        string actualStatus { get; }
-
-        IServiceStatus _status { get; }
+        public IServiceStatus _status { get; }
 
     }
 

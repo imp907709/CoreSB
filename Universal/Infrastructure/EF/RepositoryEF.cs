@@ -116,6 +116,16 @@ namespace CoreSB.Universal.Infrastructure.EF
             return this._context.Database.GetDbConnection().ConnectionString;
         }
 
+        public async Task DropDB()
+        {
+            await this._context.Database.EnsureDeletedAsync();
+        }
+        
+        public async Task CreateDB()
+        {
+            await this._context.Database.EnsureCreatedAsync();
+        }
+        
         public void ReInitialize()
         {
             this._context.Database.EnsureDeleted();

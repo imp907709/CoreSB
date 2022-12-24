@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoreSB.Universal.Infrastructure.EF
 {
-    public class ServiceEF : Service
+    public class ServiceEF : Service, IServiceEF
     {
         private IRepositoryEF _repositoryRead;
         private IRepositoryEF _repositoryWrite;
@@ -24,6 +24,7 @@ namespace CoreSB.Universal.Infrastructure.EF
         {
             _repositoryWrite = repositoryWrite;
         }
+        
         
         /// <summary>
         /// Temporary naive synchronization by paging, simpky by ID

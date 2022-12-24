@@ -74,6 +74,16 @@ namespace CoreSB.Universal
             throw new NotImplementedException();
         }
 
+        public async Task DropDB()
+        {
+            throw new NotImplementedException();
+        }
+        
+        public async Task CreateDB()
+        {
+            throw new NotImplementedException();
+        }
+        
         public void ReInitialize()
         {
             throw new NotImplementedException();

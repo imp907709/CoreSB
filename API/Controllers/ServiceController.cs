@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Universal;
+using CoreSB.Universal.Infrastructure.EF;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreSB.API.Controllers
@@ -9,12 +10,12 @@ namespace CoreSB.API.Controllers
     [Route("[Controller]")]
     public class ServiceController : ControllerBase
     {
-        internal IService _service;
         internal IMapper _mapper;
         internal IValidatorCustom _validator;
         internal ILoggerCustom _logger;
 
-        public ServiceController(IService service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger)
+        internal IServiceEF _service;
+        public ServiceController(IServiceEF service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger)
         {
             _service = service;
             _mapper = mapper;
@@ -27,5 +28,13 @@ namespace CoreSB.API.Controllers
         {
             return $"Service: {_service.GetType()} {_service._status.Message}" ;
         }
+        
+        [HttpGet]
+        [Route("getConnectionString")]
+        public ActionResult<string> GetConnectionString()
+        {
+            return $"Write service connstr: {_service.GetConnectionString()}" ;
+        }
+        
     }
 }

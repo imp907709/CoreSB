@@ -87,6 +87,19 @@ namespace CoreSB.Universal
             _repositoryWrite.DeleteRange(items);
         }
 
+        public async Task CreateDB()
+        {
+            await _repositoryWrite.CreateDB();
+        }
+        public async Task DropDB()
+        {
+            await _repositoryWrite.DropDB();
+        }
+ 
+        public string GetConnectionString()
+        {
+            return this._repositoryWrite.GetConnectionString();
+        }
 
         public enum DateComparisonRange
         {
@@ -103,14 +116,14 @@ namespace CoreSB.Universal
         {
             var dateRanged = compareBy switch
             {
-                DateComparisonRange.Day => new DateTime(date.Year, date.Month,date.Day),
+                DateComparisonRange.Day => new DateTime(date.Year, date.Month, date.Day),
                 DateComparisonRange.Month => new DateTime(date.Year, date.Month, 1),
                 DateComparisonRange.Year => new DateTime(date.Year, 1, 1),
-                DateComparisonRange.Hour => new DateTime(date.Year, date.Month,date.Day, date.Hour,0,0),
+                DateComparisonRange.Hour => new DateTime(date.Year, date.Month, date.Day, date.Hour, 0, 0),
                 _ => date
             };
 
-            Expression<Func<IDateEntityDAL, bool>>  exp = direction switch
+            Expression<Func<IDateEntityDAL, bool>> exp = direction switch
             {
                 ExpressionType.Equal => (s) => s.Date == dateRanged,
                 ExpressionType.GreaterThanOrEqual => (s) => s.Date >= dateRanged,
@@ -140,6 +153,7 @@ namespace CoreSB.Universal
             this._status.Message = message;
             _logger.Information(this._status.Message);
         }
+
     }
 
     public class ServiceStatus : IServiceStatus

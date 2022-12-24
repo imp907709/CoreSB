@@ -12,7 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace CoreSB.Domain.Currency.EF
 {
-    public class CurrencyServiceEF : Service, ICurrencyServiceEF
+    public class CurrencyServiceEF : ServiceEF, ICurrencyServiceEF
     {
         internal IRepositoryEFRead _repositoryRead;
         internal IRepositoryEFWrite _repositoryWrite;
@@ -353,31 +353,35 @@ namespace CoreSB.Domain.Currency.EF
 
             return result.Cast<ICrossCurrenciesAPI>().ToList();
         }
+
+
         
-     
-
-
-        public void ReInitialize()
+        public void Initialize()
         {
-            _repositoryRead.ReInitialize();
-            _repositoryWrite.ReInitialize();
-
-            _repositoryWrite.AddRange(InitialPreloadData.initialCurrencies);
+            _repositoryWrite.AddRangeAsync(InitialPreloadData.initialCurrencies);
             try { _repositoryWrite.SaveIdentity<CurrencyDAL>(); }
             catch (Exception e)
             {
                 throw;
             }
 
-            _repositoryWrite.AddRange(InitialPreloadData.CrossCurrencies_2019);
-            _repositoryWrite.AddRange(InitialPreloadData.CrossCurrencies_2022);
+            _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2019);
+            _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2022);
             try { _repositoryWrite.SaveIdentity<CurrencyRatesDAL>(); }
             catch (Exception e)
             {
                 throw;
             }
         }
+        
+        public void ReInitialize()
+        {
+            _repositoryRead.ReInitialize();
+            _repositoryWrite.ReInitialize();
 
+            this.Initialize();
+        }
+        
         public void CleanUp()
         {
             _repositoryWrite.ReInitialize();
@@ -385,6 +389,27 @@ namespace CoreSB.Domain.Currency.EF
             _repositoryWrite.DeleteRange(_repositoryRead.GetAll<CurrencyDAL>().ToList());
             try { _repositoryWrite.Save(); }
             catch (Exception e) { throw; }
+        }
+
+
+        public async Task ValidateCrudTest()
+        {
+            var crs = await _repositoryWrite.GetAll<CurrencyDAL>().Take(10)
+                .ToListAsync();
+            
+            var cur = new CurrencyDAL
+            {
+                Name = "test genned",
+                IsoName = "test name",
+                IsoCode = 132,
+                IsMain = false
+            };
+            
+            await _repositoryWrite.AddAsync(cur);
+            await _repositoryWrite.SaveAsync();
+
+            var res = await _repositoryWrite.GetAll<CurrencyDAL>(s=>s.IsoName == "test name")
+                .ToListAsync();
         }
     }
 }
