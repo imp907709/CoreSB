@@ -134,7 +134,7 @@ namespace InfrastructureCheckers
         static IConfiguration conf { get; set; }
         
         static ConnectionStringsOption cso;
-        private static MongoConnectionStringOption mcso;
+        private static MongoOption mcso;
         
         static Fixture _f = new Fixture();
         
@@ -147,7 +147,7 @@ namespace InfrastructureCheckers
             cso = new ConnectionStringsOption();
             conf.GetSection(cso.ConfigString).Bind(cso);
 
-            mcso = new MongoConnectionStringOption();
+            mcso = new MongoOption();
             conf.GetSection(mcso.ConfigString).Bind(mcso);
             
             _f.Behaviors.Remove(new ThrowingRecursionBehavior());

@@ -69,6 +69,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: core
       MONGO_INITDB_ROOT_PASSWORD: core
-      
+    ports: 
+        - 27017:27017
+
 networks:
     elastic:

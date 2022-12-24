@@ -2,6 +2,7 @@
 using AutoMapper;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
+using CoreSB.Universal.Infrastructure.Mongo;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreSB.API.Controllers
@@ -15,6 +16,7 @@ namespace CoreSB.API.Controllers
         internal ILoggerCustom _logger;
 
         internal IServiceEF _service;
+
         public ServiceController(IServiceEF service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger)
         {
             _service = service;

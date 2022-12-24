@@ -18,6 +18,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 StartupRegistrations.ConfigureAutoMapper();
+StartupRegistrations.OptionsBinding(builder.Configuration);
 
 RegistrationsIoC.ConfigureMainServices(builder.Services);
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CoreSB.Universal.Infrastructure.EF
 {
-    public interface IServiceEF
+    public interface IServiceEF : IService
     {
         /**
  > take page from read
@@ -39,9 +39,7 @@ namespace CoreSB.Universal.Infrastructure.EF
          */
         Task Sync<T>(string entityName)
             where T: EntityIntIdDAL;
-
-        IServiceStatus _status { get; set; }
-        string actualStatus { get; set; }
+        
 
         Task<int> AddOne<T>(T item)
             where T : EntityIntIdDAL;
@@ -58,14 +56,5 @@ namespace CoreSB.Universal.Infrastructure.EF
         Task Delete<T>(ICollection<int> ids)
             where T : EntityIntIdDAL;
 
-        Task CreateDB();
-        Task DropDB();
-        string GetConnectionString();
-
-        Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
-            Service.DateComparisonRange compareBy);
-
-        IRepository GetRepositoryRead();
-        IRepository GetRepositoryWrite();
     }
 }

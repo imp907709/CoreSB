@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Domain.Currency;
 using CoreSB.Universal;
+using CoreSB.Universal.Infrastructure.Mongo;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreSB.API.Controllers
@@ -11,30 +12,22 @@ namespace CoreSB.API.Controllers
     public class CurrencyController : ServiceController
     {
         private new ICurrencyServiceEF _service;
+        private new IMongoService _mongoService;
 
-        public CurrencyController(ICurrencyServiceEF service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) : base(service, mapper, validator,logger)
+        public CurrencyController(ICurrencyServiceEF service, IMongoService mongoService, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) 
+            : base(service, mapper, validator,logger)
         {
             _service = service;
+            _mongoService = mongoService;
         }
 
         [HttpGet]
-        [Route("Reinitialize")]
-        public async Task<ActionResult> Reinitialize()
+        [Route("ReinitializeSQL")]
+        public async Task<ActionResult> ReinitializeSQL()
         {
             _service.CleanUp();
             _service.ReInitialize();
             return Ok();
-        }
-
-        [HttpGet]
-        [Route("Check")]
-        public async Task<ActionResult> Check()
-        {
-            var result = await _service.AddCurrency(new CurrencyBL()
-            {
-                IsMain = false, IsoCode = 840, IsoName = "USD", Name = "United States dollar"
-            });
-            return Ok(result);
         }
 
         [HttpPost]
@@ -47,8 +40,8 @@ namespace CoreSB.API.Controllers
         }
 
         [HttpGet]
-        [Route("dropdb")]
-        public async Task<IActionResult> DropDB()
+        [Route("dropdbSQL")]
+        public async Task<IActionResult> DropDBSQL()
         {
             try
             {
@@ -65,8 +58,8 @@ namespace CoreSB.API.Controllers
         }
         
         [HttpGet]
-        [Route("createdb")]
-        public async Task<IActionResult> CreateDB()
+        [Route("createdbSQL")]
+        public async Task<IActionResult> CreateDBSQL()
         {
             try
             {
@@ -83,8 +76,8 @@ namespace CoreSB.API.Controllers
         }
         
         [HttpGet]
-        [Route("initialize")]
-        public async Task<IActionResult> Initialize()
+        [Route("initializeSQL")]
+        public async Task<IActionResult> InitializeSQL()
         {
             try
             {
@@ -116,6 +109,13 @@ namespace CoreSB.API.Controllers
                 throw;
             }
             return Ok();
+        }
+
+        [HttpGet]
+        [Route("validateMongo")]
+        public async Task ValidateMongo()
+        {
+            await _mongoService.CreateDB();
         }
     }
 }

@@ -3,7 +3,7 @@
     public class ConfigOptions
     {
         public ConnectionStringsOption ConnectionStrings { get; set; }
-        public MongoConnectionStringOption MongoConnectionString { get; set; }
+        public MongoOption MongoConnectionString { get; set; }
     }
 
     public class ConnectionStringsOption
@@ -17,10 +17,10 @@
         public string DockerPgSQlNewOrderConnection { get; set; } = string.Empty;
 
     }
-    public class MongoConnectionStringOption
+    public class MongoOption
     {
 
-        public string ConfigString => "MongoConnectionString";
+        public string ConfigString => "Mongo";
         
         
         public string ConnectionString { get; set; } = null!;

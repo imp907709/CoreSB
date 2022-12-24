@@ -11,8 +11,6 @@ namespace CoreSB.Domain.NewOrder.EF
     {
         IRepositoryEF _repositoryRead;
         IRepositoryEF _repositoryWrite;
-        IMapper _mapper;
-        IValidatorCustom _validator;
 
         public NewOrderServiceEF(IRepositoryEF repositoryRead, IRepositoryEF repositoryWrite, IMapper mapper, IValidatorCustom validator)
            : base(repositoryRead, repositoryWrite, mapper, validator)

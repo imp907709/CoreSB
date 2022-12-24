@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace CoreSB.Universal.Registrations
 {
@@ -48,7 +47,8 @@ namespace CoreSB.Universal.Registrations
             * Registering multiple IRepository clones with different connections trings
             * For multiple SQL DBs in one project
             */
-            var connection = configuration.GetSection(Variables.ConnectionStrings)
+            var connection = configuration
+                .GetSection(Variables.ConnectionStrings)
                 .Get<ConnectionStrings>()
                 .MsSQlCoreSBConnection;
             if (!string.IsNullOrEmpty(connection))
