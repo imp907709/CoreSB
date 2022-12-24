@@ -16,10 +16,10 @@ namespace CoreSB.Universal
         public IRepository GetRepositoryRead();
         public IRepository GetRepositoryWrite();
 
-        Task DropDB();
-        Task CreateDB();
-        
-        string GetConnectionString();
+        public Task DropDB();
+        public Task CreateDB();
+
+        public string GetConnectionString();
         
         public string actualStatus { get; }
 
