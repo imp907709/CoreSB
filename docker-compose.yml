@@ -4,17 +4,71 @@ version: '3.4'
 
 services:
   coresb:
+    container_name: coresb
     image: coresb
     build:
       context: .
       dockerfile: ./Dockerfile
     ports:
       - 5002:5002
+    depends_on:
+        - sqldb
+    environment:
+        ASPNETCORE_ENVIRONMENT: "Development"
+        AZURE_SQL_CONNECTIONSTRING: "Server=tcp:coresqldb.database.windows.net,1433;Initial Catalog=coreSB;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        MsSQlCoreSBConnection: "Server=tcp:coresqldb2.database.windows.net,1433;Initial Catalog=testdb;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+  
   sqldb:
     container_name: MSSQLCoreSB
     image: mcr.microsoft.com/mssql/server
     ports: 
-        - 1433:1433
-    environment: 
+        - "1433:1433"
+    environment:
         SA_PASSWORD: "coresbQ1"
         ACCEPT_EULA: "Y"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - cluster.name=elasticsearch
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - xpack.license.self_generated.type=trial
+      - xpack.security.enabled=false
+      - ELASTIC_PASSWORD=zsxdcf
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks: 
+        - elastic
+
+  kibana:
+    container_name: kibana
+    # hostname: kibana
+    image: "docker.elastic.co/kibana/kibana:8.5.3"
+    ports: 
+        - 5601:5601
+    networks: 
+        - elastic
+    environment:
+        - SERVERNAME=kibana
+        #- ELASTICSEARCH_HOSTS=https://localhost:9200
+        - ELASTICSEARCH_USERNAME=kibana_system
+        - ELASTICSEARCH_PASSWORD=zsxdcf      
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: core
+      MONGO_INITDB_ROOT_PASSWORD: core
+      
+networks:
+    elastic:
