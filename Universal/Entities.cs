@@ -5,6 +5,7 @@
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace CoreSB.Universal
 {
@@ -38,10 +39,16 @@ namespace CoreSB.Universal
 
     
     //mongo
-    public class MongoDAL : IMongoDAL
+    public class MongoStringDAL : IMongoStringDAL
     {
-        [BsonId]
+        [BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
+    }
+    public class MongoDAL : IMongoGuidDAL
+    {
+        [BsonId]
+        [BsonRepresentation(BsonType.String)]
+        public Guid Id { get; set; }
     }
 }

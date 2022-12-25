@@ -14,8 +14,6 @@ namespace CoreSB.Universal
 
     public interface IRepository
     {
-        IQueryable<T> GetAll<T>(Expression<Func<T, bool>> expression = null)
-            where T : class;
 
         void Add<T>(T item) where T : class;
         Task AddRangeAsync<T>(IList<T> items) where T : class;

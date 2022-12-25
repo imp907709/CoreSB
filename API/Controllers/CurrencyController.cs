@@ -14,12 +14,19 @@ namespace CoreSB.API.Controllers
     {
         private new ICurrencyServiceEF _service;
         private new IMongoService _mongoService;
+        
+        private new IMongoRepository _mongoRepository;
 
-        public CurrencyController(ICurrencyServiceEF service, IMongoService mongoService, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) 
+        public CurrencyController(ICurrencyServiceEF service, 
+            IMongoService mongoService, 
+            IMongoRepository mongoRepository,
+            IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) 
             : base(service, mapper, validator,logger)
         {
             _service = service;
             _mongoService = mongoService;
+
+            _mongoRepository = mongoRepository;
         }
 
         [HttpGet]
@@ -114,20 +121,11 @@ namespace CoreSB.API.Controllers
 
         [HttpGet]
         [Route("validateMongo")]
-        public async Task ValidateMongo()
+        public async Task<IActionResult> ValidateMongo()
         {
-            await _mongoService.CreateDB();
-            await _mongoService.DropDB();
-            
-            _mongoService.SetDb("testdb");
-            var c = new CurrencyMongoDAL
-            {
-                Name = "testName",
-                IsoName = "testiso",
-                IsoCode = 123,
-                IsMain = true
-            };
-            await _mongoService.Add(c);
+            await _mongoService.ValidateAllInOne();
+
+            return Ok( );
         }
     }
 }

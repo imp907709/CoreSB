@@ -11,6 +11,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
     public class MongoRepository : IMongoRepository
     {
         private MongoClient _client;
+        
         private IMongoDatabase _database;
         private string dbName;
 
@@ -64,9 +65,11 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         }
             
         
-        public IQueryable<T> GetAll<T>(Expression<Func<T, bool>> expression = null) where T : class
+        public async Task<ICollection<T>> GetAll<T>(Expression<Func<T, bool>> expression) 
+            where T : IMongoGuidDAL
         {
-            throw new NotImplementedException();
+            var items = await GetCollection<T>().Find(expression).ToListAsync();
+            return items;
         }
 
         public void Add<T>(T item) where T : class
@@ -74,8 +77,8 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             throw new NotImplementedException();
         }
 
-        public async Task<string> AddAsync<T>(T item)
-            where T : IMongoDAL
+        public async Task<Guid?> AddAsync<T>(T item)
+            where T : IMongoGuidDAL
         {
             var c = GetCollection<T>();
             await c.InsertOneAsync(item);
@@ -135,6 +138,11 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         public async Task DropDB()
         {
             await _client.DropDatabaseAsync(dbName);
+        }
+
+        public void DropDbSync()
+        {
+            _client.DropDatabase(dbName);
         }
 
         public async Task CreateDB()

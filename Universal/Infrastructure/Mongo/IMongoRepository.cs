@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 using MongoDB.Driver;
 
 namespace CoreSB.Universal.Infrastructure.Mongo
@@ -10,7 +13,12 @@ namespace CoreSB.Universal.Infrastructure.Mongo
 
         IMongoCollection<T> GetCollection<T>();
 
-        Task<string> AddAsync<T>(T item)
-            where T : IMongoDAL;
+        Task<Guid?> AddAsync<T>(T item)
+            where T : IMongoGuidDAL;
+
+        Task<ICollection<T>> GetAll<T>(Expression<Func<T, bool>> expression)
+            where T : IMongoGuidDAL;
+
+        void DropDbSync();
     }
 }

@@ -34,11 +34,12 @@ namespace CoreSB.Universal
     
     
     
-    public interface IMongoDAL
+    public interface IMongoStringDAL
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
         string? Id { get; set; }
     }
-
+    public interface IMongoGuidDAL
+    {
+        Guid Id { get; set; }
+    }
 }

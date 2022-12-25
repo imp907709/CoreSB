@@ -18,10 +18,7 @@ namespace CoreSB.Domain.Currency.Mongo
         public CurrencyMongoDAL CurrencyFrom { get; set; }
         public CurrencyMongoDAL CurrencyTo { get; set; }
 
-        public int CurrencyFromId { get; set; }
-        public int CurrencyToId { get; set; }
-
-        public decimal Rate { get; set; }
+        public double Rate { get; set; }
         public DateTime Date { get; set; }
     }
 
