@@ -286,7 +286,7 @@ DONE:[
 				and reinnitializing domain DBs (newOrer and Currencies) from controller Index;
 			<- done 02.05.2020 3h30m -> move blogging to brunch, 
 				merge TMPL to master, merge blogging to master
-			<- 08.11.2020 4h -> migrate from net core 2.0 to 3.0            
+			<- 08.11.2020 4h -> migrate from net core 2.0 to 3.0
 		]~19h in 5days
         
         <- 10.12.2020 2h45m -> rearrange Services and Context interfaces
@@ -324,6 +324,11 @@ DONE:[
         -> currency cross rates recount from curency changes via rabbit mq
         -> sync from write db to read
        
+
+        22.12.2022 
+            ~10h TMPL docker compose 
+        23.12.2022 TMPL
+            ~5h TMPL mongo repo, service
 	]
 	~67h 00m in 25days
 
