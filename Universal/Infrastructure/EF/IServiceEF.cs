@@ -55,6 +55,10 @@ namespace CoreSB.Universal.Infrastructure.EF
 
         Task Delete<T>(ICollection<int> ids)
             where T : EntityIntIdDAL;
+        
+        
+        public Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
+            Service.DateComparisonRange compareBy);
 
     }
 }

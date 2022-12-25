@@ -275,19 +275,19 @@ namespace InfrastructureCheckers
             var dbs = await client.ListDatabases().ToListAsync();
             var db = client.GetDatabase(mcso.DatabaseName);
 
-            var collection = db.GetCollection<CoreSBEntityDAL>(mcso.CollectionName);
+            var collection = db.GetCollection<MongoDAL>(mcso.CollectionName);
 
-            var items = _f.CreateMany<CoreSBEntityDAL>(10);
+            var items = _f.CreateMany<MongoDAL>(10);
             await collection.InsertManyAsync(items);
 
             var exist = await collection.Find(s => s.Id != null).ToListAsync();
 
-            var filterDef = new FilterDefinitionBuilder<CoreSBEntityDAL>();
+            var filterDef = new FilterDefinitionBuilder<MongoDAL>();
             var filter = filterDef.In(s => s.Id, exist.Select(s => s.Id));
             
-            var filterConcat = Builders<CoreSBEntityDAL>.Filter.And(
+            var filterConcat = Builders<MongoDAL>.Filter.And(
                 filter,
-                Builders<CoreSBEntityDAL>.Filter.In(s => s.Id, exist.Select(s => s.Id))
+                Builders<MongoDAL>.Filter.In(s => s.Id, exist.Select(s => s.Id))
             );
             
             //filterConcat || filter

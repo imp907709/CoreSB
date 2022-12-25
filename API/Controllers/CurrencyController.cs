@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Domain.Currency;
+using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.Mongo;
 using Microsoft.AspNetCore.Mvc;
@@ -116,6 +117,17 @@ namespace CoreSB.API.Controllers
         public async Task ValidateMongo()
         {
             await _mongoService.CreateDB();
+            await _mongoService.DropDB();
+            
+            _mongoService.SetDb("testdb");
+            var c = new CurrencyMongoDAL
+            {
+                Name = "testName",
+                IsoName = "testiso",
+                IsoCode = 123,
+                IsMain = true
+            };
+            await _mongoService.Add(c);
         }
     }
 }

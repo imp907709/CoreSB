@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
 using CoreSB.Universal.Infrastructure.Mongo;
@@ -15,11 +14,13 @@ namespace CoreSB.API.Controllers
         internal IValidatorCustom _validator;
         internal ILoggerCustom _logger;
 
-        internal IServiceEF _service;
+        internal IServiceEF _serviceEF;
 
-        public ServiceController(IServiceEF service, IMapper mapper, IValidatorCustom validator, ILoggerCustom logger)
+        public ServiceController(IServiceEF serviceEF, IMapper mapper,
+            IValidatorCustom validator, ILoggerCustom logger)
         {
-            _service = service;
+            _serviceEF = serviceEF;
+
             _mapper = mapper;
             _validator = validator;
             _logger = logger;
@@ -28,15 +29,14 @@ namespace CoreSB.API.Controllers
         [HttpGet]
         public ActionResult<string> GetStatus()
         {
-            return $"Service: {_service.GetType()} {_service._status.Message}" ;
+            return $"Service: {_serviceEF.GetType()} {_serviceEF._status.Message}";
         }
-        
+
         [HttpGet]
         [Route("getConnectionString")]
         public ActionResult<string> GetConnectionString()
         {
-            return $"Write service connstr: {_service.GetConnectionString()}" ;
+            return $"Write service connstr: {_serviceEF.GetConnectionString()}";
         }
-        
     }
 }

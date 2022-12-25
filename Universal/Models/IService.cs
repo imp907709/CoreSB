@@ -10,8 +10,6 @@ namespace CoreSB.Universal
 
     public interface IService
     {
-        public Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction,
-            Service.DateComparisonRange compareBy);
 
         public IRepository GetRepositoryRead();
         public IRepository GetRepositoryWrite();

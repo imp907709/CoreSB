@@ -16,9 +16,6 @@ namespace CoreSB.Domain.Currency.EF
     {
         internal IRepositoryEFRead _repositoryRead;
         internal IRepositoryEFWrite _repositoryWrite;
-        internal IMapper _mapper;
-        internal IValidatorCustom _validator;
-
         public CurrencyServiceEF(IRepositoryEFRead repositoryRead, IRepositoryEFWrite repositoryWrite, IMapper mapper,
             IValidatorCustom validator, ILoggerCustom logger)
             : base(repositoryRead, repositoryWrite, mapper, validator, logger)

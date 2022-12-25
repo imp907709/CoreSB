@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using CoreSB.Domain.Currency.EF;
+using CoreSB.Universal;
 using CoreSB.Universal.Framework;
 using CoreSB.Universal.Infrastructure.EF;
 using CoreSB.Universal.Infrastructure.Mongo;
@@ -35,13 +36,17 @@ namespace CoreSB.Domain.Currency
                 configuration.GetConnectionString(Variables.MsSQlCoreSBConnection)));
             
             services.AddScoped<DbContext, CurrencyContextWrite>();
-            
+
             services.AddScoped<IRepositoryEFWrite, RepositoryCurrencyWrite>();
             services.AddScoped<IRepositoryEFRead, RepositoryCurrencyRead>();
             services.AddScoped<ICurrencyServiceEF, CurrencyServiceEF>();
 
+            
+            //mongo services
             var option = getMongoOption(configuration);
-            services.AddScoped<IMongoRepository>(s=> new MongoRepository(option.ConnectionString, option.DatabaseName));
+            services.AddScoped<IMongoRepository>(s=> 
+                new MongoRepository(option.ConnectionString, option.DatabaseName));
+            
             services.AddScoped<IMongoService, MongoService>();
         }
 

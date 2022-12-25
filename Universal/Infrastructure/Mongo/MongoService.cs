@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -13,11 +15,6 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             _repository = repo;
         }
 
-        public Expression<Func<IDateEntityDAL, bool>> CompareByDateExp(DateTime date, ExpressionType direction, Service.DateComparisonRange compareBy)
-        {
-            throw new NotImplementedException();
-        }
-
         public IRepository GetRepositoryRead()
         {
             throw new NotImplementedException();
@@ -25,12 +22,16 @@ namespace CoreSB.Universal.Infrastructure.Mongo
 
         public IRepository GetRepositoryWrite()
         {
-            throw new NotImplementedException();
+            return _repository;
         }
 
-        public Task DropDB()
+        public void SetDb(string dbName)
         {
-            throw new NotImplementedException();
+            _repository.SetDatabase(dbName);
+        }
+        public async Task DropDB()
+        {
+            await _repository.DropDB();
         }
 
         public async Task CreateDB()
@@ -45,5 +46,12 @@ namespace CoreSB.Universal.Infrastructure.Mongo
 
         public string actualStatus { get; }
         public IServiceStatus _status { get; }
+
+        public async Task<string> Add<T>(T item) where T : IMongoDAL
+        {
+            var c = _repository.GetCollection<T>();
+            await c.InsertOneAsync(item);
+            return item.Id;
+        }
     }
 }

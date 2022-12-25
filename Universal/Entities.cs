@@ -2,6 +2,10 @@
 /// <summary>
 /// reusable entities for repositories
 /// </summary>
+
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace CoreSB.Universal
 {
     using System;
@@ -32,8 +36,12 @@ namespace CoreSB.Universal
         public DateTime DateTo { get; set; }
     }
 
-    public class CoreSBEntityDAL : IMongoDAL
+    
+    //mongo
+    public class MongoDAL : IMongoDAL
     {
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
     }
 }

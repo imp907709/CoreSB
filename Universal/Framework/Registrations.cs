@@ -13,6 +13,7 @@ namespace CoreSB
         public static void ConfigureMainServices(IServiceCollection services)
         {
             services.AddScoped<IRepository, Repository>();
+            
             services.AddScoped<IService, Service>();
             
             services.AddScoped<IRepositoryEF, RepositoryEF>();

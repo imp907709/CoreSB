@@ -14,7 +14,7 @@ namespace CoreSB.Universal.Infrastructure.EF
     /// <summary>
     /// Basic repository implementation
     /// </summary>
-    public class RepositoryEF : IRepository, IRepositoryEF
+    public class RepositoryEF : IRepositoryEF
     {
         DbContext _context;
 
