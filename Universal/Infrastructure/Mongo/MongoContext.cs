@@ -8,7 +8,7 @@ using MongoDB.Driver;
 
 namespace CoreSB.Universal.Infrastructure.Mongo
 {
-    public class MongoRepository : IMongoRepository
+    public class MongoContext : IMongoContext
     {
         private MongoClient _client;
         
@@ -17,23 +17,23 @@ namespace CoreSB.Universal.Infrastructure.Mongo
 
         private MongoClientSettings _settings;
 
-        public MongoRepository(MongoClient client)
+        public MongoContext(MongoClient client)
         {
             _client = client;
         }
 
-        public MongoRepository(MongoClient client, string dbName)
+        public MongoContext(MongoClient client, string dbName)
         {
             _client = client;
             SetDatabase(dbName);
         }
 
-        public MongoRepository(string connString)
+        public MongoContext(string connString)
         {
             SetClient(connString);
         }
 
-        public MongoRepository(string connString, string dbName)
+        public MongoContext(string connString, string dbName)
         {
             SetClient(connString);
             SetDatabase(dbName);
@@ -72,17 +72,50 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             return items;
         }
 
-        public void Add<T>(T item) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<Guid?> AddAsync<T>(T item)
+        public async Task<Guid?> AddOneAsync<T>(T item)
             where T : IMongoGuidDAL
         {
             var c = GetCollection<T>();
             await c.InsertOneAsync(item);
             return item?.Id;
+        }
+        
+        public async Task<IEnumerable<Guid>> AddManyAsync<T>(ICollection<T> items)
+            where T : IMongoGuidDAL
+        {
+            var c = GetCollection<T>();
+            await c.InsertManyAsync(items);
+            return items.Select(s=>s.Id);
+        }
+
+        public async Task<long> DeleteAsync<T>(T item)
+            where T : IMongoGuidDAL
+        {
+            var deleteFilter = Builders<T>.Filter.Eq(s=> s.Id, item.Id);
+            var c = await GetCollection<T>()
+                .DeleteOneAsync(deleteFilter);
+            return c.DeletedCount;
+        }
+        public async Task<long> DeleteManyAsync<T>(DateTime created)
+            where T : ICreateDateDAL
+        {
+            var deleteFilter = Builders<T>.Filter.Lte(s => s.Created, created);
+            var c = await GetCollection<T>()
+                .DeleteOneAsync(deleteFilter);
+            return c.DeletedCount;
+        }
+        public async Task<long> DeleteByFilterAsync<T>(FilterDefinition<T> deleteFilter)
+            where T : IMongoGuidDAL
+        {
+            var c = await GetCollection<T>()
+                .DeleteOneAsync(deleteFilter);
+            return c.DeletedCount;
+        }
+
+
+        public void Add<T>(T item) where T : class
+        {
+            throw new NotImplementedException();
         }
 
         public Task AddRangeAsync<T>(IList<T> items) where T : class

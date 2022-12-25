@@ -44,8 +44,8 @@ namespace CoreSB.Domain.Currency
             
             //mongo services
             var option = getMongoOption(configuration);
-            services.AddScoped<IMongoRepository>(s=> 
-                new MongoRepository(option.ConnectionString, option.DatabaseName));
+            services.AddScoped<IMongoContext>(s=> 
+                new MongoContext(option.ConnectionString, option.DatabaseName));
             
             services.AddScoped<IMongoService, MongoService>();
         }

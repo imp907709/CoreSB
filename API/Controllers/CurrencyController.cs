@@ -15,11 +15,11 @@ namespace CoreSB.API.Controllers
         private new ICurrencyServiceEF _service;
         private new IMongoService _mongoService;
         
-        private new IMongoRepository _mongoRepository;
+        private new IMongoContext _mongoRepository;
 
         public CurrencyController(ICurrencyServiceEF service, 
             IMongoService mongoService, 
-            IMongoRepository mongoRepository,
+            IMongoContext mongoRepository,
             IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) 
             : base(service, mapper, validator,logger)
         {

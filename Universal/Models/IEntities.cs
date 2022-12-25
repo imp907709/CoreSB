@@ -42,4 +42,10 @@ namespace CoreSB.Universal
     {
         Guid Id { get; set; }
     }
+
+    public interface ICreateDateDAL : IMongoGuidDAL
+    {
+        public DateTime Created { get; set; }
+    }
+    
 }
