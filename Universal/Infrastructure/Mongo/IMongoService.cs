@@ -10,7 +10,5 @@ namespace CoreSB.Universal.Infrastructure.Mongo
     {
         void SetDb(string dbName);
         Task<T> Add<T>(T item) where T : IMongoGuidDAL;
-
-        Task ValidateAllInOne();
     }
 }

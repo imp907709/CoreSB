@@ -16,8 +16,11 @@ namespace CoreSB.API.Controllers
         private new IMongoService _mongoService;
         
         private new IMongoContext _mongoRepository;
-
-        public CurrencyController(ICurrencyServiceEF service, 
+        private new ICurrencyMongoService _currencyMongoService;
+        
+        public CurrencyController(
+            ICurrencyServiceEF service, 
+            ICurrencyMongoService mongoCurService,
             IMongoService mongoService, 
             IMongoContext mongoRepository,
             IMapper mapper, IValidatorCustom validator, ILoggerCustom logger) 
@@ -27,6 +30,7 @@ namespace CoreSB.API.Controllers
             _mongoService = mongoService;
 
             _mongoRepository = mongoRepository;
+            _currencyMongoService = mongoCurService;
         }
 
         [HttpGet]
@@ -123,7 +127,7 @@ namespace CoreSB.API.Controllers
         [Route("validateMongo")]
         public async Task<IActionResult> ValidateMongo()
         {
-            await _mongoService.ValidateAllInOne();
+            await _currencyMongoService.ValidateCrudTest();
 
             return Ok( );
         }

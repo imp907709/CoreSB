@@ -7,8 +7,6 @@ namespace CoreSB.Universal
 {
     public interface IContext<T>
     {
-        public void SetWorkingDatabase(string dbName);
-        
         public Task DropDatabase();
 
         public void CreateDatabase();
@@ -19,8 +17,7 @@ namespace CoreSB.Universal
         public Task<T> AddOneAsync<T>(T item);
 
         public Task<IEnumerable<T>> AddManyAsync<T>(ICollection<T> items);
-
-
+        
         Task<long> DeleteAsync<T>(T item)
             where T : IMongoGuidDAL;
 

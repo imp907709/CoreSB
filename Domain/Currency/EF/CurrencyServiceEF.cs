@@ -37,7 +37,6 @@ namespace CoreSB.Domain.Currency.EF
             _validator = validator;
         }
 
-
         /*Currencies*/
         public async Task<ICurrencyBL> AddCurrency(ICurrencyBL currency)
         {
@@ -389,24 +388,25 @@ namespace CoreSB.Domain.Currency.EF
         }
 
 
+        public async Task InitialGen()
+        {
+            var crrs = await _repositoryWrite.GetAll<CurrencyRatesDAL>().ToListAsync();
+            _repositoryWrite.DeleteRange(crrs);
+            await _repositoryWrite.SaveAsync();
+            
+            var crs = await _repositoryWrite.GetAll<CurrencyDAL>().ToListAsync();
+            _repositoryWrite.DeleteRange(crs);
+            await _repositoryWrite.SaveAsync();
+            
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.initialCurrencies);
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2019);
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2022);
+            await _repositoryWrite.SaveAsync();
+        }
+        
         public async Task ValidateCrudTest()
         {
-            var crs = await _repositoryWrite.GetAll<CurrencyDAL>().Take(10)
-                .ToListAsync();
-            
-            var cur = new CurrencyDAL
-            {
-                Name = "test genned",
-                IsoName = "test name",
-                IsoCode = 132,
-                IsMain = false
-            };
-            
-            await _repositoryWrite.AddAsync(cur);
-            await _repositoryWrite.SaveAsync();
-
-            var res = await _repositoryWrite.GetAll<CurrencyDAL>(s=>s.IsoName == "test name")
-                .ToListAsync();
+            await InitialGen();
         }
     }
 }

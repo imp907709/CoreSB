@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using CoreSB.Domain.Currency.EF;
+using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
 using CoreSB.Universal.Framework;
 using CoreSB.Universal.Infrastructure.EF;
@@ -46,8 +47,12 @@ namespace CoreSB.Domain.Currency
             var option = getMongoOption(configuration);
             services.AddScoped<IMongoContext>(s=> 
                 new MongoContext(option.ConnectionString, option.DatabaseName));
+            services.AddScoped<ICurrencyMongoContext>(s=> 
+                new CurrencyMongoContext(option.ConnectionString, option.DatabaseName));
             
             services.AddScoped<IMongoService, MongoService>();
+            services.AddScoped<ICurrencyMongoService, CurrencyMongoService>();
+
         }
 
         static MongoOption getMongoOption(IConfiguration conf)

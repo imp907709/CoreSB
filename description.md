@@ -329,6 +329,11 @@ DONE:[
             ~10h TMPL docker compose 
         23.12.2022 TMPL
             ~5h TMPL mongo repo, service
+        25.12.2022
+            < done h5 > mongo add, delete, get by filter
+            < done h2 > mongo repository to context, insert, update
+        26.12.2022
+            < done 6h > mongo context, service, crud, models, update, upsert
 	]
 	~67h 00m in 25days
 

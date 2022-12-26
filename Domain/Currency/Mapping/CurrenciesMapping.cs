@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CoreSB.Domain.Currency.Mongo;
+using CoreSB.Universal;
 
 namespace CoreSB.Domain.Currency.Mapping
 {
@@ -32,6 +34,15 @@ namespace CoreSB.Domain.Currency.Mapping
                 .ForMember(d => d.FromCurrency, m => m.MapFrom(src => src.CurrencyFrom.IsoCode))
                 .ForMember(d => d.ToCurrency, m => m.MapFrom(src => src.CurrencyTo.IsoCode))
                 .ReverseMap();
+
+            CreateMap<EntityIntIdDAL, MongoDAL>()
+                .ForMember(d=>d.Id, s=>s.Ignore());
+
+            CreateMap<CurrencyDAL, CurrencyMongoDAL>()
+                .IncludeBase<EntityIntIdDAL, MongoDAL>();
+            
+            CreateMap<CurrencyRatesDAL, CurrencyRatesMongoDAL>()
+                .IncludeBase<EntityIntIdDAL, MongoDAL>();
         }
     }
 }

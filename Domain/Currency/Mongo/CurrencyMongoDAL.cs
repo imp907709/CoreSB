@@ -4,6 +4,7 @@ using CoreSB.Universal;
 
 namespace CoreSB.Domain.Currency.Mongo
 {
+    
     public class CurrencyMongoDAL : MongoDAL
     {
         public string Name { get; set; }
