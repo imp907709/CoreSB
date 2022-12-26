@@ -18,28 +18,21 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             _repository = repo;
         }
 
-        public IRepository GetRepositoryRead()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IRepository GetRepositoryWrite()
-        {
-            return _repository;
-        }
-
         public void SetDb(string dbName)
         {
-            _repository.SetDatabase(dbName);
+            _repository.SetWorkingDatabase(dbName);
         }
         public async Task DropDB()
         {
-            await _repository.DropDB();
+            await _repository.DropDatabase();
         }
 
         public async Task CreateDB()
         {
-            await _repository.CreateDB();
+            await Task.Run(() =>
+            {
+                _repository.CreateDatabase();
+            });
         }
 
         public string GetConnectionString()
@@ -50,7 +43,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         public string actualStatus { get; }
         public IServiceStatus _status { get; }
 
-        public async Task<Guid?> Add<T>(T item) where T : IMongoGuidDAL
+        public async Task<T> Add<T>(T item) where T : IMongoGuidDAL
         {
             return await _repository.AddOneAsync(item);
         }
@@ -61,15 +54,16 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             return await _repository.DeleteByFilterAsync(filter);
         }
         
-        public async Task<ICollection<T>> GetAll<T>(Expression<Func<T, bool>> expression)
+        public async Task<ICollection<T>> GetByFilter<T>(Expression<Func<T, bool>> expression)
             where T : IMongoGuidDAL
         {
-            return await _repository.GetAll<T>(s=>s.Id != null);
+            return await _repository.GetByFilter<T>(expression);
         }
 
         public async Task ValidateAllInOne()
         {
-            SetDb("testdb");
+            _repository.SetWorkingDatabase("testdb");
+            //SetDb("testdb");
             await DropDB();
             await CreateDB();
 
@@ -93,7 +87,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             };
             await Add(c2);
             
-            var curs1 = await GetAll<CurrencyMongoDAL>(null);
+            var curs1 = await GetByFilter<CurrencyMongoDAL>(s=>s.Id != null);
 
             var cr = new List<CurrencyRatesMongoDAL>()
             {
@@ -102,11 +96,13 @@ namespace CoreSB.Universal.Infrastructure.Mongo
                 new CurrencyRatesMongoDAL {CurrencyFrom = c, CurrencyTo = c2, Rate = 5 / 40.0, Date = DateTime.Now.AddDays(-2)}
             };
             await _repository.AddManyAsync(cr);
-            var crates = await GetAll<CurrencyRatesMongoDAL>(null);
+            var crates = await GetByFilter<CurrencyRatesMongoDAL>(s=>s.Id != null);
             
             await _repository.DeleteAsync(c2);
             
-            var curs2 = await GetAll<CurrencyMongoDAL>(null);
+            var curs2 = await GetByFilter<CurrencyMongoDAL>(s=>s.Id != null);
+            
+            await DropDB();
         }
     }
 }

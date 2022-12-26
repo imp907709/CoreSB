@@ -25,7 +25,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         public MongoContext(MongoClient client, string dbName)
         {
             _client = client;
-            SetDatabase(dbName);
+            SetWorkingDatabase(dbName);
         }
 
         public MongoContext(string connString)
@@ -36,16 +36,25 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         public MongoContext(string connString, string dbName)
         {
             SetClient(connString);
-            SetDatabase(dbName);
+            SetWorkingDatabase(dbName);
         }
 
-        public void SetDatabase(string dbName)
+        public void SetWorkingDatabase(string dbName)
         {
             _database = _client.GetDatabase(dbName);
             this.dbName = dbName;
         }
+        public async Task DropDatabase()
+        {
+            await _client.DropDatabaseAsync(dbName);
+        }
 
-        public IMongoDatabase GetDb()
+        public void CreateDatabase()
+        {
+            _client.GetDatabase(this.dbName);
+        }
+        
+        public IMongoDatabase GetDatabase()
         {
             return this._database;
         }
@@ -65,27 +74,24 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         }
             
         
-        public async Task<ICollection<T>> GetAll<T>(Expression<Func<T, bool>> expression) 
-            where T : IMongoGuidDAL
+        public async Task<ICollection<T>> GetByFilter<T>(Expression<Func<T, bool>> expression)
         {
             var items = await GetCollection<T>().Find(expression).ToListAsync();
             return items;
         }
 
-        public async Task<Guid?> AddOneAsync<T>(T item)
-            where T : IMongoGuidDAL
+        public async Task<T> AddOneAsync<T>(T item)
         {
             var c = GetCollection<T>();
             await c.InsertOneAsync(item);
-            return item?.Id;
+            return item;
         }
         
-        public async Task<IEnumerable<Guid>> AddManyAsync<T>(ICollection<T> items)
-            where T : IMongoGuidDAL
+        public async Task<IEnumerable<T>> AddManyAsync<T>(ICollection<T> items)
         {
             var c = GetCollection<T>();
             await c.InsertManyAsync(items);
-            return items.Select(s=>s.Id);
+            return items;
         }
 
         public async Task<long> DeleteAsync<T>(T item)
@@ -111,96 +117,10 @@ namespace CoreSB.Universal.Infrastructure.Mongo
                 .DeleteOneAsync(deleteFilter);
             return c.DeletedCount;
         }
-
-
-        public void Add<T>(T item) where T : class
+        
+        public FilterDefinitionBuilder<T> GetFilterBuilder<T>()
         {
-            throw new NotImplementedException();
-        }
-
-        public Task AddRangeAsync<T>(IList<T> items) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> SaveAsync()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddRange<T>(IList<T> items) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete<T>(T item) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteRange<T>(IList<T> items) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Update<T>(T item) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UpdateRange<T>(IList<T> items) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public IQueryable<T> SkipTake<T>(int skip, int take) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public IQueryable<T> QueryByFilter<T>(Expression<Func<T, bool>> expression) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Save()
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task DropDB()
-        {
-            await _client.DropDatabaseAsync(dbName);
-        }
-
-        public void DropDbSync()
-        {
-            _client.DropDatabase(dbName);
-        }
-
-        public async Task CreateDB()
-        {
-            _client.GetDatabase(this.dbName);
-        }
-
-        public void ReInitialize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CleanUp()
-        {
-            throw new NotImplementedException();
-        }
-
-        public string GetDatabaseName()
-        {
-            throw new NotImplementedException();
-        }
-
-        public string GetConnectionString()
-        {
-            throw new NotImplementedException();
+            return Builders<T>.Filter;
         }
     }
 }

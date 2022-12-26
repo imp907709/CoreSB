@@ -7,12 +7,11 @@ using AutoMapper;
 namespace CoreSB.Universal
 {
 
-
     public interface IService
     {
-
-        public IRepository GetRepositoryRead();
-        public IRepository GetRepositoryWrite();
+        //
+        // public IRepository GetRepositoryRead();
+        // public IRepository GetRepositoryWrite();
 
         public Task DropDB();
         public Task CreateDB();

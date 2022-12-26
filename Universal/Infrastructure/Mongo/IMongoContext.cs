@@ -6,33 +6,19 @@ using MongoDB.Driver;
 
 namespace CoreSB.Universal.Infrastructure.Mongo
 {
-    public interface IMongoContext
+    public interface IMongoContext : IContext<IMongoGuidDAL>
     {
-        void SetDatabase(string dbName);
-        IMongoDatabase GetDb();
 
+        public IMongoDatabase GetDatabase();
+        
         IMongoCollection<T> GetCollection<T>();
-
-        Task<ICollection<T>> GetAll<T>(Expression<Func<T, bool>> expression)
-            where T : IMongoGuidDAL;
-
-        void DropDbSync();
-
-
-        public Task<Guid?> AddOneAsync<T>(T item)
-            where T : IMongoGuidDAL;
-
-        public Task<IEnumerable<Guid>> AddManyAsync<T>(ICollection<T> items)
-            where T : IMongoGuidDAL;
-
-
-        Task<long> DeleteAsync<T>(T item)
-            where T : IMongoGuidDAL;
-
-        Task<long> DeleteManyAsync<T>(DateTime created)
-            where T : ICreateDateDAL;
 
         Task<long> DeleteByFilterAsync<T>(FilterDefinition<T> deleteFilter)
             where T : IMongoGuidDAL;
+        
+        public FilterDefinitionBuilder<T> GetFilterBuilder<T>()
+        {
+            return Builders<T>.Filter;
+        }
     }
 }
