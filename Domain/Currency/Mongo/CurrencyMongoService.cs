@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Universal.Infrastructure.Mongo;
@@ -17,20 +18,16 @@ namespace CoreSB.Domain.Currency.Mongo
 
         public async Task InitialGen()
         {
-            _repository.GetCollection<CurrencyMongoDAL>();
-            _repository.GetCollection<CurrencyRatesMongoDAL>();
+            // _repository.GetCollection<CurrencyMongoDAL>();
+            // _repository.GetCollection<CurrencyRatesMongoDAL>();
 
             var crs = _mapper.Map<List<CurrencyMongoDAL>>(InitialPreloadData.initialCurrencies);
-            var rts1 = _mapper.Map<List<CurrencyRatesMongoDAL>>(InitialPreloadData.CrossCurrencies_2019);
-            var rts2 = _mapper.Map<List<CurrencyRatesMongoDAL>>(InitialPreloadData.CrossCurrencies_2022);
+            var rts1 = InitialPreloadData.CrossCurrencies_mongo_2019();
+            var rts2 = InitialPreloadData.CrossCurrencies_mongo_2022();
 
             await _repository.currencies.InsertManyAsync(crs);
             await _repository.rates.InsertManyAsync(rts1);
             await _repository.rates.InsertManyAsync(rts2);
-            
-            await _repository.AddManyAsync(crs,"Currencies2");
-            await _repository.AddManyAsync(rts1,"CurrencyRates2");
-            await _repository.AddManyAsync(rts2,"CurrencyRates2");
         }
 
         public async Task ValidateCrudTest()
@@ -41,11 +38,13 @@ namespace CoreSB.Domain.Currency.Mongo
             await CreateDB();
 
             var c = new CurrencyMongoDAL {Name = "testName", IsoName = "testiso1", IsoCode = 123, IsMain = true};
-            await Add(c);
+            await _repository.currencies.InsertOneAsync(c);
+            //await Add(c);
 
 
             var c2 = new CurrencyMongoDAL {Name = "testName2", IsoName = "testiso2", IsoCode = 1234, IsMain = true};
-            await Add(c2);
+            //await Add(c2);
+            await _repository.currencies.InsertOneAsync(c2);
 
             var curs1 = await GetByFilter<CurrencyMongoDAL>(s => s.Id != null);
 
@@ -79,6 +78,11 @@ namespace CoreSB.Domain.Currency.Mongo
 
             await InitialGen();
             
+            var с3 = 
+                await GetByFilter<CurrencyMongoDAL>(s => s.IsMain == false);
+            var c4 =
+                await GetByFilter<CurrencyRatesMongoDAL>(s => s.CurrencyFrom.IsoName == "RUB");
+
             await DropDB();
         }
     }

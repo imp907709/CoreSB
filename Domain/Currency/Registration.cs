@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using AutoMapper;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
@@ -52,7 +53,7 @@ namespace CoreSB.Domain.Currency
             
             services.AddScoped<IMongoService, MongoService>();
             services.AddScoped<ICurrencyMongoService, CurrencyMongoService>();
-
+            //var s = services.BuildServiceProvider().CreateScope().ServiceProvider.GetRequiredService<IMapper>();
         }
 
         static MongoOption getMongoOption(IConfiguration conf)

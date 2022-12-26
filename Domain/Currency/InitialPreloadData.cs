@@ -1,10 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using AutoMapper;
+using CoreSB.Domain.Currency.Mapping;
+using CoreSB.Domain.Currency.Mongo;
 
 namespace CoreSB.Domain.Currency
 {
     public class InitialPreloadData
     {
+        public static IMapper _mapper { get; set; }
+
+        static InitialPreloadData()
+        {
+            var cfg = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<CurrenciesMapping>();
+            });
+            _mapper = new Mapper(cfg);
+        }
         public static List<CurrencyDAL> initialCurrencies => new List<CurrencyDAL>()
         {
             new CurrencyDAL() {Id = 1, Name = "United States dollar", IsoName = "USD", IsoCode = 840, IsMain = false},
@@ -39,5 +53,34 @@ namespace CoreSB.Domain.Currency
             // USD AMD
             new CurrencyRatesDAL() { Id = 12, CurrencyFromId = 1, CurrencyToId = 5, Rate = 395.53M, Date = new DateTime(2022, 10, 30) }
         };
+
+        public static List<CurrencyRatesMongoDAL> CrossCurrencies_mongo_2019()
+        {
+            return Remap(CrossCurrencies_2019);
+        }
+        
+        public static List<CurrencyRatesMongoDAL> CrossCurrencies_mongo_2022()
+        {
+            return Remap(CrossCurrencies_2022);
+        }
+        
+        static List<CurrencyRatesMongoDAL> Remap(List<CurrencyRatesDAL> rates)
+        {
+            var result = new List<CurrencyRatesMongoDAL>();
+            foreach (var i in rates)
+            {
+                
+                var currSQL = _mapper.Map<CurrencyRatesMongoDAL>(i);
+                currSQL.CurrencyFrom =
+                    _mapper.Map<CurrencyMongoDAL>(
+                        InitialPreloadData.initialCurrencies.FirstOrDefault(s => s.Id == i.CurrencyFromId));
+                currSQL.CurrencyTo =
+                    _mapper.Map<CurrencyMongoDAL>(
+                        InitialPreloadData.initialCurrencies.FirstOrDefault(s => s.Id == i.CurrencyToId));
+                result.Add(currSQL);
+            }
+
+            return result;
+        }
     }
 }

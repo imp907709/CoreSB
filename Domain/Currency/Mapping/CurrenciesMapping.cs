@@ -40,9 +40,23 @@ namespace CoreSB.Domain.Currency.Mapping
 
             CreateMap<CurrencyDAL, CurrencyMongoDAL>()
                 .IncludeBase<EntityIntIdDAL, MongoDAL>();
-            
+
             CreateMap<CurrencyRatesDAL, CurrencyRatesMongoDAL>()
-                .IncludeBase<EntityIntIdDAL, MongoDAL>();
+                .IncludeBase<EntityIntIdDAL, MongoDAL>()
+                .ForMember(d => d.CurrencyFrom,
+                    opt =>
+                    {
+                        opt.PreCondition(s => s.CurrencyFrom is not null);
+                        opt.MapFrom(s=>s.CurrencyFrom);
+                    }
+                ).ForMember(d => d.CurrencyTo,
+                    opt =>
+                    {
+                        opt.PreCondition(s => s.CurrencyTo is not null);
+                        opt.MapFrom(s=>s.CurrencyTo);
+                    }
+                );
+
         }
     }
 }
