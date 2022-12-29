@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using CoreSB.Universal;
+﻿using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.Mongo;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.IdGenerators;
@@ -23,7 +19,6 @@ namespace CoreSB.Domain.Currency.Mongo
         {
             RegisterCollections();
         }
-
         public CurrencyMongoContext(string connString, string dbName) : base(connString, dbName)
         {
             RegisterCollections();

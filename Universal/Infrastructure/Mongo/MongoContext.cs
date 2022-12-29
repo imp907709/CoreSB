@@ -30,7 +30,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         {
             SetClient(connString);
         }
-
+        
         public MongoContext(string connString, string dbName)
         {
             SetClient(connString);

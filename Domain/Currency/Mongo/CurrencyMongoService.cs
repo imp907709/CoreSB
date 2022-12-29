@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Universal.Infrastructure.Mongo;
+using MongoDB.Driver;
 
 namespace CoreSB.Domain.Currency.Mongo
 {
@@ -18,9 +19,6 @@ namespace CoreSB.Domain.Currency.Mongo
 
         public async Task InitialGen()
         {
-            // _repository.GetCollection<CurrencyMongoDAL>();
-            // _repository.GetCollection<CurrencyRatesMongoDAL>();
-
             var crs = _mapper.Map<List<CurrencyMongoDAL>>(InitialPreloadData.initialCurrencies);
             var rts1 = InitialPreloadData.CrossCurrencies_mongo_2019();
             var rts2 = InitialPreloadData.CrossCurrencies_mongo_2022();
@@ -77,11 +75,15 @@ namespace CoreSB.Domain.Currency.Mongo
             var curs2 = await GetByFilter<CurrencyMongoDAL>(s => s.Id != null);
 
             await InitialGen();
-            
-            var с3 = 
-                await GetByFilter<CurrencyMongoDAL>(s => s.IsMain == false);
+
+            var с3 =
+                await _repository
+                    .currencies
+                    .Find(s => s.IsMain == false).ToListAsync();
             var c4 =
-                await GetByFilter<CurrencyRatesMongoDAL>(s => s.CurrencyFrom.IsoName == "RUB");
+                await _repository 
+                    .rates
+                    .Find(s => s.CurrencyFrom.IsoName == "RUB").ToListAsync();
 
             await DropDB();
         }

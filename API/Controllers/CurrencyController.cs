@@ -42,15 +42,6 @@ namespace CoreSB.API.Controllers
             return Ok();
         }
 
-        [HttpPost]
-        [Route("ValidateCrossRates")]
-        public async Task<IList<CrossCurrenciesAPI>> ValidateCrossRates(ICrossCurrencyValidateAPI request)
-        {
-            var command = _mapper.Map<ICrossCurrencyValidateCommand>(request);
-            var result = await _service.ValidateCrossRates(command);
-            return result;
-        }
-
         [HttpGet]
         [Route("dropdbSQL")]
         public async Task<IActionResult> DropDBSQL()
@@ -86,28 +77,10 @@ namespace CoreSB.API.Controllers
             }
             return Ok();
         }
-        
+
         [HttpGet]
-        [Route("initializeSQL")]
-        public async Task<IActionResult> InitializeSQL()
-        {
-            try
-            {
-                _service.Initialize();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("-----------ERROR>>>");
-                Console.WriteLine(e);
-                Console.WriteLine("-----------<<<");
-                throw;
-            }
-            return Ok();
-        }
-        
-        [HttpGet]
-        [Route("validateCrudTest")]
-        public async Task<IActionResult> ValidateCrudTest()
+        [Route("ValidateSQL")]
+        public async Task<IActionResult> ValidateSQL()
         {
             try
             {

@@ -23,7 +23,5 @@ namespace CoreSB.Universal
 
         Task<long> DeleteManyAsync<T>(DateTime created)
             where T : ICreateDateDAL;
-
-
     }
 }
