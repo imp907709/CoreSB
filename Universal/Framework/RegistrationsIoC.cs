@@ -1,12 +1,12 @@
 ﻿using CoreSB.Domain.Currency.Validation;
 using CoreSB.Infrastructure.IO.Logging;
 using CoreSB.Infrastructure.IO.Serialization;
-using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
 using CoreSB.Universal.Infrastructure.IO.Serialization;
+using CoreSB.Universal.Infrastructure.Mongo;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CoreSB
+namespace CoreSB.Universal.Framework
 {
     public static class RegistrationsIoC
     {
@@ -24,6 +24,8 @@ namespace CoreSB
             services.AddScoped<IValidatorCustom,ValidatorCustom>();
             services.AddScoped<ILoggerCustom,LoggerCustom>();
             services.AddScoped<ISerialization,JSONNewtonsoft>();
+            
+            services.AddScoped<IMongoService, MongoService>();
         }
     }
 }

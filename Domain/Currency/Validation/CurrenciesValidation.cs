@@ -1,4 +1,5 @@
-﻿using CoreSB.Universal;
+﻿using CoreSB.Domain.Currency.Models;
+using CoreSB.Universal;
 using FluentValidation;
 
 namespace CoreSB.Domain.Currency.Validation

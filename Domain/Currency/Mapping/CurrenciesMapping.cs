@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CoreSB.Domain.Currency.Models;
 using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
 

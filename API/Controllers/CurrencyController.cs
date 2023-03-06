@@ -37,8 +37,7 @@ namespace CoreSB.API.Controllers
         [Route("ReinitializeSQL")]
         public async Task<ActionResult> ReinitializeSQL()
         {
-            _service.CleanUp();
-            _service.ReInitialize();
+            await _service.ReInitialize();
             return Ok();
         }
 
@@ -79,12 +78,12 @@ namespace CoreSB.API.Controllers
         }
 
         [HttpGet]
-        [Route("ValidateSQL")]
+        [Route("InitializeSQL")]
         public async Task<IActionResult> ValidateSQL()
         {
             try
             {
-                await _service.ValidateCrudTest();
+                await _service.Initialize();
             }
             catch (Exception e)
             {
@@ -97,10 +96,10 @@ namespace CoreSB.API.Controllers
         }
 
         [HttpGet]
-        [Route("validateMongo")]
+        [Route("InitializeMongo")]
         public async Task<IActionResult> ValidateMongo()
         {
-            await _currencyMongoService.ValidateCrudTest();
+            await _currencyMongoService.InitialGen();
 
             return Ok( );
         }

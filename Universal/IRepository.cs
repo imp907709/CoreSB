@@ -32,11 +32,12 @@ namespace CoreSB.Universal
 
         void Save();
 
+        
         Task DropDB();
         Task CreateDB();
+        Task Recreate();
+        
 
-        void ReInitialize();
-        void CleanUp();
         string GetDatabaseName();
         string GetConnectionString();
 

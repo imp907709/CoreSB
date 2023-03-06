@@ -35,7 +35,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
                 _context.CreateDatabase();
             });
         }
-
+ 
         public string GetConnectionString()
         {
             throw new NotImplementedException();

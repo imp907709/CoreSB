@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoreSB.Domain.Currency;
+using CoreSB.Domain.Currency.Models;
 using CoreSB.Universal;
 
 namespace CoreSB.Domain.NewOrder

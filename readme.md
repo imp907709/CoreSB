@@ -24,6 +24,7 @@ dotnet add package Serilog.AspNetCore
 dotnet add package MongoDB.Bson --version 2.16.1
 dotnet add package MongoDB.Driver --version 2.16.1
 dotnet add package MongoDB.Driver.Core --version 2.16.1
+dotnet add package Elastic.Clients.Elasticsearch
 
 dotnet add package xunit 
 dotnet add package xunit.runner.visualstudio

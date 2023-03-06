@@ -1,15 +1,11 @@
-﻿using System.Configuration;
-using Autofac;
+﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using CoreSB.Domain.Currency.Validation;
 using CoreSB.Infrastructure.IO.Logging;
 using CoreSB.Infrastructure.IO.Serialization;
-using CoreSB.Universal.Framework;
-using InfrastructureCheckers;
-using LINQtoObjectsCheck;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CoreSB.Universal.Registrations.IoC
+namespace CoreSB.Universal.Framework.IoC
 {
     /*Build in logging*/
     public static partial class AutofacConfig

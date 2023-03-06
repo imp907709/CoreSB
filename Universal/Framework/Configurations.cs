@@ -4,15 +4,15 @@ using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.NewOrder;
 using CoreSB.Domain.NewOrder.EF;
+using CoreSB.Universal.Framework.IoC;
 using CoreSB.Universal.Infrastructure.EF;
-using CoreSB.Universal.Registrations.IoC;
 using CoreSB.Universal.StartupConfigs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
-namespace CoreSB.Universal.Registrations
+namespace CoreSB.Universal.Framework
 {
     public static class Configurations
     {
@@ -44,7 +44,7 @@ namespace CoreSB.Universal.Registrations
         {
 
             /*
-            * Registering multiple IRepository clones with different connections trings
+            * Registering multiple IRepository clones with different connections strings
             * For multiple SQL DBs in one project
             */
             var connection = configuration

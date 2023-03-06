@@ -3,7 +3,6 @@ using AutoMapper;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
-using CoreSB.Universal.Framework;
 using CoreSB.Universal.Infrastructure.EF;
 using CoreSB.Universal.Infrastructure.Mongo;
 using CoreSB.Universal.StartupConfigs;
@@ -51,7 +50,6 @@ namespace CoreSB.Domain.Currency
             services.AddScoped<ICurrencyMongoContext>(s=> 
                 new CurrencyMongoContext(option.ConnectionString, option.DatabaseName));
             
-            services.AddScoped<IMongoService, MongoService>();
             services.AddScoped<ICurrencyMongoService, CurrencyMongoService>();
             //var s = services.BuildServiceProvider().CreateScope().ServiceProvider.GetRequiredService<IMapper>();
         }

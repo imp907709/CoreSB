@@ -85,7 +85,6 @@ namespace CoreSB.Domain.Currency.Mongo
                     .rates
                     .Find(s => s.CurrencyFrom.IsoName == "RUB").ToListAsync();
 
-            await DropDB();
         }
     }
 }

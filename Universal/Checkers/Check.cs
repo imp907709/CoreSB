@@ -1,10 +1,19 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Text.Json;
+using AngleSharp.Common;
+using Elastic.Clients.Elasticsearch;
+using LINQtoObjectsCheck;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.VisualBasic;
+using NetPlatformCheckers;
 
 namespace InfrastructureCheckers
 {
@@ -95,8 +104,17 @@ namespace InfrastructureCheckers
 
     public class LINQcheck
     {
+
+        public class Student
+        {
+            public string Name { get; set; }
+            public int Id { get; set; }
+        }
+
         public static void GO()
         {
+            var intended = new JsonSerializerOptions() {WriteIndented = true};
+
             var propsIntersectAny = new List<Property>()
             {
                 new Property() {ID = 1, PropertyName = "PropName1"},
@@ -208,6 +226,161 @@ namespace InfrastructureCheckers
             File.WriteAllTextAsync(@"C:\files\test\r2.json", JsonSerializer.Serialize(r2));
 
             File.WriteAllTextAsync(@"C:\files\test\r3.json", JsonSerializer.Serialize(r3));
+
+
+            var a = new List<string>() {"a", "b", "c"};
+
+            var all = new List<string>() {"a", "b", "c"};
+            var few = new List<string>() {"a", "b"};
+            var fewAndOther = new List<string>() {"a", "b", "d"};
+            var notAny = new List<string>() {"e", "f"};
+
+            var a1 = a.Where(s => all.All(c => c == s)).ToList();
+
+            //all [a,b,c]
+            var a2 = a.Where(s => all.Any(c => c == s)).ToList();
+            var a3 = a.Where(s => all.Exists(c => s == c));
+            var a4 = a.Where(s => all.Contains(s));
+
+            //few [a,b]
+            var f = a.Where(s => few.Any(c => c == s)).ToList();
+
+            //except [c]
+            var fex = a.Where(s => !few.Any(c => c == s)).ToList();
+
+            //!!! not except
+            //!any != any (!=)
+            var fex2 = a.Where(s => few.Any(c => c != s)).ToList();
+
+            string res = string.Empty;
+            res = appendRes(res, JsonSerializer.Serialize(f));
+            res = appendRes(res, "=====");
+            res = appendRes(res, JsonSerializer.Serialize(fex));
+            res = appendRes(res, JsonSerializer.Serialize(fex2));
+
+
+            for (int i = 0; i < 4; i++)
+                res += Environment.NewLine;
+
+            var gp1 = itemsList1.SelectMany(p => p.Property, (l, r) => new {Name = l.Name, Prop = r.PropertyName})
+                .ToList();
+            var gp2 = itemsList2.SelectMany(p => p.Property, (l, r) => new {Name = l.Name, Prop = r.PropertyName})
+                .ToList();
+
+            var jn = gp1.Join(gp2,
+                lk => new {lk.Name, lk.Prop},
+                rk => new {rk.Name, rk.Prop},
+                (l, r) => new {lName = l.Name, lProp = l.Prop, rName = r.Name, rProp = r.Prop}).ToList();
+
+            var gpJn = gp1.GroupJoin(gp2,
+                    lk => new {lk.Name, lk.Prop},
+                    rk => new {rk.Name, rk.Prop},
+                    (l, r) => new {lName = l.Name, lProp = l.Prop, Cnt = r?.Count(s => !string.IsNullOrEmpty(s?.Name))})
+                .ToList();
+
+            var gpJnQl =
+                (from s1 in gp1
+                    join s2 in gp2 on new {s1.Name, s1.Prop}
+                        equals new {s2.Name, s2.Prop} into g
+                    from s3 in g.DefaultIfEmpty()
+                    group new {s3} by new {s1.Name, s1.Prop}
+                    into g
+                    select new
+                    {
+                        Name = g.Key.Name, Prop = g.Key.Prop, Cnt = g.Count(s => !string.IsNullOrEmpty(s?.s3?.Name))
+                    }).ToList();
+
+
+            res = appendResFunc(res, Jsonsize(gp1));
+            res = appendRes(res, JsonSerializer.Serialize(gp2, intended));
+            res = appendRes(res, JsonSerializer.Serialize(jn, intended));
+            res = appendRes(res, JsonSerializer.Serialize(gpJn, intended));
+            res = appendRes(res, JsonSerializer.Serialize(gpJnQl, intended));
+
+            File.WriteAllTextAsync(@"C:\files\test\a.json", res);
+            
+            
+            
+            List<Student> lt = new()
+            {
+                new() {Name = "abcde", Id = 0},
+                new() {Name = "abcdf", Id = 1},
+                new() {Name = "abcdg", Id = 2},
+                new() {Name = "abcd", Id = 3},
+                new() {Name = "abce", Id = 4},
+                new() {Name = "abc", Id = 5}
+            };
+
+            var stGp =
+                lt.GroupBy(NameCount, StudentsGroup);
+            var stMn = 
+                stGp.SelectMany(p => p.r,StudentsSelectMany).ToList();
+
+            var res2 = string.Empty;
+            res2 = appendRes(res2, Jsonsize(stGp));
+            res2 = appendRes(res2, Jsonsize(stMn));
+            
+            File.WriteAllTextAsync(@"C:\files\test\std.json", res2);
+        }
+        
+        static Func<Student, int> NameCount =
+            (i) =>
+            {
+                return i.Name.Count();
+            };
+
+        public class Gp
+        {
+            public int l { get; set; }
+            public IEnumerable<Student> r { get; set; }
+        }
+
+        public class GpS
+        {
+            public Gp l { get; set; }
+            public Student r { get; set; }
+        }
+
+        public class GpRes
+        {
+            public string Name { get; set; }
+            public int NameLangthGroup { get; set; }
+        }
+
+        private static Func<int, IEnumerable<Student>, Gp> StudentsGroup = (l,r) =>
+        {
+            return new Gp {l = l, r = r};
+        };
+
+        private static Func<Gp,Student, GpRes> StudentsSelectMany = (l,r) =>
+        {
+            return new GpRes {Name = r.Name, NameLangthGroup = l.l};
+        };
+        
+        static Func<string, string, string> appendResFunc = (string res, string value) =>
+        {
+            res += value;
+            res += Environment.NewLine;
+            res += "------";
+            res += Environment.NewLine;
+            return res;
+        };
+
+        private static Func<object, string> Jsonsize = (i) =>
+        {
+            return JsonSerializer.Serialize(i, new JsonSerializerOptions()
+            {
+                WriteIndented = true
+            });
+        };
+
+        static string appendRes(string res, string value)
+        {
+            res += value;
+            res += Environment.NewLine;
+            res += "------";
+            res += Environment.NewLine;
+            return res;
         }
     }
 }
@@ -234,6 +407,281 @@ namespace Algorithms
             return arr;
         }
     }
+
+
+    public class SelectionSort
+    {
+        public int[] GO(int[] arr)
+        {
+            if (arr.Length <= 1)
+                return arr;
+
+            int l = arr.Length;
+
+            for (int i = 0; i < l - 1; i++)
+            {
+                int min_idx = i;
+
+                for (int j = i + 1; j < l; j++)
+                {
+                    if (arr[j] < arr[min_idx])
+                    {
+                        min_idx = j;
+                    }
+                }
+
+                (arr[min_idx], arr[i]) = (arr[i], arr[min_idx]);
+            }
+
+            return arr;
+        }
+    }
+
+    public class SelectionSortOriginal
+    {
+        public int[] GO(int[] arr)
+        {
+            int n = arr.Length;
+
+            // One by one move boundary of unsorted subarray
+            for (int i = 0; i < n - 1; i++)
+            {
+                // Find the minimum element in unsorted array
+                int min_idx = i;
+                for (int j = i + 1; j < n; j++)
+                    if (arr[j] < arr[min_idx])
+                    {
+                        min_idx = j;
+                    }
+
+                // Swap the found minimum element with the first
+                // element
+                (arr[min_idx], arr[i]) = (arr[i], arr[min_idx]);
+            }
+
+            return arr;
+        }
+    }
+
+
+    public class InsertionSort
+    {
+        public int[] GO(int[] arr)
+        {
+            for (int i = 1; i < arr.Length; i++)
+            {
+                var n = arr[i];
+                var j = i - 1;
+                while (arr[j] > n && j >= 0)
+                {
+                    arr[j + 1] = arr[j];
+                    j--;
+                }
+
+                arr[j + 1] = n;
+            }
+
+            return arr;
+        }
+    }
+
+    public class InsertionSortOriginal
+    {
+        // Function to sort array
+        // using insertion sort
+        public int[] GO(int[] arr)
+        {
+            int n = arr.Length;
+            for (int i = 1; i < n; ++i)
+            {
+                int key = arr[i];
+                int j = i - 1;
+
+                // Move elements of arr[0..i-1],
+                // that are greater than key,
+                // to one position ahead of
+                // their current position
+                while (j >= 0 && arr[j] > key)
+                {
+                    arr[j + 1] = arr[j];
+                    j = j - 1;
+                }
+
+                arr[j + 1] = key;
+            }
+
+            return arr;
+        }
+    }
+
+
+    public class ShellSortInt
+    {
+        public int[] GO(int[] arr)
+        {
+            for (var gap = arr.Length / 2; gap > 0; gap /= 2)
+            {
+                for (var i = gap; i < arr.Length; i++)
+                {
+                    int j;
+                    var pvt = arr[i];
+                    for (j = i; j >= gap && arr[j - gap] > pvt; j -= gap)
+                    {
+                        arr[j] = arr[j - gap];
+                    }
+
+                    arr[j] = pvt;
+                }
+            }
+
+            return arr;
+        }
+    }
+
+    public class ShellSortOriginal
+    {
+        public int[] GO(int[] arr)
+        {
+            int n = arr.Length;
+
+            // Start with a big gap,
+            // then reduce the gap
+            for (int gap = n / 2; gap > 0; gap /= 2)
+            {
+                // Do a gapped insertion sort for this gap size.
+                // The first gap elements a[0..gap-1] are already
+                // in gapped order keep adding one more element
+                // until the entire array is gap sorted
+                for (int i = gap; i < n; i += 1)
+                {
+                    // add a[i] to the elements that have
+                    // been gap sorted save a[i] in temp and
+                    // make a hole at position i
+                    int temp = arr[i];
+
+                    // shift earlier gap-sorted elements up until
+                    // the correct location for a[i] is found
+                    int j;
+                    for (j = i; j >= gap && arr[j - gap] > temp; j -= gap)
+                        arr[j] = arr[j - gap];
+
+                    // put temp (the original a[i])
+                    // in its correct location
+                    arr[j] = temp;
+                }
+            }
+
+            return arr;
+        }
+    }
+
+
+   
+    public class QuickSort{
+
+        public int[] GO(int[] arr){
+            sort(arr,0,arr.Length-1);
+            return arr;
+        }
+
+        void sort(int[] arr, int st, int fn){	
+            if(st>=fn)
+                return;
+            
+            var p = partition(arr,st, fn);
+		
+            sort(arr,st,p-1);
+            sort(arr,p+1,fn);
+        }
+
+        int partition(int[] arr,int low,int hi){
+		
+            var p = hi;
+            var i = low-1;
+		
+            for(int j = low; j<hi;j++){
+                if(arr[j] < arr[p]){
+                    i++;
+                    (arr[i], arr[j]) = (arr[j], arr[i]);
+                }
+            }
+		
+            i++;
+            (arr[i],arr[hi])=(arr[hi],arr[i]);
+		
+            return i;
+        }
+
+    }
+    public class QuickSortIntOriginal   
+    {
+        public int[] GO(int[] arr)
+        {
+            quickSort(arr, 0, arr.Length - 1);
+            return arr;
+        }
+
+        // A utility function to swap two elements
+        static void swap(int[] arr, int i, int j)
+        {
+            int temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+
+        /* This function takes last element as pivot, places
+             the pivot element at its correct position in sorted
+             array, and places all smaller (smaller than pivot)
+             to left of pivot and all greater elements to right
+             of pivot */
+        static int partition(int[] arr, int low, int high)
+        {
+            // pivot
+            int pivot = arr[high];
+
+            // Index of smaller element and
+            // indicates the right position
+            // of pivot found so far
+            int i = (low - 1);
+
+            for (int j = low; j <= high - 1; j++)
+            {
+                // If current element is smaller
+                // than the pivot
+                if (arr[j] < pivot)
+                {
+                    // Increment index of
+                    // smaller element
+                    i++;
+                    swap(arr, i, j);
+                }
+            }
+
+            swap(arr, i + 1, high);
+            return (i + 1);
+        }
+
+        /* The main function that implements QuickSort
+                    arr[] --> Array to be sorted,
+                    low --> Starting index,
+                    high --> Ending index
+           */
+        static void quickSort(int[] arr, int low, int high)
+        {
+            if (low < high)
+            {
+                // pi is partitioning index, arr[p]
+                // is now at right place
+                int pi = partition(arr, low, high);
+
+                // Separately sort elements before
+                // partition and after partition
+                quickSort(arr, low, pi - 1);
+                quickSort(arr, pi + 1, high);
+            }
+        }
+    }
+
 
     public class MergeSortOriginal
     {
@@ -330,380 +778,210 @@ namespace Algorithms
             }
         }
     }
-
     public class MergeSort
     {
-        public static MergeSort item = new MergeSort();
-
-        public static void _GO()
-        {
-            var unsorted0 = new int[] {5, 3, 4, 2, 1, 9, 8, 7, 10};
-
-            //var unsorted0 = new int[]{5,1,2,8,9};
-            var sortedarr0 = new int[unsorted0.Length];
-            unsorted0.CopyTo(sortedarr0, 0);
-            var sorted0 = sortedarr0.ToList().OrderBy(s => s);
-            var sortedResult0 = item.GO(unsorted0);
-
-            var bool0 = sortedResult0.SequenceEqual(sorted0);
-        }
-
         public int[] GO(int[] arr)
         {
-            var result = split(arr);
-            return result;
+            return split(arr);
         }
 
-        int[] split(int[] arr)
+        public int[] split(int[] arr)
         {
-            if (arr.Length <= 1)
+            var N = arr.Length;
+            
+            if (N <= 1)
                 return arr;
 
-            var mg = arr.Length / 2;
+            var m = (arr.Length / 2);
+            var ll = m;
+            var rr = arr.Length - m;
+            var l = new int[ll];
+            var r = new int[rr];
+            Array.Copy(arr, 0, l, 0, ll);
+            Array.Copy(arr, ll, r, 0, rr);
 
-            var lg = 0;
-            var rg = arr.Length - 1;
-            var rLng = arr.Length - mg;
+            var l2 = arr.Take(m).ToArray();
+            var r2 = arr.Skip(m).Take(N - m).ToArray();
+            l2 = split(l2);
+            r2 = split(r2);
 
-            var arrL = new int[mg];
-            var arrR = new int[rLng];
-            Array.Copy(arr, 0, arrL, 0, mg);
-            Array.Copy(arr, mg, arrR, 0, rLng);
+            return merge(l2, r2);
+        }
 
-            arrL = split(arrL);
-            arrR = split(arrR);
+        public int[] merge(int[] lt, int[] rt)
+        {
+            int l = 0;
+            int r = 0;
+            int[] res = new int[lt.Length + rt.Length];
 
-            var res = compareMerge(arrL, arrR);
+            while (l < lt.Length && r < rt.Length)
+            {
+                if (lt[l] <= rt[r])
+                {
+                    res[l + r] = lt[l];
+                    l++;
+                }
+                else
+                {
+                    res[l + r] = rt[r];
+                    r++;
+                }
+            }
+
+            while (l < lt.Length)
+            {
+                res[l + r] = lt[l];
+                l++;
+            }
+
+            while (r < rt.Length)
+            {
+                res[l + r] = rt[r];
+                r++;
+            }
+
             return res;
         }
-
-        int[] compareMerge(int[] arrL, int[] arrR)
-        {
-            var result = new int[arrL.Length + arrR.Length];
-
-            int i1 = 0;
-            int i2 = 0;
-
-            while (i1 < arrL.Length && i2 < arrR.Length)
-            {
-                if (i1 < arrL.Length && i2 < arrR.Length && arrL[i1] <= arrR[i2])
-                {
-                    result[i1 + i2] = arrL[i1];
-                    i1++;
-                }
-
-                if (i1 < arrL.Length && i2 < arrR.Length && arrR[i2] < arrL[i1])
-                {
-                    result[i1 + i2] = arrR[i2];
-                    i2++;
-                }
-            }
-
-            while (i1 < arrL.Length && i1 <= i2)
-            {
-                result[i1 + i2] = arrL[i1];
-                i1++;
-            }
-
-            while (i2 < arrR.Length && i2 <= i1)
-            {
-                result[i1 + i2] = arrR[i2];
-                i2++;
-            }
-
-            return result;
-        }
     }
 
-    public class SelectionSort
+
+    public class HeapSortOriginal
     {
         public int[] GO(int[] arr)
         {
-            if (arr.Length <= 1)
-                return arr;
+            int N = arr.Length;
 
-            int l = arr.Length;
+            // Build heap (rearrange array)
+            for (int i = N / 2 - 1; i >= 0; i--)
+                heapify(arr, N, i);
 
-            for (int i = 0; i < l - 1; i++)
+            // One by one extract an element from heap
+            for (int i = N - 1; i > 0; i--)
             {
-                int min_idx = i;
+                // Move current root to end
+                int temp = arr[0];
+                arr[0] = arr[i];
+                arr[i] = temp;
 
-                for (int j = i + 1; j < l; j++)
-                {
-                    if (arr[j] < arr[min_idx])
-                    {
-                        min_idx = j;
-                    }
-                }
+                // call max heapify on the reduced heap
+                heapify(arr, i, 0);
+            }
 
-                (arr[min_idx], arr[i]) = (arr[i], arr[min_idx]);
+            return arr;
+        }
+
+        // To heapify a subtree rooted with node i which is
+        // an index in arr[]. n is size of heap
+        void heapify(int[] arr, int N, int i)
+        {
+            int largest = i; // Initialize largest as root
+            int l = 2 * i + 1; // left = 2*i + 1
+            int r = 2 * i + 2; // right = 2*i + 2
+
+            // If left child is larger than root
+            if (l < N && arr[l] > arr[largest])
+                largest = l;
+
+            // If right child is larger than largest so far
+            if (r < N && arr[r] > arr[largest])
+                largest = r;
+
+            // If largest is not root
+            if (largest != i)
+            {
+                int swap = arr[i];
+                arr[i] = arr[largest];
+                arr[largest] = swap;
+
+                // Recursively heapify the affected sub-tree
+                heapify(arr, N, largest);
+            }
+
+        }
+    }
+    public class HeapSort{
+		
+        public int[] GO(int[] arr){
+            arr = sort(arr);
+            return arr;
+        }
+
+        int[] sort(int[] arr){
+
+            var N = arr.Length;
+            for(int i = (N/2)-1;i>=0; i-- ){
+                arr = heapify(arr,i,N);
+            }
+		
+            for(int i = N-1;i>0; i-- )
+            {
+                (arr[0], arr[i]) = (arr[i], arr[0]);
+                arr = heapify(arr,0,i);
+            }
+
+            return arr;
+        }
+
+        int[] heapify(int[] arr,int st, int fn)
+        {
+            var lg = st;
+            var l = st*2+1;
+            var r = st*2+2;
+		
+            if(l < fn && arr[l] > arr[lg])
+                lg = l;
+		
+            if(r < fn && arr[r] > arr[lg])
+                lg = r;
+		
+            if(lg != st)
+            {
+                (arr[lg], arr[st]) = (arr[st], arr[lg]);
+                arr = heapify(arr, lg, fn);
             }
 
             return arr;
         }
     }
 
-    public class SelectionSortOriginal
-    {
-        public int[] GO(int[] arr)
-        {
-            int n = arr.Length;
-
-            // One by one move boundary of unsorted subarray
-            for (int i = 0; i < n - 1; i++)
-            {
-                // Find the minimum element in unsorted array
-                int min_idx = i;
-                for (int j = i + 1; j < n; j++)
-                    if (arr[j] < arr[min_idx])
-                    {
-                        min_idx = j;
-                    }
-
-                // Swap the found minimum element with the first
-                // element
-                (arr[min_idx], arr[i]) = (arr[i], arr[min_idx]);
-            }
-
-            return arr;
-        }
-    }
-
-    public class InsertionSort
-    {
-        public int[] GO(int[] arr)
-        {
-            if (arr.Length <= 1)
-                return arr;
-            
-            for (int i = 1; i < arr.Length; i++)
-            {
-                var k = arr[i];
-                
-                int j = i - 1;
-                while (j >= 0 && arr[j] > k)
-                {
-                    arr[j + 1] = arr[j];
-                    j--;
-                }
-
-                arr[j + 1] = k;
-            }
-
-            return arr;
-        }
-    }
-
-    public class InsertionSortOriginal
-    {
-        // Function to sort array
-        // using insertion sort
-        public int[] GO(int[] arr)
-        {
-            int n = arr.Length;
-            for (int i = 1; i < n; ++i) {
-                int key = arr[i];
-                int j = i - 1;
- 
-                // Move elements of arr[0..i-1],
-                // that are greater than key,
-                // to one position ahead of
-                // their current position
-                while (j >= 0 && arr[j] > key) {
-                    arr[j + 1] = arr[j];
-                    j = j - 1;
-                }
-                arr[j + 1] = key;
-            }
-
-            return arr;
-        }
-    }
-
-
-    public class QuickSortInt
-    {
-        public int[] GO(int[] arr)
-        {
-            if (arr?.Length <= 1)
-                return arr;
-
-            pivotAndSort(arr, 0, arr.Length-1);
-            return arr;
-        }
-
-        public int[] pivotAndSort(int[] arr, int st, int fn)
-        {
-            if (st < 0 || fn > arr.Length || st >= fn )
-                return arr;
-
-            var pvt = sort(arr, st, fn);
-            pivotAndSort(arr, st, pvt-1);
-            pivotAndSort(arr, pvt+1, fn);
-
-            return arr;
-        }
-
-        public int sort(int[] arr, int st, int fn)
-        {
-            int i = st-1;
-
-            int pvt = fn;
-
-            for (var j = st; j <= fn; j++)
-            {
-                if (arr[j] < arr[pvt])
-                {
-                    i++;
-                    (arr[i], arr[j]) = (arr[j], arr[i]);
-                }
-            }
-            
-            (arr[i+1], arr[fn]) = (arr[fn], arr[i+1]);
-            return i+1;
-        }
-    }
-
-    public class QuickSortIntOriginal
-    {
-
-        public int[] GO(int[] arr)
-        {
-            quickSort(arr, 0, arr.Length - 1);
-            return arr;
-        }
-        
-        // A utility function to swap two elements
-        static void swap(int[] arr, int i, int j)
-        {
-            int temp = arr[i];
-            arr[i] = arr[j];
-            arr[j] = temp;
-        }
-
-        /* This function takes last element as pivot, places
-             the pivot element at its correct position in sorted
-             array, and places all smaller (smaller than pivot)
-             to left of pivot and all greater elements to right
-             of pivot */
-        static int partition(int[] arr, int low, int high)
-        {
-
-            // pivot
-            int pivot = arr[high];
-
-            // Index of smaller element and
-            // indicates the right position
-            // of pivot found so far
-            int i = (low - 1);
-
-            for (int j = low; j <= high - 1; j++)
-            {
-
-                // If current element is smaller
-                // than the pivot
-                if (arr[j] < pivot)
-                {
-
-                    // Increment index of
-                    // smaller element
-                    i++;
-                    swap(arr, i, j);
-                }
-            }
-
-            swap(arr, i + 1, high);
-            return (i + 1);
-        }
-
-        /* The main function that implements QuickSort
-                    arr[] --> Array to be sorted,
-                    low --> Starting index,
-                    high --> Ending index
-           */
-        static void quickSort(int[] arr, int low, int high)
-        {
-            if (low < high)
-            {
-
-                // pi is partitioning index, arr[p]
-                // is now at right place
-                int pi = partition(arr, low, high);
-
-                // Separately sort elements before
-                // partition and after partition
-                quickSort(arr, low, pi - 1);
-                quickSort(arr, pi + 1, high);
-            }
-        }
-    }
-
-
-    public class ShellSortInt
-    {
-        public int[] GO(int[] arr)
-        {
-            for (var gap = arr.Length / 2; gap > 0; gap /=2)
-            {
-                for(var i = gap; i < arr.Length; i++)
-                {
-                    int j;
-                    var pvt = arr[i];
-                    for(j=i;j >= gap && arr[j-gap] > pvt; j-=gap)
-                    {
-                        arr[j] = arr[j - gap];
-                    }
-                    arr[j] = pvt;
-                }
-            }
-
-            return arr;
-        }
-    }
-
-    public class ShellSortOriginal
-    {
-        public int[] GO(int []arr)
-        {
-            int n = arr.Length;
- 
-            // Start with a big gap,
-            // then reduce the gap
-            for (int gap = n/2; gap > 0; gap /= 2)
-            {
-                // Do a gapped insertion sort for this gap size.
-                // The first gap elements a[0..gap-1] are already
-                // in gapped order keep adding one more element
-                // until the entire array is gap sorted
-                for (int i = gap; i < n; i += 1)
-                {
-                    // add a[i] to the elements that have
-                    // been gap sorted save a[i] in temp and
-                    // make a hole at position i
-                    int temp = arr[i];
- 
-                    // shift earlier gap-sorted elements up until
-                    // the correct location for a[i] is found
-                    int j;
-                    for (j = i; j >= gap && arr[j - gap] > temp; j -= gap)
-                        arr[j] = arr[j - gap];
- 
-                    // put temp (the original a[i])
-                    // in its correct location
-                    arr[j] = temp;
-                }
-            }
-            return arr;
-        }
-    }
     
 
     public delegate int[] SortInt(int[] arr);
 
+
+    //utilities, helpers
+    public class Arrays
+    {
+        public static void Split(int[] arr, out int[] l, out int[] r)
+        {
+            l = new int[0];
+            r = new int[0];
+            
+            if (arr.Length <= 1)
+            {
+                l = arr;
+                r = new int[0];
+            }
+            else
+            {
+                var m = arr.Length / 2;
+                var lL = arr.Length - m;
+                l = new int[m];
+                r = new int[lL];
+                Array.Copy(arr,0,l,0,l.Length);
+                Array.Copy(arr,m,r,0,r.Length);
+            }
+        }
+        public static void Swap(int[] arr, int l, int r)
+        {
+            (arr[l], arr[r]) = (arr[r], arr[l]);
+        }
+    }
+
     public class SortChecker
     {
         private Random rnd = new Random();
-        List<int> _ranges = new List<int>() {10000, 20000, 30000};
+        List<int> _ranges = new List<int>() {10, 10000, 20000, 30000};
         private List<string> rep = new List<string>();
         private StringBuilder sb = new StringBuilder();
 
@@ -713,29 +991,42 @@ namespace Algorithms
             if (ranges?.Any() != true)
                 ranges = _ranges;
 
-            MergeSort ms = new MergeSort();
+            var lineGap = "-----";
+            rep.Add(
+                StatFormat("Alg Name", "Result", "Items cnt", "Time elapsed", "Ratio")
+            );
+            rep.Add(StatFormat(lineGap,lineGap,lineGap,lineGap,lineGap));
+            
             SelectionSort sst = new SelectionSort();
             InsertionSort iss = new InsertionSort();
-            QuickSortInt qsi = new QuickSortInt();
             ShellSortInt ssi = new ShellSortInt();
-
-            MergeSortOriginal mso = new MergeSortOriginal();
+            QuickSort qsi = new QuickSort();
+            MergeSort ms = new MergeSort();
+            HeapSort hs = new HeapSort();
+            
             SelectionSortOriginal sso = new SelectionSortOriginal();
             InsertionSortOriginal iso = new InsertionSortOriginal();
-            QuickSortIntOriginal qso = new QuickSortIntOriginal();
             ShellSortOriginal slst = new ShellSortOriginal();
-
+            QuickSortIntOriginal qso = new QuickSortIntOriginal();
+            MergeSortOriginal mso = new MergeSortOriginal();
+            HeapSortOriginal hso = new HeapSortOriginal();
+            
+            
+            
             // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {ssi.GO, slst.GO};
+            List<SortInt> algs = new List<SortInt>() {hso.GO };
 
             //for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)
             {
-                var arr = getArr(rng);
+                var arr = fillRandomArr(rng);
+                Trace.WriteLine($"Array under test:{string.Join(",", arr.ToList())} ;");
+
                 // arr = new List<int>() {5, 9, 0, 6, 2, 1};
                 var sortedarr = copySorted(arr);
 
                 var sw = new Stopwatch();
+
                 // arr = new List<int>() { 2, 1, 4, 3, 5};
                 foreach (var alg in algs)
                 {
@@ -748,16 +1039,20 @@ namespace Algorithms
                     var ratio = etcks / (rng * Math.Log(rng));
 
                     //rep.Add($"Algorithm: {ms.GetType().Name}; Result: {res}; Range: {rng}; Elapsed:{sw.Elapsed}; Ratio:{ratio};");
-                    rep.Add($"{alg.Target} {res} {rng} {etcks} {ratio}");
+                    //rep.Add($"{alg.Target} {res} {rng} {etcks} {ratio}");
+                    rep.Add(
+                        //string.Format("{0,45} | {1,7} | {2,7} | {3,7} | {4,7}", alg.Target, res, rng, etcks, ratio)
+                        StatFormat(alg.Target.ToString(), res.ToString(), rng.ToString(), etcks.ToString(), ratio.ToString())
+                    );
                 }
 
                 rep.Add(Environment.NewLine);
             }
 
-            File.WriteAllLines(@"C:\files\test\rep.txt", rep);
+            File.WriteAllLines(@"C:\files\test\algTest.txt", rep);
         }
 
-        List<int> getArr(int rng = 10)
+        public List<int> fillRandomArr(int rng = 10)
         {
             var arr = new List<int>(rng);
             for (int i = 0; i < rng; i++)
@@ -772,19 +1067,534 @@ namespace Algorithms
         {
             var sortedarr0 = new int[arr.Count];
             arr.CopyTo(sortedarr0, 0);
-            arr.CopyTo(sortedarr0, 0);
+
+            //arr.CopyTo(sortedarr0, 0);
             var sorted0 = sortedarr0.ToList().OrderBy(s => s).ToList();
             return sorted0;
+        }
+
+        public void SplitArr(int[] arr, out int[] l, out int[] r)
+        {
+            var ll = (arr.Length / 2);
+            var rr = arr.Length - ll;
+            l = new int[ll];
+            r = new int[rr];
+            Array.Copy(arr, 0, l, 0, ll);
+            Array.Copy(arr, ll, r, 0, rr);
+        }
+
+        public string StatFormat(string name,string res, string rng, string elapsed, string ratio)
+        {
+            return string.Format($"{name,45} | {res,7} | {rng,11} | {elapsed,12} | {ratio,7}");
         }
     }
 
     public class AlgCheck
     {
+        public class SplitResult
+        {
+            public int[] ArrayUT { get; set; }
+            public int[] Left { get; set; }
+            public int[] Right { get; set; }
+
+            public bool IsOK { get; set; }
+
+            public void OkCheckAssign()
+            {
+                IsOK = false;
+                if (ArrayUT.Length == 0)
+                {
+                    IsOK = Left.Length == 0 && Right.Length == 0;
+                }
+
+                if (ArrayUT.Length == 1)
+                {
+                    IsOK = (Left.Length == 1 && Left[0] == ArrayUT[0] && Right.Length == 0)
+                           || (Left.Length == 0 && Right.Length == 1 && Right[0] == ArrayUT[0]);
+                }
+
+                if (ArrayUT.Length > 1)
+                {
+                    var b1 = (Left.Length + Right.Length == ArrayUT.Length);
+                    var b2 = new List<bool>();
+                    int i = 0;
+                    while (i < ArrayUT.Length)
+                    {
+                        int i2 = 0;
+                        int i3 = 0;
+                        while (i2 < Left.Length)
+                        {
+                            b2.Add(ArrayUT[i] == Left[i2]);
+                            i++;
+                            i2++;
+                        }
+
+                        while (i3 < Right.Length)
+                        {
+                            b2.Add(ArrayUT[i] == Right[i3]);
+                            i++;
+                            i3++;
+                        }
+                    }
+
+                    IsOK = b1 && b2.All(s => s);
+                }
+            }
+        }
+
+        public static void SplitCheck()
+        {
+            SortChecker sc = new SortChecker();
+            List<int[]> arrs = new List<int[]>();
+            List<SplitResult> results = new List<SplitResult>();
+            for (int i = 0; i <= 10; i++)
+            {
+                var arr = sc.fillRandomArr(i).ToArray();
+                arrs.Add(arr);
+                int[] l;
+                int[] r;
+                sc.SplitArr(arr, out l, out r);
+                var item = new SplitResult() {ArrayUT = arr, Left = l, Right = r};
+                item.OkCheckAssign();
+                results.Add(item);
+            }
+        }
+
         public static void GO()
         {
             SortChecker ch = new SortChecker();
-
             ch.Init(null);
+        }
+    }
+}
+
+namespace Datastructures
+{
+    public class LinkedLists
+    {
+        public static void SinglePlatformList()
+        {
+            var n4 = new LinkedListNode<string>("Node 4");
+            
+            LinkedList<string> list = new LinkedList<string>(new List<string>()
+            {
+                "Node 1", "Node 2", "Node 3"
+            });
+
+            var l = string.Join(',', list.Select(s => s));
+            Trace.WriteLine(l);
+
+            var n2 = list.Find("Node 2");
+            list.AddAfter(n2, n4);
+            
+            var n5 = new LinkedListNode<string>("Node 5");
+            list.AddFirst(n5);
+            
+            var l2 = string.Join(',', list.Select(s => s));
+            Trace.WriteLine(l2);
+
+            var reversed = list.Reverse();
+            var l3 = string.Join(',', reversed.Select(s => s));
+            Trace.WriteLine(l3);
+        }
+    }
+    
+    // A class for Min Heap
+    public class MinHeap
+    {
+        // To store array of elements in heap
+        public int[] heapArray { get; set; }
+
+        // max size of the heap
+        public int capacity { get; set; }
+
+        // Current number of elements in the heap
+        public int current_heap_size { get; set; }
+
+        // Constructor 
+        public MinHeap(int n)
+        {
+            capacity = n;
+            heapArray = new int[capacity];
+            current_heap_size = 0;
+        }
+
+        // Swapping using reference 
+        public static void Swap<T>(ref T lhs, ref T rhs)
+        {
+            T temp = lhs;
+            lhs = rhs;
+            rhs = temp;
+        }
+
+        // Get the Parent index for the given index
+        public int Parent(int key)
+        {
+            return (key - 1) / 2;
+        }
+
+        // Get the Left Child index for the given index
+        public int Left(int key)
+        {
+            return 2 * key + 1;
+        }
+
+        // Get the Right Child index for the given index
+        public int Right(int key)
+        {
+            return 2 * key + 2;
+        }
+
+        // Inserts a new key
+        public bool insertKey(int key)
+        {
+            if (current_heap_size == capacity)
+            {
+                // heap is full
+                return false;
+            }
+
+            // First insert the new key at the end 
+            int i = current_heap_size;
+            heapArray[i] = key;
+            current_heap_size++;
+
+            // Fix the min heap property if it is violated 
+            while (i != 0 && heapArray[i] <
+                heapArray[Parent(i)])
+            {
+                Swap(ref heapArray[i],
+                    ref heapArray[Parent(i)]);
+                i = Parent(i);
+            }
+
+            return true;
+        }
+
+        // Decreases value of given key to new_val. 
+        // It is assumed that new_val is smaller 
+        // than heapArray[key]. 
+        public void decreaseKey(int key, int new_val)
+        {
+            heapArray[key] = new_val;
+
+            while (key != 0 && heapArray[key] <
+                heapArray[Parent(key)])
+            {
+                Swap(ref heapArray[key],
+                    ref heapArray[Parent(key)]);
+                key = Parent(key);
+            }
+        }
+
+        // Returns the minimum key (key at
+        // root) from min heap 
+        public int getMin()
+        {
+            return heapArray[0];
+        }
+
+        // Method to remove minimum element 
+        // (or root) from min heap 
+        public int extractMin()
+        {
+            if (current_heap_size <= 0)
+            {
+                return int.MaxValue;
+            }
+
+            if (current_heap_size == 1)
+            {
+                current_heap_size--;
+                return heapArray[0];
+            }
+
+            // Store the minimum value, 
+            // and remove it from heap 
+            int root = heapArray[0];
+
+            heapArray[0] = heapArray[current_heap_size - 1];
+            current_heap_size--;
+            MinHeapify(0);
+
+            return root;
+        }
+
+        // This function deletes key at the 
+        // given index. It first reduced value 
+        // to minus infinite, then calls extractMin()
+        public void deleteKey(int key)
+        {
+            decreaseKey(key, int.MinValue);
+            extractMin();
+        }
+
+        // A recursive method to heapify a subtree 
+        // with the root at given index 
+        // This method assumes that the subtrees
+        // are already heapified
+        public void MinHeapify(int key)
+        {
+            int l = Left(key);
+            int r = Right(key);
+
+            int smallest = key;
+            if (l < current_heap_size &&
+                heapArray[l] < heapArray[smallest])
+            {
+                smallest = l;
+            }
+
+            if (r < current_heap_size &&
+                heapArray[r] < heapArray[smallest])
+            {
+                smallest = r;
+            }
+
+            if (smallest != key)
+            {
+                Swap(ref heapArray[key],
+                    ref heapArray[smallest]);
+                MinHeapify(smallest);
+            }
+        }
+
+        // Increases value of given key to new_val.
+        // It is assumed that new_val is greater 
+        // than heapArray[key]. 
+        // Heapify from the given key
+        public void increaseKey(int key, int new_val)
+        {
+            heapArray[key] = new_val;
+            MinHeapify(key);
+        }
+
+        // Changes value on a key
+        public void changeValueOnAKey(int key, int new_val)
+        {
+            if (heapArray[key] == new_val)
+            {
+                return;
+            }
+
+            if (heapArray[key] < new_val)
+            {
+                increaseKey(key, new_val);
+            }
+            else
+            {
+                decreaseKey(key, new_val);
+            }
+        }
+    }
+}
+
+namespace Patterns
+{
+    namespace StrategyPattern
+    {
+        //Strategy pattern
+        public interface IProduct
+        {
+            public string Name { get; set; }
+        }
+
+        public class Product : IProduct
+        {
+            public string Name { get; set; }
+        }
+        
+        public interface IProducer
+        {
+            public IProduct Produce(string Name);
+        }
+
+        public class Producer : IProducer
+        {
+            public virtual IProduct Produce(string Name) { return new Product() {Name = Name}; }
+        }
+
+        
+        // Items for factory creation
+        // Item one
+        public interface IVessel
+        {
+            public double Tonnage { get; set; }
+        }
+
+        public class Vessel : Product, IVessel
+        {
+            public double Tonnage { get; set; }
+        }
+
+        // Item two
+        public interface ICar
+        {
+            public double Speed { get; set; }
+            public string Model { get; set; }
+        }
+
+        public class Car : Product, ICar
+        {
+            public double Speed { get; set; }
+            public string Model { get; set; }
+        }
+        
+        
+        // Producers
+        public class ManufacturerOne : Producer
+        {
+            //!!! override
+            public override IProduct Produce(string Name)
+            {
+                return new Vessel() {Name = Name};
+            }
+
+            public new IProduct Produce(string Name, double tonnage)
+            {
+                return new Vessel() {Name = Name, Tonnage = tonnage};
+            }
+        }
+
+        public class ManufacturerTwo : Producer
+        {
+            //!!! override
+            public override IProduct Produce(string Name)
+            {
+                return new Car() {Name = Name, Model = "Model1"};
+            }
+
+            public new IProduct Produce(string Name, string Model)
+            {
+                return new Car() {Name = Name, Model = Model};
+            }
+        }
+
+        public class ManufacturerThree : Producer
+        {
+            //!!! override
+            public override IProduct Produce(string Name)
+            {
+                return new Car() {Name = Name, Model = "Model2", Speed = 10};
+            }
+        }
+
+
+        // Factory
+        public interface IProducerFactory
+        {
+            IProducer CreateProducer(string name);
+            IProducer CreateProducer(IProducer type);
+            IProducer CreateProducer(Type type);
+        }
+
+        public class ProducerFactory : IProducerFactory
+        {
+            public IProducer CreateProducer(string name)
+            {
+                IProducer r = name switch
+                {
+                    "ManufactureOne" => new ManufacturerOne(),
+                    "ManufactureTwo" => new ManufacturerTwo(),
+                    "ManufactureThree" => new ManufacturerThree(),
+                    _ => new ManufacturerThree(),
+                };
+
+                return r;
+            }
+
+            public IProducer CreateProducer(IProducer type)
+            {
+                IProducer r = type switch
+                {
+                    ManufacturerOne => new ManufacturerOne(),
+                    ManufacturerTwo => new ManufacturerTwo(),
+                    ManufacturerThree => new ManufacturerThree(),
+                    _ => new ManufacturerOne(),
+                };
+
+                return r;
+            }
+            public IProducer CreateProducer(Type type)
+            {
+                if (type == typeof(ManufacturerOne))
+                {
+                    return new ManufacturerOne();
+                }
+
+                if (type == typeof(ManufacturerTwo))
+                {
+                    return new ManufacturerTwo();
+                }
+
+                if (type == typeof(ManufacturerThree))
+                {
+                    return new ManufacturerThree();
+                }
+
+                return new ManufacturerOne();
+            }
+        }
+
+        // Factory for producers of items testing
+        public class Printer
+        {
+            public static void Print(IProducer p, IProduct pd)
+            {
+                Trace.WriteLine($"Producer is: {p.GetType()}");
+                Trace.WriteLine($"Product is: {pd.GetType()}");
+
+                PrintProd(pd);
+            }
+
+            public static void PrintProd(IProduct p)
+            {
+                if (p is ICar t)
+                    PrintType(t);
+                if (p is IVessel t2)
+                    PrintType(t2);
+            }
+
+            public static void PrintType(ICar c)
+            {
+                Trace.WriteLine($"Car model is: {c.Model}");
+            }
+
+            public static void PrintType(IVessel c)
+            {
+                Trace.WriteLine($"Vessel tonnage is: {c.Tonnage}");
+            }
+        }
+
+        public class StrategyPatternCheck
+        {
+            private static StrategyPatternCheck instance;
+
+            public static void GO()
+            {
+                instance = new StrategyPatternCheck();
+                instance._GO();
+            }
+
+            void _GO()
+            {
+                IProducerFactory factory = new ProducerFactory();
+
+                List<IProducer> items = new List<IProducer>();
+
+                IProducer p1 = new ManufacturerOne();
+                IProducer p2 = new ManufacturerTwo();
+
+                items.Add(factory.CreateProducer(p1.GetType()));
+                items.Add(factory.CreateProducer(p2.GetType()));
+                items.Add(factory.CreateProducer(typeof(ManufacturerThree)));
+
+                foreach (var i in items)
+                {
+                    var item = i.Produce("Item name");
+                    Printer.Print(i, item);
+                }
+            }
         }
     }
 }

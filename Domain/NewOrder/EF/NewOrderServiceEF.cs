@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
@@ -38,44 +39,11 @@ namespace CoreSB.Domain.NewOrder.EF
         {
             _repositoryWrite = repositoryWrite;
         }
-
-        public void ReInitialize()
-        {
-
-            _repositoryWrite.ReInitialize();
-            _repositoryRead?.ReInitialize();
-        }
         
-        public void ReGenerate()
+        public async Task ReInitialize()
         {
-
-            _repositoryWrite.ReInitialize();
-            List<AddressDAL> addresses = new List<AddressDAL>();
-
-            for (int i = 0; i < 10; i++)
-            {
-                addresses.Add(new AddressDAL() { Id = i + 1, StreetName = $"test street {i}", Code = i + 1 });
-            };
-
-            _repositoryWrite.AddRange(addresses);
-
-            try
-            {
-                _repositoryWrite.SaveIdentity("Adresses");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-
+            await _repositoryWrite.DropDB();
+            await _repositoryWrite.CreateDB();
         }
-        public void CleanUp()
-        {
-            _repositoryWrite.CleanUp();
-            var addressesExist = _repositoryWrite.QueryByFilter<AddressDAL>(s => s.Id != 0).ToList();
-            _repositoryWrite.DeleteRange(addressesExist);
-            try { _repositoryWrite.Save(); } catch (Exception) { throw; }
-        }
-
     }
 }

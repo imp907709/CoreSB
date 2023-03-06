@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
 using CoreSB.Domain.Currency.Mapping;
+using CoreSB.Domain.Currency.Models;
 using CoreSB.Domain.Currency.Mongo;
 
 namespace CoreSB.Domain.Currency

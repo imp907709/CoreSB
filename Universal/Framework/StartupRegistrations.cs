@@ -1,11 +1,11 @@
 using AutoMapper;
 using CoreSB.Domain.Currency.Mapping;
-using CoreSB.Universal.Framework;
+using CoreSB.Universal.StartupConfigs;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace aspnetcoreapp.Universal.StartupConfigs
+namespace CoreSB.Universal.Framework
 {
     public class StartupRegistrations
     {

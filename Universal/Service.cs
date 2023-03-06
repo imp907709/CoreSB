@@ -95,7 +95,7 @@ namespace CoreSB.Universal
         {
             await _repositoryWrite.DropDB();
         }
- 
+
         public string GetConnectionString()
         {
             return this._repositoryWrite.GetConnectionString();

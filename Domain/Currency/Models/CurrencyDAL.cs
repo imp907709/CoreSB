@@ -1,9 +1,8 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using CoreSB.Universal;
 
-namespace CoreSB.Domain.Currency
+namespace CoreSB.Domain.Currency.Models
 {
     public class CurrencyDAL : EntityIntIdDAL
     {

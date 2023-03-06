@@ -1,7 +1,7 @@
 using System;
-using aspnetcoreapp.Universal.StartupConfigs;
-using CoreSB;
 using CoreSB.Domain.Currency;
+using CoreSB.Startup;
+using CoreSB.Universal.Framework;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,10 +20,13 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 StartupRegistrations.ConfigureAutoMapper();
 StartupRegistrations.OptionsBinding(builder.Configuration);
 
+
+// Universal services registration
 RegistrationsIoC.ConfigureMainServices(builder.Services);
 
 // Domain registration
 Registration.ConfigureCurrencyServices(builder.Services, builder.Configuration);
+
 
 var app = builder.Build();
 
@@ -37,5 +40,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.CustomBeforeStartProcess();
 
 app.Run();

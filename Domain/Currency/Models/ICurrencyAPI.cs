@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CoreSB.Domain.Currency
+namespace CoreSB.Domain.Currency.Models
 {
     public interface ICurrencyRateAddAPI
     {

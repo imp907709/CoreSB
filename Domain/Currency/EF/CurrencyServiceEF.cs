@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
+using CoreSB.Domain.Currency.Models;
 using CoreSB.Infrastructure.IO.Settings;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
@@ -351,62 +352,27 @@ namespace CoreSB.Domain.Currency.EF
         }
 
 
-        
-        public void Initialize()
+        public async Task ReInitialize()
         {
-            _repositoryWrite.AddRangeAsync(InitialPreloadData.initialCurrencies);
+            await _repositoryWrite.DropDB();
+            await _repositoryWrite.CreateDB();
+        }
+        public async Task Initialize()
+        {
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.initialCurrencies);
             try { _repositoryWrite.SaveIdentity<CurrencyDAL>(); }
             catch (Exception e)
             {
                 throw;
             }
 
-            _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2019);
-            _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2022);
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2019);
+            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2022);
             try { _repositoryWrite.SaveIdentity<CurrencyRatesDAL>(); }
             catch (Exception e)
             {
                 throw;
             }
-        }
-        
-        public void ReInitialize()
-        {
-            _repositoryRead.ReInitialize();
-            _repositoryWrite.ReInitialize();
-
-            this.Initialize();
-        }
-        
-        public void CleanUp()
-        {
-            _repositoryWrite.ReInitialize();
-            _repositoryWrite.DeleteRange(_repositoryRead.GetAll<CurrencyRatesDAL>().ToList());
-            _repositoryWrite.DeleteRange(_repositoryRead.GetAll<CurrencyDAL>().ToList());
-            try { _repositoryWrite.Save(); }
-            catch (Exception e) { throw; }
-        }
-
-
-        public async Task InitialGen()
-        {
-            var crrs = await _repositoryWrite.GetAll<CurrencyRatesDAL>().ToListAsync();
-            _repositoryWrite.DeleteRange(crrs);
-            await _repositoryWrite.SaveAsync();
-            
-            var crs = await _repositoryWrite.GetAll<CurrencyDAL>().ToListAsync();
-            _repositoryWrite.DeleteRange(crs);
-            await _repositoryWrite.SaveAsync();
-            
-            await _repositoryWrite.AddRangeAsync(InitialPreloadData.initialCurrencies);
-            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2019);
-            await _repositoryWrite.AddRangeAsync(InitialPreloadData.CrossCurrencies_2022);
-            await _repositoryWrite.SaveAsync();
-        }
-        
-        public async Task ValidateCrudTest()
-        {
-            await InitialGen();
         }
     }
 }

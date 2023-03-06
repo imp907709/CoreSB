@@ -1,7 +1,7 @@
 ﻿
-
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CoreSB.Domain.Currency.Models;
 using CoreSB.Universal;
 using CoreSB.Universal.Infrastructure.EF;
 
@@ -22,11 +22,8 @@ namespace CoreSB.Domain.Currency
         Task<IList<ICrossCurrenciesAPI>> GetCurrencyCrossRatesAsync(IGetCurrencyCommand command);
 
 
-        void Initialize();
-        void ReInitialize();
-        void CleanUp();
-        
-        
-        Task ValidateCrudTest();
+        Task Initialize();
+        Task ReInitialize();
+
     }
 }

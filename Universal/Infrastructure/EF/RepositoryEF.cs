@@ -126,16 +126,10 @@ namespace CoreSB.Universal.Infrastructure.EF
             await this._context.Database.EnsureCreatedAsync();
         }
         
-        public void ReInitialize()
+        public async Task Recreate()
         {
-            this._context.Database.EnsureDeleted();
-            this._context.Database.EnsureCreated();
-        }
-
-        public void CleanUp()
-        {
-            this._context.Database.EnsureDeleted();
-            this._context.Database.EnsureCreated();
+            await DropDB();
+            await CreateDB();
         }
 
         public void SaveIdentity<T>()

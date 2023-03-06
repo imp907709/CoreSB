@@ -83,13 +83,7 @@ namespace CoreSB.Universal
         {
             throw new NotImplementedException();
         }
-        
-        public void ReInitialize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CleanUp()
+        public async Task Recreate()
         {
             throw new NotImplementedException();
         }
