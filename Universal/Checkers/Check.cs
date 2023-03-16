@@ -682,6 +682,45 @@ namespace Algorithms
         }
     }
 
+    public class QuickSortNew
+    {
+        public int[] GO(int[] arr)
+        {
+            return sort(arr, 0, arr.Length -1);
+        }
+
+        public int[] sort(int[] arr, int l, int h)
+        {
+            if (l > h)
+                return arr;
+
+            var p = partition(arr, 0, arr.Length);
+
+            sort(arr, 0, p - 1);
+            sort(arr, p + 1, arr.Length);
+            
+            return arr;
+        }
+
+        public int partition(int[] arr, int low, int hg)
+        {
+            var p = hg;
+            var i = low-1;
+
+            for (int j = low; j < hg; j++)
+            {
+                if (arr[j] < arr[p])
+                {
+                    i++;
+                    Utils.Swap(arr,i,j);
+                }
+            }
+
+            i++;
+            Utils.Swap(arr,i,hg);
+            return i;
+        }
+    }
 
     public class MergeSortOriginal
     {
@@ -950,7 +989,7 @@ namespace Algorithms
 
 
     //utilities, helpers
-    public class Arrays
+    public class Utils
     {
         public static void Split(int[] arr, out int[] l, out int[] r)
         {
@@ -1003,6 +1042,8 @@ namespace Algorithms
             QuickSort qsi = new QuickSort();
             MergeSort ms = new MergeSort();
             HeapSort hs = new HeapSort();
+
+            QuickSortNew qsn = new QuickSortNew();
             
             SelectionSortOriginal sso = new SelectionSortOriginal();
             InsertionSortOriginal iso = new InsertionSortOriginal();
@@ -1014,7 +1055,7 @@ namespace Algorithms
             
             
             // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {hso.GO };
+            List<SortInt> algs = new List<SortInt>() {qso.GO, qsn.GO };
 
             //for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)
