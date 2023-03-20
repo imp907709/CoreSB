@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AutoMapper;
 using CoreSB.Domain.Currency.Mapping;
 using CoreSB.Universal.StartupConfigs;
@@ -19,6 +20,7 @@ namespace CoreSB.Universal.Framework
         
         public static void ConfigureFluentValidation(IServiceCollection services)
         {
+            
             services.AddMvc().AddFluentValidation();
         }
 

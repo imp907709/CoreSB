@@ -9,12 +9,56 @@ using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Text.Json;
 using AngleSharp.Common;
+using AngleSharp.Dom;
 using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualBasic;
 using NetPlatformCheckers;
 
+namespace UtilsCustom
+{
+    //utilities, wrapper
+    public class Utils
+    {
+        public static void Split(int[] arr, out int[] l, out int[] r)
+        {
+            l = new int[0];
+            r = new int[0];
+            
+            if (arr.Length <= 1)
+            {
+                l = arr;
+                r = new int[0];
+            }
+            else
+            {
+                var m = arr.Length / 2;
+                var lL = arr.Length - m;
+                l = new int[m];
+                r = new int[lL];
+                Array.Copy(arr,0,l,0,l.Length);
+                Array.Copy(arr,m,r,0,r.Length);
+            }
+        }
+        public static void ArraySwap(int[] arr, int l, int r)
+        {
+            (arr[l], arr[r]) = (arr[r], arr[l]);
+        }
+
+        public static void PrintTrace(string str)
+        {
+            System.Diagnostics.Trace.WriteLine(str);
+        }
+
+        public static void WriteTofile(string contents, string name = "test", string path = @"C:\files\test\",string ext="txt" )
+        {
+            System.IO.File.WriteAllText($"{path}{name}.{ext}",contents);
+        }
+    }
+}
 namespace InfrastructureCheckers
 {
     public class Check
@@ -436,7 +480,6 @@ namespace Algorithms
             return arr;
         }
     }
-
     public class SelectionSortOriginal
     {
         public int[] GO(int[] arr)
@@ -484,7 +527,6 @@ namespace Algorithms
             return arr;
         }
     }
-
     public class InsertionSortOriginal
     {
         // Function to sort array
@@ -537,7 +579,6 @@ namespace Algorithms
             return arr;
         }
     }
-
     public class ShellSortOriginal
     {
         public int[] GO(int[] arr)
@@ -576,43 +617,7 @@ namespace Algorithms
     }
 
 
-   
-    public class QuickSort{
-
-        public int[] GO(int[] arr){
-            sort(arr,0,arr.Length-1);
-            return arr;
-        }
-
-        void sort(int[] arr, int st, int fn){	
-            if(st>=fn)
-                return;
-            
-            var p = partition(arr,st, fn);
-		
-            sort(arr,st,p-1);
-            sort(arr,p+1,fn);
-        }
-
-        int partition(int[] arr,int low,int hi){
-		
-            var p = hi;
-            var i = low-1;
-		
-            for(int j = low; j<hi;j++){
-                if(arr[j] < arr[p]){
-                    i++;
-                    (arr[i], arr[j]) = (arr[j], arr[i]);
-                }
-            }
-		
-            i++;
-            (arr[i],arr[hi])=(arr[hi],arr[i]);
-		
-            return i;
-        }
-
-    }
+    
     public class QuickSortIntOriginal   
     {
         public int[] GO(int[] arr)
@@ -681,47 +686,86 @@ namespace Algorithms
             }
         }
     }
+    public class QuickSort{
 
-    public class QuickSortNew
-    {
-        public int[] GO(int[] arr)
-        {
-            return sort(arr, 0, arr.Length -1);
-        }
-
-        public int[] sort(int[] arr, int l, int h)
-        {
-            if (l > h)
-                return arr;
-
-            var p = partition(arr, 0, arr.Length);
-
-            sort(arr, 0, p - 1);
-            sort(arr, p + 1, arr.Length);
-            
+        public int[] GO(int[] arr){
+            sort(arr,0,arr.Length-1);
             return arr;
         }
 
-        public int partition(int[] arr, int low, int hg)
-        {
-            var p = hg;
-            var i = low-1;
+        void sort(int[] arr, int st, int fn){	
+            if(st>=fn)
+                return;
+            
+            var p = partition(arr,st, fn);
+		
+            sort(arr, st,p-1);
+            sort(arr,p+1, fn);
+        }
 
-            for (int j = low; j < hg; j++)
-            {
-                if (arr[j] < arr[p])
-                {
+        int partition(int[] arr,int low,int hi){
+		
+            var p = hi;
+            var i = low-1;
+		
+            for(int j = low; j<hi; j++){
+                if(arr[j] < arr[p]){
                     i++;
-                    Utils.Swap(arr,i,j);
+                    (arr[i], arr[j]) = (arr[j], arr[i]);
                 }
             }
-
+		
             i++;
-            Utils.Swap(arr,i,hg);
+            (arr[i],arr[hi])=(arr[hi],arr[i]);
+		
             return i;
         }
+
+    }
+    public class QuickSortNew
+    {
+
+        public int[] GO(int[] arr){
+            Sort(arr,0,arr.Length-1);
+            return arr;
+        }
+
+        void Sort(int[] arr, int st, int fn){
+		
+            if(st>=fn)
+                return;
+
+            var p = Partition(arr,st,fn);
+		
+            Sort(arr,st,p-1);
+            Sort(arr,p+1,fn);
+        }
+
+        int Partition(int[] arr, int st, int fn){
+		
+            var p = fn;
+            var i = st-1;
+		
+            for(int j = st; j< fn; j++){
+                if(arr[j] < arr[p]){
+                    i++;
+                    Swap(arr,i,j);
+                }
+            }
+		
+            i++;
+            Swap(arr,i,fn);
+            return i;
+        }
+
+        void Swap(int[] arr, int st, int fn){
+            (arr[st],arr[fn])=(arr[fn],arr[st]);
+        }
+
     }
 
+    
+    
     public class MergeSortOriginal
     {
         public int[] GO(int[] arr)
@@ -882,8 +926,67 @@ namespace Algorithms
             return res;
         }
     }
+    public class MergeSortNew
+    {
 
+        public int[] GO(int[] arr){
+            return Sort(arr);
+        }
 
+        int[] Sort(int[] arr){
+		
+            var N = arr.Length;
+            if(N<=1)
+                return arr;
+			
+            var m = N /2;
+            int[] lt = new int[m];
+            int[] rt = new int[N-m];
+            Array.Copy(arr,0,lt,0,lt.Length);
+            Array.Copy(arr,m,rt,0,rt.Length);
+		
+            lt = Sort(lt);
+            rt = Sort(rt);
+		
+            return merge(lt,rt);
+        }
+
+        int[] merge(int[] lt, int[] rt){
+            var result = new int[lt.Length + rt.Length];
+            var l = 0;
+            var r = 0;
+		
+            while(l < lt.Length && r < rt.Length){
+                if(lt[l]<rt[r]){
+                    result[l+r] = lt[l];
+                    l++;
+                }else{
+                    result[l+r] = rt[r];
+                    r++;
+                }
+            }
+		
+            while(l < lt.Length){
+                result[l+r] = lt[l];
+                l++;
+            }
+		
+            while(r < rt.Length){
+                result[l+r] = rt[r];
+                r++;
+            }
+		
+            return result;
+        }
+
+        void Swap(int[]arr, int st, int fn){
+            (arr[st],arr[fn])=(arr[fn],arr[st]);
+        }
+
+    }
+
+    
+    
     public class HeapSortOriginal
     {
         public int[] GO(int[] arr)
@@ -983,44 +1086,68 @@ namespace Algorithms
         }
     }
 
-    
-
-    public delegate int[] SortInt(int[] arr);
-
-
-    //utilities, helpers
-    public class Utils
+    public class HeapSortNew
     {
-        public static void Split(int[] arr, out int[] l, out int[] r)
+        public int[] GO(int[] arr)
         {
-            l = new int[0];
-            r = new int[0];
-            
-            if (arr.Length <= 1)
+            Sort(arr);
+            return arr;
+        }
+
+        void Sort(int[] arr)
+        {
+            var N = arr.Length;
+            if (N <= 1)
+                return;
+
+            for (int i = N / 2 - 1; i >= 0; i--)
             {
-                l = arr;
-                r = new int[0];
+                heapify(arr, i, N);
             }
-            else
+
+            for (int i = N - 1; i > 0; i--)
             {
-                var m = arr.Length / 2;
-                var lL = arr.Length - m;
-                l = new int[m];
-                r = new int[lL];
-                Array.Copy(arr,0,l,0,l.Length);
-                Array.Copy(arr,m,r,0,r.Length);
+                //sawp
+                Swap(arr, 0, i);
+                heapify(arr, 0, i);
             }
         }
-        public static void Swap(int[] arr, int l, int r)
+
+        void heapify(int[] arr, int st, int fn)
         {
-            (arr[l], arr[r]) = (arr[r], arr[l]);
+            var lg = st;
+            var lt = st * 2 + 1;
+            var rt = st * 2 + 2;
+
+            if (lt < fn && arr[lt] > arr[lg])
+                lg = lt;
+
+            if (rt < fn && arr[rt] > arr[lg])
+                lg = rt;
+
+            if (lg != st)
+            {
+                Swap(arr, lg, st);
+                heapify(arr, lg, fn);
+            }
+        }
+
+        void Swap(int[] arr, int st, int fn)
+        {
+            (arr[st], arr[fn]) = (arr[fn], arr[st]);
         }
     }
+
+
+
+    public delegate int[] SortInt(int[] arr);
+    
 
     public class SortChecker
     {
         private Random rnd = new Random();
-        List<int> _ranges = new List<int>() {10, 10000, 20000, 30000};
+        //List<int> _ranges = new List<int>() {10, 10000, 20000, 30000};
+        List<int> _ranges = new List<int>() {10, 1000, 10000};
         private List<string> rep = new List<string>();
         private StringBuilder sb = new StringBuilder();
 
@@ -1043,7 +1170,6 @@ namespace Algorithms
             MergeSort ms = new MergeSort();
             HeapSort hs = new HeapSort();
 
-            QuickSortNew qsn = new QuickSortNew();
             
             SelectionSortOriginal sso = new SelectionSortOriginal();
             InsertionSortOriginal iso = new InsertionSortOriginal();
@@ -1051,11 +1177,9 @@ namespace Algorithms
             QuickSortIntOriginal qso = new QuickSortIntOriginal();
             MergeSortOriginal mso = new MergeSortOriginal();
             HeapSortOriginal hso = new HeapSortOriginal();
-            
-            
-            
+
             // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {qso.GO, qsn.GO };
+            List<SortInt> algs = new List<SortInt>() {hso.GO};
 
             //for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)
@@ -1213,7 +1337,7 @@ namespace Datastructures
 {
     public class LinkedLists
     {
-        public static void SinglePlatformList()
+        public static void FrameworkSingleList()
         {
             var n4 = new LinkedListNode<string>("Node 4");
             
@@ -1239,6 +1363,249 @@ namespace Datastructures
             Trace.WriteLine(l3);
         }
     }
+
+    
+    
+    public class ListNodeSingle
+    {
+        public int Id { get; set; }
+        public string Message { get; set; }
+
+        public ListNodeSingle Next { get; set; }
+
+        public string Print()
+        {
+            return $"Id:{Id}; Message:{Message};";
+        }
+    }
+    public class ListNodeDouble : ListNodeSingle
+    {
+        public new ListNodeDouble Next { get; set; }
+        public ListNodeDouble Prev {get; set; }
+    }
+
+    public class LinkedListSingle
+    {
+        private ListNodeSingle _head;
+
+        private bool check()
+        {
+            if (_head == null)
+                return false;
+
+            return true;
+        } 
+            
+        public int Add(ListNodeSingle node)
+        {
+            if (!check())
+            {
+                _head = new ListNodeSingle(){Id = -1, Message = "_head_"};
+                node.Id = 1;
+                _head.Next = node;
+            }
+            else
+            {
+                var n = _head;
+                while (n?.Next != null)
+                {
+                    var d = n;
+                    n = d.Next;
+                }
+
+                node.Id = n.Id+1;
+                n.Next = node;
+            }
+
+            return node.Id;
+        }
+
+        public ListNodeSingle SearchById(int id)
+        {
+            if (!check())
+                return null;
+
+            var n = _head.Next;
+            while (n.Next != null || n.Id != id)
+            {
+                var d = n.Next;
+                n = d;
+            }
+
+            return n;
+        }
+
+        public string Print()
+        {
+            var result = $"{Environment.NewLine}---Empty---{Environment.NewLine}";
+            if (!check())
+                return result;
+
+            result = string.Empty;
+            var n = _head;
+            while (n?.Next != null)
+            {
+                var d = n;
+                n = d.Next;
+                result+=$"{Environment.NewLine}Id: {n.Id} ; Message: {n.Message} ;";
+            }
+
+            return result;
+        }
+
+        public IEnumerable<ListNodeSingle> Nodes()
+        {
+            if (!check())
+                yield return null;
+
+            var n = _head.Next;
+            while (n != null)
+            {
+                var d = n;
+                    yield return n;
+                n = d.Next;
+            }
+        }
+    }
+    public class LinkedListDouble
+    {
+        private IList<ListNodeDouble> nodes;
+        private ListNodeDouble _head;
+
+        private string _printEmpty => $"------{Environment.NewLine}Empty{Environment.NewLine}------";
+        private string _printNode(ListNodeSingle node) => $"{Environment.NewLine} Node :{node.Id}, Message: {node.Message};";
+            
+        private void headInit()
+        {
+            _head = new ListNodeDouble() {Id = -1, Message = "_head_", Next = null, Prev = null};
+            nodes = new List<ListNodeDouble>();
+        }
+
+        bool check()
+        {
+            return (nodes != null && _head != null);
+        }
+
+        public int AddLast(ListNodeDouble node)
+        {
+            if (!check())
+                headInit();
+
+            var n = _head;
+            while (n.Next != null)
+            {
+                n = n.Next;
+            }
+
+            node.Id = n.Id + 1;
+            n.Next = node;
+            
+            if(n!= _head) 
+                node.Prev = n;
+            
+            return node.Id;
+        }
+
+        public int AddFirst(ListNodeDouble node)
+        {
+            if (!check())
+            {
+                headInit();
+                return AddLast(node);
+            }
+
+            var d = _head.Next;
+            var rand = new Random();
+            node.Id = d.Id + 1;
+            
+            _head.Next = node;
+            node.Next = d;
+            node.Prev = null;
+
+            d.Prev = node;
+
+            return node.Id;
+        }
+
+        public bool Reverse()
+        {
+            if (!check())
+                return false;
+
+            var n = _head.Next;
+            while (n!=null)
+            {
+                (@n.Prev, @n.Next) = (@n.Next, @n.Prev);
+                
+                if (n.Prev == null)
+                    _head.Next = n;
+                
+                n = n.Prev;
+            }
+
+            return true;
+        }
+
+        public IList<ListNodeDouble> Nodes()
+        {
+            var result = new List<ListNodeDouble>(); 
+            if (!check())
+                return result;
+
+            var n = _head.Next;
+            while (n != null)
+            {
+                var d = n;
+                result.Add(n);
+                    n = d.Next;
+            }
+
+            return result;
+        }
+
+
+
+
+        
+        public string Print(bool reversed = false, bool printHead = false)
+        {
+            var res = _printEmpty;
+            if (!check())
+                return res;
+
+            res = string.Empty;
+            var n = _head.Next;
+            while (n != null)
+            {
+                res += _printNode(n);
+                n = n.Next;
+            }
+            return res;
+        }
+        
+        public ListNodeDouble GetHead()
+        {
+            return _head;
+        }
+
+        public ListNodeDouble SearchById(int id)
+        {
+            var node = _head;
+            while (node != null)
+            {
+                if(node.Id == id)
+                    break;
+
+                node = node.Next;
+            }
+
+            return node;
+        }
+
+        
+    }
+    
+    
     
     // A class for Min Heap
     public class MinHeap
@@ -1426,6 +1793,65 @@ namespace Datastructures
             {
                 decreaseKey(key, new_val);
             }
+        }
+    }
+
+
+
+    public class DatasstructuresCheck
+    {
+        private static DatasstructuresCheck inst = new DatasstructuresCheck();
+        public static void GO()
+        {
+            inst._go();
+        }
+
+        public void _go()
+        {
+            NodeLinkedListCheck();
+        }
+
+        private void NodeLinkedListCheck()
+        {
+            LinkedListDouble nll = new LinkedListDouble();
+            var res = $"{Environment.NewLine}----------{Environment.NewLine}";
+
+            nll.AddLast(new ListNodeDouble() {Message = "one"});
+            nll.AddLast(new ListNodeDouble() {Message = "two"});
+            nll.AddLast(new ListNodeDouble() {Message = "three"});
+            nll.AddFirst(new ListNodeDouble() {Message = "four"});
+            
+            UtilsCustom.Utils.PrintTrace(nll.Print());
+            
+            nll.Reverse();
+            UtilsCustom.Utils.PrintTrace(nll.Print());
+            
+            UtilsCustom.Utils.PrintTrace(nll.Print(true));
+            UtilsCustom.Utils.PrintTrace(nll.Print(false,true));
+
+
+            LinkedListSingle lls = new LinkedListSingle();
+
+            UtilsCustom.Utils.PrintTrace(lls.Print());
+
+            lls.Add(new ListNodeSingle() {Message = "five"});
+            lls.Add(new ListNodeSingle() {Message = "six"});
+            lls.Add(new ListNodeSingle() {Message = "seven"});
+            
+            UtilsCustom.Utils.PrintTrace(lls.Print());
+
+            var nodes = lls.Nodes().ToList();
+
+            var lld2 = new LinkedListDouble();
+            foreach (var n in nodes)
+            {
+                lld2.AddLast(new ListNodeDouble() {Message = n.Message});
+            }
+
+            UtilsCustom.Utils.PrintTrace(lld2.Print());
+
+            lld2.Reverse();
+            UtilsCustom.Utils.PrintTrace(lld2.Print());
         }
     }
 }
