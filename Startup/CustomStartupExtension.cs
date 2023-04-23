@@ -9,9 +9,13 @@ namespace CoreSB.Startup
         public static void CustomBeforeStartProcess(this IHost a)
         {
             System.Diagnostics.Trace.WriteLine($"Started");
-            //LINQcheck.GO();
-            //AlgCheck.GO();
-            Datastructures.DatasstructuresCheck.GO();
+            // LINQcheck.GO();
+            // AlgCheck.GO();
+            Datastructures.DataStructuresCheck.GO();
+            // Datastructures.DataStructuresCheck.GO();
+            
+            // Multithreadings.MultithreadingCheck.GO();
+
             Patterns.StrategyPattern.StrategyPatternCheck.GO();
             System.Diagnostics.Trace.WriteLine($"Finished");
         }

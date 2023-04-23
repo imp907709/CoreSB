@@ -3,11 +3,14 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using AngleSharp.Common;
 using AngleSharp.Dom;
 using Elastic.Clients.Elasticsearch;
@@ -16,7 +19,9 @@ using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualBasic;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NetPlatformCheckers;
+using UtilsCustom;
 
 namespace UtilsCustom
 {
@@ -56,6 +61,34 @@ namespace UtilsCustom
         public static void WriteTofile(string contents, string name = "test", string path = @"C:\files\test\",string ext="txt" )
         {
             System.IO.File.WriteAllText($"{path}{name}.{ext}",contents);
+        }
+
+        public static void Elapsed(Action method)
+        {
+            var sw = new Stopwatch();
+
+            sw.Reset();
+            sw.Start();
+
+            PrintTrace($"Method started");
+            method.Invoke();
+            PrintTrace($"Method finised in: { sw.Elapsed.Ticks}");
+
+            sw.Stop();
+        }
+        
+        public static async Task ElapsedAsync(Func<Task> method)
+        {
+            var sw = new Stopwatch();
+
+            sw.Reset();
+            sw.Start();
+
+            PrintTrace($"Method started");
+            await method.Invoke();
+            PrintTrace($"Method finised in: { sw.Elapsed.Ticks}");
+
+            sw.Stop();
         }
     }
 }
@@ -724,42 +757,41 @@ namespace Algorithms
     }
     public class QuickSortNew
     {
-
         public int[] GO(int[] arr){
-            Sort(arr,0,arr.Length-1);
+	
+            if(arr?.Length <=1)
+                return arr;
+
+            return sort(arr, 0, arr.Length - 1);
+        }
+
+        int[] sort(int[] arr, int st, int fn){
+            if(st>fn || fn >= arr.Length)
+                return arr;
+
+            var p = partition(arr,st, fn);
+	
+            sort(arr,st,p-1);
+            sort(arr,p+1,fn);
+
             return arr;
         }
 
-        void Sort(int[] arr, int st, int fn){
-		
-            if(st>=fn)
-                return;
-
-            var p = Partition(arr,st,fn);
-		
-            Sort(arr,st,p-1);
-            Sort(arr,p+1,fn);
-        }
-
-        int Partition(int[] arr, int st, int fn){
-		
-            var p = fn;
+        int partition(int[] arr, int st, int fn){
             var i = st-1;
-		
-            for(int j = st; j< fn; j++){
-                if(arr[j] < arr[p]){
+            var p = arr[fn];
+	
+            for(int j = st; j < fn; j++){
+                if(arr[j] < p){
                     i++;
-                    Swap(arr,i,j);
+                    UtilsCustom.Utils.ArraySwap(arr, i, j);
                 }
             }
-		
-            i++;
-            Swap(arr,i,fn);
-            return i;
-        }
 
-        void Swap(int[] arr, int st, int fn){
-            (arr[st],arr[fn])=(arr[fn],arr[st]);
+            i++;
+            UtilsCustom.Utils.ArraySwap(arr, i, fn);
+
+            return i;
         }
 
     }
@@ -929,34 +961,40 @@ namespace Algorithms
     public class MergeSortNew
     {
 
-        public int[] GO(int[] arr){
-            return Sort(arr);
+        public int[] GO(int[] arr)
+        {
+            return split(arr);
         }
-
-        int[] Sort(int[] arr){
-		
-            var N = arr.Length;
-            if(N<=1)
+	
+        int[] split(int[] arr){
+            if(arr?.Length <= 1)
                 return arr;
-			
-            var m = N /2;
-            int[] lt = new int[m];
-            int[] rt = new int[N-m];
-            Array.Copy(arr,0,lt,0,lt.Length);
-            Array.Copy(arr,m,rt,0,rt.Length);
-		
-            lt = Sort(lt);
-            rt = Sort(rt);
-		
-            return merge(lt,rt);
-        }
 
-        int[] merge(int[] lt, int[] rt){
-            var result = new int[lt.Length + rt.Length];
-            var l = 0;
-            var r = 0;
+            var N = arr.Length;
 		
-            while(l < lt.Length && r < rt.Length){
+            var p = N/2;
+            var pl = N-p;
+
+            int[] l = new int[p];
+            int[] r = new int[pl];
+		
+            Array.Copy(arr,0,l,0,l.Length);
+            Array.Copy(arr,p,r,0,r.Length);
+		
+            l = split(l);
+            r = split(r);
+		
+            return merge(l,r);
+        }
+	
+        int[] merge(int[] lt,int[] rt){
+            int[] result = new int[lt.Length + rt.Length];
+		
+            int l = 0;
+            int r = 0;
+		
+            while(l < lt.Length && r < rt.Length)
+            {
                 if(lt[l]<rt[r]){
                     result[l+r] = lt[l];
                     l++;
@@ -971,18 +1009,14 @@ namespace Algorithms
                 l++;
             }
 		
-            while(r < rt.Length){
+			
+            while(r< rt.Length){
                 result[l+r] = rt[r];
                 r++;
             }
 		
             return result;
         }
-
-        void Swap(int[]arr, int st, int fn){
-            (arr[st],arr[fn])=(arr[fn],arr[st]);
-        }
-
     }
 
     
@@ -1085,56 +1119,48 @@ namespace Algorithms
             return arr;
         }
     }
-
     public class HeapSortNew
     {
-        public int[] GO(int[] arr)
-        {
-            Sort(arr);
+        public int[] GO(int[] arr){
+            arr = sort(arr);
             return arr;
         }
 
-        void Sort(int[] arr)
-        {
+        int[] sort(int[] arr){
+
             var N = arr.Length;
-            if (N <= 1)
-                return;
-
-            for (int i = N / 2 - 1; i >= 0; i--)
+            for(int i = (N/2)-1;i>=0; i-- ){
+                arr = heapify(arr,i,N);
+            }
+		
+            for(int i = N-1;i>0; i-- )
             {
-                heapify(arr, i, N);
+                (arr[0], arr[i]) = (arr[i], arr[0]);
+                arr = heapify(arr,0,i);
             }
 
-            for (int i = N - 1; i > 0; i--)
-            {
-                //sawp
-                Swap(arr, 0, i);
-                heapify(arr, 0, i);
-            }
+            return arr;
         }
 
-        void heapify(int[] arr, int st, int fn)
+        int[] heapify(int[] arr,int st, int fn)
         {
             var lg = st;
-            var lt = st * 2 + 1;
-            var rt = st * 2 + 2;
-
-            if (lt < fn && arr[lt] > arr[lg])
-                lg = lt;
-
-            if (rt < fn && arr[rt] > arr[lg])
-                lg = rt;
-
-            if (lg != st)
+            var l = st*2+1;
+            var r = st*2+2;
+		
+            if(l < fn && arr[l] > arr[lg])
+                lg = l;
+		
+            if(r < fn && arr[r] > arr[lg])
+                lg = r;
+		
+            if(lg != st)
             {
-                Swap(arr, lg, st);
-                heapify(arr, lg, fn);
+                (arr[lg], arr[st]) = (arr[st], arr[lg]);
+                arr = heapify(arr, lg, fn);
             }
-        }
 
-        void Swap(int[] arr, int st, int fn)
-        {
-            (arr[st], arr[fn]) = (arr[fn], arr[st]);
+            return arr;
         }
     }
 
@@ -1178,8 +1204,12 @@ namespace Algorithms
             MergeSortOriginal mso = new MergeSortOriginal();
             HeapSortOriginal hso = new HeapSortOriginal();
 
+            QuickSortNew qsn = new QuickSortNew();
+            MergeSortNew msn = new MergeSortNew();
+            HeapSortNew hsn = new HeapSortNew();
+
             // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {hso.GO};
+            List<SortInt> algs = new List<SortInt>() {hso.GO, hsn.GO};
 
             //for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)
@@ -1364,24 +1394,56 @@ namespace Datastructures
         }
     }
 
-    
-    
-    public class ListNodeSingle
+
+
+    public class ListHashNode
+    {
+        public string Message { get; set; }
+        public int Prev { get; set; }
+        public int Next { get; set; }
+    }
+    public class ListNodeSingle 
     {
         public int Id { get; set; }
         public string Message { get; set; }
-
         public ListNodeSingle Next { get; set; }
+
+        public ListNodeSingle() { }
+
+        public ListNodeSingle(string message)
+        {
+            Message = message;
+        }
 
         public string Print()
         {
             return $"Id:{Id}; Message:{Message};";
         }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode()
+                   + Message.GetHashCode();
+        }
     }
     public class ListNodeDouble : ListNodeSingle
     {
+        public bool visited { get; set; } = false;
         public new ListNodeDouble Next { get; set; }
         public ListNodeDouble Prev {get; set; }
+
+        public ListNodeDouble() { }
+
+        public ListNodeDouble(string message) : base(message)
+        {
+            
+        }
+        
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode()
+                   + Message.GetHashCode();
+        }
     }
 
     public class LinkedListSingle
@@ -1467,14 +1529,19 @@ namespace Datastructures
             }
         }
     }
+
     public class LinkedListDouble
     {
         private IList<ListNodeDouble> nodes;
         private ListNodeDouble _head;
 
+        private LinkedListHash _loopChecker = new LinkedListHash();
+
         private string _printEmpty => $"------{Environment.NewLine}Empty{Environment.NewLine}------";
-        private string _printNode(ListNodeSingle node) => $"{Environment.NewLine} Node :{node.Id}, Message: {node.Message};";
-            
+
+        private string _printNode(ListNodeSingle node) =>
+            $"{Environment.NewLine} Node :{node.Id}, Message: {node.Message};";
+
         private void headInit()
         {
             _head = new ListNodeDouble() {Id = -1, Message = "_head_", Next = null, Prev = null};
@@ -1499,10 +1566,8 @@ namespace Datastructures
 
             node.Id = n.Id + 1;
             n.Next = node;
-            
-            if(n!= _head) 
-                node.Prev = n;
-            
+            node.Prev = n;
+ 
             return node.Id;
         }
 
@@ -1515,9 +1580,8 @@ namespace Datastructures
             }
 
             var d = _head.Next;
-            var rand = new Random();
             node.Id = d.Id + 1;
-            
+
             _head.Next = node;
             node.Next = d;
             node.Prev = null;
@@ -1527,20 +1591,67 @@ namespace Datastructures
             return node.Id;
         }
 
+        public ListNodeDouble FindById(int id)
+        {
+            var item = _head;
+
+            while (item?.Next != null && item?.Id != id)
+            {
+                item = item.Next;
+            }
+
+            if (item?.Id == id)
+                return item;
+
+            return null;
+        }
+        public bool Remove(int id)
+        {
+            var node = FindById(id);
+
+            if (node != null)
+            {
+                var p = node.Prev;
+                var n = node.Next;
+
+                if(p!=null)
+                    p.Next = node.Next;
+                
+                if(n!=null)
+                    n.Prev = node.Prev;
+
+                node = null;
+                return true;
+            }
+            return false;
+        }
         public bool Reverse()
         {
             if (!check())
                 return false;
 
             var n = _head.Next;
-            while (n!=null)
+            while (n != null)
             {
+
+                var nxt = n.Next;
+
                 (@n.Prev, @n.Next) = (@n.Next, @n.Prev);
-                
+
+                // last node
                 if (n.Prev == null)
+                {
                     _head.Next = n;
-                
-                n = n.Prev;
+                    n.Prev = _head;
+                }
+
+                // first node
+                if (n.Next?.Id < 0)
+                {
+                    n.Next = null;
+                }
+
+                n = nxt;
             }
 
             return true;
@@ -1548,7 +1659,7 @@ namespace Datastructures
 
         public IList<ListNodeDouble> Nodes()
         {
-            var result = new List<ListNodeDouble>(); 
+            var result = new List<ListNodeDouble>();
             if (!check())
                 return result;
 
@@ -1557,7 +1668,7 @@ namespace Datastructures
             {
                 var d = n;
                 result.Add(n);
-                    n = d.Next;
+                n = d.Next;
             }
 
             return result;
@@ -1565,8 +1676,64 @@ namespace Datastructures
 
 
 
+        public bool IsLoopedHash()
+        {
+            if (!check())
+                return false;
 
-        
+            var n = _head.Next;
+            while (n != null)
+            {
+                var b = n;
+                if (_loopChecker.Looped(n))
+                    return true;
+
+                _loopChecker.Add(n);
+                n = b.Next;
+            }
+
+            return false;
+        }
+
+        public bool IsLoopedVisited()
+        {
+            var n = _head.Next;
+            while (n != null)
+            {
+                var b = n;
+
+                if (n.visited)
+                    return true;
+
+                n.visited = true;
+
+                n = b.Next;
+            }
+
+            return false;
+        }
+
+        public bool IsLoopFloydsCycle()
+        {
+            var sl = _head.Next;
+            var ft = sl?.Next;
+            while (sl != null && ft != null)
+            {
+                var dSl = sl;
+                var dFt = ft;
+
+                if (sl == ft)
+                    return true;
+
+                sl = dSl.Next;
+                ft = dFt?.Next?.Next;
+            }
+
+            return false;
+        }
+
+
+
         public string Print(bool reversed = false, bool printHead = false)
         {
             var res = _printEmpty;
@@ -1577,12 +1744,14 @@ namespace Datastructures
             var n = _head.Next;
             while (n != null)
             {
-                res += _printNode(n);
+                res +=
+                    $"{Environment.NewLine} Node :{n.Id}, Message: {n.Message}; Previous:{n?.Prev?.Message ?? "empty"}";
                 n = n.Next;
             }
+
             return res;
         }
-        
+
         public ListNodeDouble GetHead()
         {
             return _head;
@@ -1593,7 +1762,7 @@ namespace Datastructures
             var node = _head;
             while (node != null)
             {
-                if(node.Id == id)
+                if (node.Id == id)
                     break;
 
                 node = node.Next;
@@ -1602,7 +1771,138 @@ namespace Datastructures
             return node;
         }
 
-        
+    }
+
+    public class LinkedListDoubleNew
+    {
+        public ListNodeDouble _head = new ListNodeDouble(){Message = "_head",Id=0};
+
+        public ListNodeDouble Add(ListNodeDouble node)
+        {
+            var item = _head;
+
+            while (item.Next != null)
+            {
+                item = item.Next;
+            }
+
+            node.Id = item.Id + 1;
+            node.Prev = item;
+            item.Next = node;
+            return node;
+        }
+
+        public bool DeleteById(int id)
+        {
+            var node = FindById(id);
+            if (node != null)
+            {
+                var p = node.Prev;
+                var n = node.Next;
+
+                p.Next = node.Next;
+                n.Prev = node.Prev;
+
+                node = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        public ListNodeDouble FindById(int id)
+        {
+            if (_head.Id == id)
+                return _head;
+
+            var item = _head;
+
+            while (item.Next != null && item.Id != id)
+            {
+                if (item.Id == id)
+                    return item;
+
+                item = item.Next;
+            }
+
+            if (item.Id == id)
+                return item;
+
+            return null;
+        }
+
+        public void Reverse()
+        {
+            var item = _head.Next;
+            while (item != null && item.Id != 0)
+            {
+                var n = item;
+                var nxt = item.Next;
+                
+                (n.Prev, n.Next) = (n.Next, n.Prev);
+
+                // first node make last
+                if (n.Next?.Id == 0)
+                    n.Next = null;
+                
+                // last node bind to first
+                if (n.Prev == null)
+                {
+                    _head.Next = n;
+                    n.Prev = _head;
+                }
+
+                item = nxt;
+            }
+        }
+
+        public string print()
+        {
+            var result = "=== Linked list start";
+
+            var item = _head;
+
+            while (item.Next != null)
+            {
+                result += $"\n Node message: {item.Message}; Node previous: {item.Prev?.Message ?? "empty"}";
+                item = item.Next;
+            }
+            
+            result += $"\n Node message: {item.Message}; Node previous: {item.Prev?.Message ?? "empty"}";
+            result += "\n --- linked list end";
+            return result;
+        }
+
+        ListNodeDouble iterateHeadFinal()
+        {
+            var item = _head;
+            while (item.Next != null)
+            {
+                item = item.Next;
+            }
+
+            return item;
+        }
+    }
+    
+
+    public class LinkedListHash
+    {
+        private Hashtable _hashtable = new Hashtable();
+
+        public void Add(ListNodeDouble node)
+        {
+            _hashtable.Add(node.GetHashCode(), node);
+        }
+
+        public bool Looped(ListNodeDouble node)
+        {
+            var hs = node.GetHashCode();
+            if (_hashtable.ContainsKey(node.GetHashCode()))
+                return true;
+            
+            return false;
+        }
     }
     
     
@@ -1798,9 +2098,9 @@ namespace Datastructures
 
 
 
-    public class DatasstructuresCheck
+    public class DataStructuresCheck
     {
-        private static DatasstructuresCheck inst = new DatasstructuresCheck();
+        private static DataStructuresCheck inst = new DataStructuresCheck();
         public static void GO()
         {
             inst._go();
@@ -1808,7 +2108,9 @@ namespace Datastructures
 
         public void _go()
         {
+            LinkedListDoubleNewCheck();
             NodeLinkedListCheck();
+            LinkedListLoopCheck();
         }
 
         private void NodeLinkedListCheck()
@@ -1852,6 +2154,86 @@ namespace Datastructures
 
             lld2.Reverse();
             UtilsCustom.Utils.PrintTrace(lld2.Print());
+        }
+
+        private void LinkedListLoopCheck()
+        {
+            LinkedListDouble lld = new LinkedListDouble();
+            LinkedListHash llh = new LinkedListHash();
+
+            var nodes = new List<ListNodeDouble>()
+            {
+                new ListNodeDouble() {Message = "Node1"},
+                new ListNodeDouble() {Message = "Node2"},
+                new ListNodeDouble() {Message = "Node3"},
+                new ListNodeDouble() {Message = "Node4"},
+            };
+
+            lld.AddLast(nodes[0]);
+            lld.AddLast(nodes[1]);
+            lld.AddLast(nodes[2]);
+            lld.AddLast(nodes[3]);
+
+            //Loop : 3 -> 2
+            //nodes[3].Next = nodes[1];
+            
+            var isLoopedHash = lld.IsLoopedHash();
+            var isLoppedVisited = lld.IsLoopedVisited();
+            var isLoopFloyds = lld.IsLoopFloydsCycle();
+
+        }
+
+        private void LinkedListDoubleNewCheck()
+        {
+            LinkedListDoubleNew lnk = new LinkedListDoubleNew();
+            
+            ListNodeDouble node = new ListNodeDouble("node one");
+            lnk.Add(node);
+
+            Utils.PrintTrace(lnk.print());
+
+            
+            
+            lnk.Add(new ListNodeDouble("node two"));
+            lnk.Add(new ListNodeDouble("node three"));
+            
+            Utils.PrintTrace(lnk.print());
+
+            
+            
+            var nodeFound = lnk.FindById(2);
+            var deleted = lnk.DeleteById(2);
+            
+            Utils.PrintTrace(lnk.print());
+
+            
+            lnk.Add(new ListNodeDouble("node four"));
+            Utils.PrintTrace(lnk.print());
+            
+            
+            lnk.Reverse();
+            Utils.PrintTrace(lnk.print());
+
+
+            
+            
+            var lnk_ = new LinkedListDouble();
+
+            lnk_.AddLast(new ListNodeDouble("node one"));
+            lnk_.AddLast(new ListNodeDouble("node two"));
+            lnk_.AddLast(new ListNodeDouble("node three"));
+            
+            Utils.PrintTrace(lnk_.Print());
+
+            var node_ = lnk_.FindById(1);
+            var delete = lnk_.Remove(1);
+            Utils.PrintTrace(lnk_.Print());
+            
+            lnk_.AddLast(new ListNodeDouble("node four"));
+            Utils.PrintTrace(lnk_.Print());
+            
+            lnk_.Reverse();
+            Utils.PrintTrace(lnk_.Print());
         }
     }
 }
@@ -2062,6 +2444,144 @@ namespace Patterns
                     Printer.Print(i, item);
                 }
             }
+        }
+    }
+}
+
+namespace Multithreadings
+{
+    public class Progressions
+    {
+        public int sum { get; private set; }
+        
+        public void Calculate(int gap)
+        {
+            if (gap >= 1)
+                this.sum++;
+            
+            for (int i = 2; i <= gap; i++)
+            {
+                this.sum += i;
+            }
+        }
+
+        public int CalculateCollectionParallel(List<int> numbers)
+        {
+            int total = 0;
+            
+            Parallel.ForEach(numbers, 
+                () => 0, // initial value,
+                (num, state, localSum) => num + localSum,
+                localSum => Interlocked.Add(ref total, localSum));
+            return total; // total = 50005000
+        }
+        
+        public int CalculateCollection(List<int> numbers)
+        {
+            int total = 0;
+            foreach (var number in numbers)
+            {
+                total += number;
+            }
+            return total;
+        }
+
+        public long SimpleCount(ref long sum, int[] arr)
+        {
+            for (int i = 0; i < arr.Length; i++)
+            {
+                sum += arr[i];
+                
+                UtilsCustom.Utils.PrintTrace($"sum is:{sum} on thread: {Thread.GetCurrentProcessorId()}");
+            }
+            return sum;
+        }
+
+        public void Increaser(List<int> arr, int st,int fn)
+        {
+            for (int i = st; i <= fn; i++)
+            {
+                arr[i] *= 2;
+            }
+        }
+
+
+        public async Task CountCompare()
+        {
+            var numbers = Enumerable.Range(1, 100).ToList();
+            for (int i = 0; i < numbers.Count; i++)
+            {
+                numbers[i] = 1;
+            }
+
+            UtilsCustom.Utils.Elapsed(() => CountAll(numbers));
+
+            numbers = Enumerable.Range(1, 100).ToList();
+            for (int i = 0; i < numbers.Count; i++)
+            {
+                numbers[i] = 1;
+            }
+            
+            UtilsCustom.Utils.Elapsed(async () =>  
+            {
+                await CountParallelAsync(numbers);
+            });
+        }
+        public void CountAll(List<int> numbers)
+        {
+            Increaser(numbers, 0, numbers.Count - 1);
+        }
+        public async Task CountParallelAsync(List<int> numbers)
+        {
+            var procs = Environment.ProcessorCount;
+            var threadsNum = 3;
+            var itemsPerThread = numbers.Count / threadsNum;
+
+            var partitions = new List<Partition>()
+            {
+                new Partition() {from = 0, to = itemsPerThread},
+                new Partition() {from = itemsPerThread+1, to = itemsPerThread+itemsPerThread},
+                new Partition() {from =  itemsPerThread+itemsPerThread+1, to = itemsPerThread*3}
+            };
+
+            var tasks = new List<Task>();
+
+            foreach (var p in partitions)
+            {
+                tasks.Add(Task.Factory.StartNew(()=> Increaser(numbers,p.from,p.to)));
+            }
+
+            await Task.WhenAll(tasks);
+        }
+    }
+
+    public class Partition
+    {
+        public int from { get; set; }
+        public int to { get; set; }
+        public long result { get; set; }
+    }
+
+    public class MultithreadingCheck
+    {
+        public static void GO()
+        {
+            Progressions f = new Progressions();
+            // f.Calculate(5);
+            // UtilsCustom.Utils.PrintTrace($"{f.sum}");
+            
+            var numbers = Enumerable.Range(1, 100000).ToList();
+            
+            UtilsCustom.Utils.Elapsed(() => f.CalculateCollection(numbers));
+            UtilsCustom.Utils.Elapsed(() => f.CalculateCollectionParallel(numbers));
+            
+           
+        }
+
+        public static async Task GOAsync()
+        {
+            Progressions f = new Progressions();
+            await f.CountCompare();
         }
     }
 }

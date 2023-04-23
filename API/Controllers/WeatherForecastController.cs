@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using CoreSB.Domain;
+using CoreSB.Universal;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace CoreSB.API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Microsoft.AspNetCore.Mvc.Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
@@ -35,5 +38,15 @@ namespace CoreSB.API.Controllers
             })
             .ToArray();
         }
+
+        [HttpGet]
+        [Microsoft.AspNetCore.Mvc.Route("CheckMultithreaded")]
+        public async Task<ActionResult> CheckMultithreaded()
+        {
+            await Multithreadings.MultithreadingCheck.GOAsync();
+            return Ok();
+        }
+
+        
     }
 }
