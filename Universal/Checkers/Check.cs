@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Runtime.Intrinsics.Arm;
@@ -12,14 +11,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp.Common;
-using AngleSharp.Dom;
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.IndexManagement;
 using LINQtoObjectsCheck;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualBasic;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NetPlatformCheckers;
 using UtilsCustom;
 
@@ -513,6 +508,7 @@ namespace Algorithms
             return arr;
         }
     }
+
     public class SelectionSortOriginal
     {
         public int[] GO(int[] arr)
@@ -560,6 +556,7 @@ namespace Algorithms
             return arr;
         }
     }
+
     public class InsertionSortOriginal
     {
         // Function to sort array
@@ -612,6 +609,7 @@ namespace Algorithms
             return arr;
         }
     }
+
     public class ShellSortOriginal
     {
         public int[] GO(int[] arr)
@@ -650,7 +648,43 @@ namespace Algorithms
     }
 
 
-    
+   
+    public class QuickSort{
+
+        public int[] GO(int[] arr){
+            sort(arr,0,arr.Length-1);
+            return arr;
+        }
+
+        void sort(int[] arr, int st, int fn){	
+            if(st>=fn)
+                return;
+            
+            var p = partition(arr,st, fn);
+		
+            sort(arr,st,p-1);
+            sort(arr,p+1,fn);
+        }
+
+        int partition(int[] arr,int low,int hi){
+		
+            var p = hi;
+            var i = low-1;
+		
+            for(int j = low; j<hi;j++){
+                if(arr[j] < arr[p]){
+                    i++;
+                    (arr[i], arr[j]) = (arr[j], arr[i]);
+                }
+            }
+		
+            i++;
+            (arr[i],arr[hi])=(arr[hi],arr[i]);
+		
+            return i;
+        }
+
+    }
     public class QuickSortIntOriginal   
     {
         public int[] GO(int[] arr)
@@ -719,85 +753,47 @@ namespace Algorithms
             }
         }
     }
-    public class QuickSort{
 
-        public int[] GO(int[] arr){
-            sort(arr,0,arr.Length-1);
-            return arr;
-        }
-
-        void sort(int[] arr, int st, int fn){	
-            if(st>=fn)
-                return;
-            
-            var p = partition(arr,st, fn);
-		
-            sort(arr, st,p-1);
-            sort(arr,p+1, fn);
-        }
-
-        int partition(int[] arr,int low,int hi){
-		
-            var p = hi;
-            var i = low-1;
-		
-            for(int j = low; j<hi; j++){
-                if(arr[j] < arr[p]){
-                    i++;
-                    (arr[i], arr[j]) = (arr[j], arr[i]);
-                }
-            }
-		
-            i++;
-            (arr[i],arr[hi])=(arr[hi],arr[i]);
-		
-            return i;
-        }
-
-    }
     public class QuickSortNew
     {
-        public int[] GO(int[] arr){
-	
-            if(arr?.Length <=1)
-                return arr;
-
-            return sort(arr, 0, arr.Length - 1);
+        public int[] GO(int[] arr)
+        {
+            return sort(arr, 0, arr.Length -1);
         }
 
-        int[] sort(int[] arr, int st, int fn){
-            if(st>fn || fn >= arr.Length)
+        public int[] sort(int[] arr, int l, int h)
+        {
+            if (l > h)
                 return arr;
 
-            var p = partition(arr,st, fn);
-	
-            sort(arr,st,p-1);
-            sort(arr,p+1,fn);
+            var p = partition(arr, 0, arr.Length);
 
+            sort(arr, 0, p - 1);
+            sort(arr, p + 1, arr.Length);
+            
             return arr;
         }
 
-        int partition(int[] arr, int st, int fn){
-            var i = st-1;
-            var p = arr[fn];
-	
-            for(int j = st; j < fn; j++){
-                if(arr[j] < p){
+        public int partition(int[] arr, int low, int hg)
+        {
+            var p = hg;
+            var i = low-1;
+
+            for (int j = low; j < hg; j++)
+            {
+                if (arr[j] < arr[p])
+                {
                     i++;
-                    UtilsCustom.Utils.ArraySwap(arr, i, j);
+                    Utils.Swap(arr,i,j);
                 }
             }
 
             i++;
-            UtilsCustom.Utils.ArraySwap(arr, i, fn);
-
+            Utils.Swap(arr,i,hg);
             return i;
         }
-
     }
 
-    
-    
     public class MergeSortOriginal
     {
         public int[] GO(int[] arr)
@@ -1119,61 +1115,45 @@ namespace Algorithms
             return arr;
         }
     }
-    public class HeapSortNew
-    {
-        public int[] GO(int[] arr){
-            arr = sort(arr);
-            return arr;
-        }
 
-        int[] sort(int[] arr){
-
-            var N = arr.Length;
-            for(int i = (N/2)-1;i>=0; i-- ){
-                arr = heapify(arr,i,N);
-            }
-		
-            for(int i = N-1;i>0; i-- )
-            {
-                (arr[0], arr[i]) = (arr[i], arr[0]);
-                arr = heapify(arr,0,i);
-            }
-
-            return arr;
-        }
-
-        int[] heapify(int[] arr,int st, int fn)
-        {
-            var lg = st;
-            var l = st*2+1;
-            var r = st*2+2;
-		
-            if(l < fn && arr[l] > arr[lg])
-                lg = l;
-		
-            if(r < fn && arr[r] > arr[lg])
-                lg = r;
-		
-            if(lg != st)
-            {
-                (arr[lg], arr[st]) = (arr[st], arr[lg]);
-                arr = heapify(arr, lg, fn);
-            }
-
-            return arr;
-        }
-    }
-
-
+    
 
     public delegate int[] SortInt(int[] arr);
-    
+
+
+    //utilities, helpers
+    public class Utils
+    {
+        public static void Split(int[] arr, out int[] l, out int[] r)
+        {
+            l = new int[0];
+            r = new int[0];
+            
+            if (arr.Length <= 1)
+            {
+                l = arr;
+                r = new int[0];
+            }
+            else
+            {
+                var m = arr.Length / 2;
+                var lL = arr.Length - m;
+                l = new int[m];
+                r = new int[lL];
+                Array.Copy(arr,0,l,0,l.Length);
+                Array.Copy(arr,m,r,0,r.Length);
+            }
+        }
+        public static void Swap(int[] arr, int l, int r)
+        {
+            (arr[l], arr[r]) = (arr[r], arr[l]);
+        }
+    }
 
     public class SortChecker
     {
         private Random rnd = new Random();
-        //List<int> _ranges = new List<int>() {10, 10000, 20000, 30000};
-        List<int> _ranges = new List<int>() {10, 1000, 10000};
+        List<int> _ranges = new List<int>() {10, 10000, 20000, 30000};
         private List<string> rep = new List<string>();
         private StringBuilder sb = new StringBuilder();
 
@@ -1196,7 +1176,7 @@ namespace Algorithms
             MergeSort ms = new MergeSort();
             HeapSort hs = new HeapSort();
 
-            
+
             SelectionSortOriginal sso = new SelectionSortOriginal();
             InsertionSortOriginal iso = new InsertionSortOriginal();
             ShellSortOriginal slst = new ShellSortOriginal();
@@ -1206,10 +1186,9 @@ namespace Algorithms
 
             QuickSortNew qsn = new QuickSortNew();
             MergeSortNew msn = new MergeSortNew();
-            HeapSortNew hsn = new HeapSortNew();
 
             // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {hso.GO, hsn.GO};
+            List<SortInt> algs = new List<SortInt>() {qso.GO, qsn.GO };
 
             //for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)

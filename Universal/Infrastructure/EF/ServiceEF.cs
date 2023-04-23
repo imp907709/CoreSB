@@ -24,6 +24,12 @@ namespace CoreSB.Universal.Infrastructure.EF
         {
             _repositoryWrite = repositoryWrite;
         }
+
+        public IQueryable<T> GetPaging<T>(int page,int perpage)
+            where T : class
+        {
+            return _repositoryWrite.SkipTake<T>(page, perpage);
+        }
         
         
         /// <summary>
