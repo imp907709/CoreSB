@@ -794,6 +794,8 @@ namespace Algorithms
         }
     }
 
+    
+    
     public class MergeSortOriginal
     {
         public int[] GO(int[] arr)
@@ -1381,15 +1383,15 @@ namespace Datastructures
         public int Prev { get; set; }
         public int Next { get; set; }
     }
-    public class ListNodeSingle 
+    public class LinkedNodeSingle 
     {
         public int Id { get; set; }
         public string Message { get; set; }
-        public ListNodeSingle Next { get; set; }
+        public LinkedNodeSingle Next { get; set; }
 
-        public ListNodeSingle() { }
+        public LinkedNodeSingle() { }
 
-        public ListNodeSingle(string message)
+        public LinkedNodeSingle(string message)
         {
             Message = message;
         }
@@ -1405,15 +1407,15 @@ namespace Datastructures
                    + Message.GetHashCode();
         }
     }
-    public class ListNodeDouble : ListNodeSingle
+    public class LinkedNodeDouble : LinkedNodeSingle
     {
         public bool visited { get; set; } = false;
-        public new ListNodeDouble Next { get; set; }
-        public ListNodeDouble Prev {get; set; }
+        public new LinkedNodeDouble Next { get; set; }
+        public LinkedNodeDouble Prev {get; set; }
 
-        public ListNodeDouble() { }
+        public LinkedNodeDouble() { }
 
-        public ListNodeDouble(string message) : base(message)
+        public LinkedNodeDouble(string message) : base(message)
         {
             
         }
@@ -1427,7 +1429,7 @@ namespace Datastructures
 
     public class LinkedListSingle
     {
-        private ListNodeSingle _head;
+        private LinkedNodeSingle _head;
 
         private bool check()
         {
@@ -1437,11 +1439,11 @@ namespace Datastructures
             return true;
         } 
             
-        public int Add(ListNodeSingle node)
+        public int Add(LinkedNodeSingle node)
         {
             if (!check())
             {
-                _head = new ListNodeSingle(){Id = -1, Message = "_head_"};
+                _head = new LinkedNodeSingle(){Id = -1, Message = "_head_"};
                 node.Id = 1;
                 _head.Next = node;
             }
@@ -1461,7 +1463,7 @@ namespace Datastructures
             return node.Id;
         }
 
-        public ListNodeSingle SearchById(int id)
+        public LinkedNodeSingle SearchById(int id)
         {
             if (!check())
                 return null;
@@ -1494,7 +1496,7 @@ namespace Datastructures
             return result;
         }
 
-        public IEnumerable<ListNodeSingle> Nodes()
+        public IEnumerable<LinkedNodeSingle> Nodes()
         {
             if (!check())
                 yield return null;
@@ -1511,20 +1513,20 @@ namespace Datastructures
 
     public class LinkedListDouble
     {
-        private IList<ListNodeDouble> nodes;
-        private ListNodeDouble _head;
+        private IList<LinkedNodeDouble> nodes;
+        private LinkedNodeDouble _head;
 
         private LinkedListHash _loopChecker = new LinkedListHash();
 
         private string _printEmpty => $"------{Environment.NewLine}Empty{Environment.NewLine}------";
 
-        private string _printNode(ListNodeSingle node) =>
-            $"{Environment.NewLine} Node :{node.Id}, Message: {node.Message};";
+        private string _printNode(LinkedNodeDouble node) =>
+            $"{Environment.NewLine} Node :{node.Id}, Message: {node.Message}; Previous:{node.Prev?.Message ?? "Empty"}";
 
         private void headInit()
         {
-            _head = new ListNodeDouble() {Id = -1, Message = "_head_", Next = null, Prev = null};
-            nodes = new List<ListNodeDouble>();
+            _head = new LinkedNodeDouble() {Id = -1, Message = "_head_", Next = null, Prev = null};
+            nodes = new List<LinkedNodeDouble>();
         }
 
         bool check()
@@ -1532,7 +1534,7 @@ namespace Datastructures
             return (nodes != null && _head != null);
         }
 
-        public int AddLast(ListNodeDouble node)
+        public int AddLast(LinkedNodeDouble node)
         {
             if (!check())
                 headInit();
@@ -1550,7 +1552,7 @@ namespace Datastructures
             return node.Id;
         }
 
-        public int AddFirst(ListNodeDouble node)
+        public int AddFirst(LinkedNodeDouble node)
         {
             if (!check())
             {
@@ -1570,7 +1572,7 @@ namespace Datastructures
             return node.Id;
         }
 
-        public ListNodeDouble FindById(int id)
+        public LinkedNodeDouble FindById(int id)
         {
             var item = _head;
 
@@ -1636,9 +1638,9 @@ namespace Datastructures
             return true;
         }
 
-        public IList<ListNodeDouble> Nodes()
+        public IList<LinkedNodeDouble> Nodes()
         {
-            var result = new List<ListNodeDouble>();
+            var result = new List<LinkedNodeDouble>();
             if (!check())
                 return result;
 
@@ -1731,12 +1733,12 @@ namespace Datastructures
             return res;
         }
 
-        public ListNodeDouble GetHead()
+        public LinkedNodeDouble GetHead()
         {
             return _head;
         }
 
-        public ListNodeDouble SearchById(int id)
+        public LinkedNodeDouble SearchById(int id)
         {
             var node = _head;
             while (node != null)
@@ -1754,9 +1756,10 @@ namespace Datastructures
 
     public class LinkedListDoubleNew
     {
-        public ListNodeDouble _head = new ListNodeDouble(){Message = "_head",Id=0};
+        public LinkedNodeDouble _head = new LinkedNodeDouble(){Message = "_head", Id = 0};
 
-        public ListNodeDouble Add(ListNodeDouble node)
+        //add
+        public LinkedNodeDouble Add(LinkedNodeDouble node)
         {
             var item = _head;
 
@@ -1765,43 +1768,24 @@ namespace Datastructures
                 item = item.Next;
             }
 
-            node.Id = item.Id + 1;
-            node.Prev = item;
+            node.Id = item.Id+1;
             item.Next = node;
+            node.Prev = item;
+            
             return node;
         }
 
-        public bool DeleteById(int id)
+        //find
+        public LinkedNodeDouble Find(int id)
         {
-            var node = FindById(id);
-            if (node != null)
-            {
-                var p = node.Prev;
-                var n = node.Next;
+            var item = _head;
 
-                p.Next = node.Next;
-                n.Prev = node.Prev;
-
-                node = null;
-                return true;
-            }
-
-            return false;
-        }
-
-        public ListNodeDouble FindById(int id)
-        {
             if (_head.Id == id)
                 return _head;
 
-            var item = _head;
-
-            while (item.Next != null && item.Id != id)
+            while (item?.Next != null && item.Id != id)
             {
-                if (item.Id == id)
-                    return item;
-
-                item = item.Next;
+                item = item?.Next;
             }
 
             if (item.Id == id)
@@ -1810,30 +1794,68 @@ namespace Datastructures
             return null;
         }
 
+        //delete
+        public bool Delete(int id)
+        {
+            var item = _head;
+
+            while (item?.Next != null && item.Id != id)
+            {
+                item = item.Next;
+            }
+
+            if (item.Id == id)
+            {
+                var p = item.Prev;
+                var n = item.Next;
+
+                p.Next = item.Next;
+
+                if (n != null)
+                    n.Prev = item.Prev;
+
+                item = null;
+                return true;
+            }
+
+            return false;
+        }
+        
+        //reverse
         public void Reverse()
         {
-            var item = _head.Next;
-            while (item != null && item.Id != 0)
-            {
-                var n = item;
-                var nxt = item.Next;
-                
-                (n.Prev, n.Next) = (n.Next, n.Prev);
+            var item = _head;
 
-                // first node make last
-                if (n.Next?.Id == 0)
-                    n.Next = null;
+            while (item != null)
+            {
+                var next = item.Next;
                 
-                // last node bind to first
-                if (n.Prev == null)
+                (item.Prev,item.Next) = (item.Next,item.Prev);
+
+                //was first elem
+                if (item.Next?.Id == 0)
                 {
-                    _head.Next = n;
-                    n.Prev = _head;
+                    //head detach
+                    item.Next = null;
+                }
+                
+                //was last element
+                if (item.Prev == null)
+                {
+                    //attach as first
+                    _head.Next = item;
+                    item.Prev = _head;
                 }
 
-                item = nxt;
+                item = next;
             }
         }
+
+        //loops
+        //hash loop
+        //visited prop
+        //floydsCycle 2 cycle
+        
 
         public string print()
         {
@@ -1852,15 +1874,54 @@ namespace Datastructures
             return result;
         }
 
-        ListNodeDouble iterateHeadFinal()
+
+        public bool IsLoopedHash()
         {
+            LinkedListHash hs = new LinkedListHash();
+
             var item = _head;
-            while (item.Next != null)
+            while (item != null)
             {
+                if (hs.Looped(item))
+                    return true;
+                
+                hs.Add(item);
                 item = item.Next;
             }
 
-            return item;
+            return false;
+        }
+
+        public bool IsLoppedVisited()
+        {
+            var item = _head;
+            while (item != null)
+            {
+                if (item.visited)
+                    return true;
+
+                item.visited = true;
+                item = item.Next;
+            }
+
+            return false;
+        }
+
+        public bool IsLoopedFloydsCycle()
+        {
+            var itemFirst = _head;
+            var itemNext = _head?.Next?.Next;
+
+            while (itemFirst != null)
+            {
+                if (itemFirst == itemNext)
+                    return true;
+                
+                itemFirst = itemFirst.Next;
+                itemNext = itemFirst?.Next?.Next;
+            }
+
+            return false;
         }
     }
     
@@ -1869,12 +1930,12 @@ namespace Datastructures
     {
         private Hashtable _hashtable = new Hashtable();
 
-        public void Add(ListNodeDouble node)
+        public void Add(LinkedNodeDouble node)
         {
             _hashtable.Add(node.GetHashCode(), node);
         }
 
-        public bool Looped(ListNodeDouble node)
+        public bool Looped(LinkedNodeDouble node)
         {
             var hs = node.GetHashCode();
             if (_hashtable.ContainsKey(node.GetHashCode()))
@@ -2087,134 +2148,77 @@ namespace Datastructures
 
         public void _go()
         {
-            LinkedListDoubleNewCheck();
-            NodeLinkedListCheck();
-            LinkedListLoopCheck();
+            LinkedListCheck();
+            LinkedListNewCheck();
         }
 
-        private void NodeLinkedListCheck()
+        private void LinkedListCheck()
         {
-            LinkedListDouble nll = new LinkedListDouble();
-            var res = $"{Environment.NewLine}----------{Environment.NewLine}";
+            LinkedListDouble ll = new LinkedListDouble();
 
-            nll.AddLast(new ListNodeDouble() {Message = "one"});
-            nll.AddLast(new ListNodeDouble() {Message = "two"});
-            nll.AddLast(new ListNodeDouble() {Message = "three"});
-            nll.AddFirst(new ListNodeDouble() {Message = "four"});
+            LinkedNodeDouble n1 = new LinkedNodeDouble("node one");
+            LinkedNodeDouble n2 = new LinkedNodeDouble("node two");
+            LinkedNodeDouble n3 = new LinkedNodeDouble("node three");
+
+            LinkedNodeDouble n4 = new LinkedNodeDouble("node four");
             
-            UtilsCustom.Utils.PrintTrace(nll.Print());
-            
-            nll.Reverse();
-            UtilsCustom.Utils.PrintTrace(nll.Print());
-            
-            UtilsCustom.Utils.PrintTrace(nll.Print(true));
-            UtilsCustom.Utils.PrintTrace(nll.Print(false,true));
+            ll.AddLast(n1);
+            ll.AddLast(n2);
+            ll.AddLast(n3);
+            UtilsCustom.Utils.PrintTrace(ll.Print());
 
+            ll.Remove(n2.Id);
+            UtilsCustom.Utils.PrintTrace(ll.Print());
 
-            LinkedListSingle lls = new LinkedListSingle();
+            ll.AddLast(n4);
+            UtilsCustom.Utils.PrintTrace(ll.Print());
 
-            UtilsCustom.Utils.PrintTrace(lls.Print());
-
-            lls.Add(new ListNodeSingle() {Message = "five"});
-            lls.Add(new ListNodeSingle() {Message = "six"});
-            lls.Add(new ListNodeSingle() {Message = "seven"});
-            
-            UtilsCustom.Utils.PrintTrace(lls.Print());
-
-            var nodes = lls.Nodes().ToList();
-
-            var lld2 = new LinkedListDouble();
-            foreach (var n in nodes)
-            {
-                lld2.AddLast(new ListNodeDouble() {Message = n.Message});
-            }
-
-            UtilsCustom.Utils.PrintTrace(lld2.Print());
-
-            lld2.Reverse();
-            UtilsCustom.Utils.PrintTrace(lld2.Print());
+            ll.Reverse();
+            UtilsCustom.Utils.PrintTrace(ll.Print());
         }
 
-        private void LinkedListLoopCheck()
+        private void LinkedListNewCheck()
         {
-            LinkedListDouble lld = new LinkedListDouble();
-            LinkedListHash llh = new LinkedListHash();
+            var ll = new LinkedListDoubleNew();
+            
+            LinkedNodeDouble n1 = new LinkedNodeDouble("node one");
+            LinkedNodeDouble n2 = new LinkedNodeDouble("node two");
+            LinkedNodeDouble n3 = new LinkedNodeDouble("node three");
 
-            var nodes = new List<ListNodeDouble>()
-            {
-                new ListNodeDouble() {Message = "Node1"},
-                new ListNodeDouble() {Message = "Node2"},
-                new ListNodeDouble() {Message = "Node3"},
-                new ListNodeDouble() {Message = "Node4"},
-            };
+            LinkedNodeDouble n4 = new LinkedNodeDouble("node four");
+            
+            ll.Add(n1);
+            ll.Add(n2);
+            ll.Add(n3);
+            UtilsCustom.Utils.PrintTrace(ll.print());
 
-            lld.AddLast(nodes[0]);
-            lld.AddLast(nodes[1]);
-            lld.AddLast(nodes[2]);
-            lld.AddLast(nodes[3]);
+            ll.Delete(n2.Id);
+            UtilsCustom.Utils.PrintTrace(ll.print());
 
-            //Loop : 3 -> 2
-            //nodes[3].Next = nodes[1];
-            
-            var isLoopedHash = lld.IsLoopedHash();
-            var isLoppedVisited = lld.IsLoopedVisited();
-            var isLoopFloyds = lld.IsLoopFloydsCycle();
+            ll.Add(n4);
+            UtilsCustom.Utils.PrintTrace(ll.print());
 
-        }
+            ll.Reverse();
+            UtilsCustom.Utils.PrintTrace(ll.print());
+            
+            LinkedNodeDouble n5 = new LinkedNodeDouble("node five");
+            LinkedNodeDouble n6 = new LinkedNodeDouble("node six");
+            LinkedNodeDouble n7 = new LinkedNodeDouble("node seven");
+            n6.Next = n5;
 
-        private void LinkedListDoubleNewCheck()
-        {
-            LinkedListDoubleNew lnk = new LinkedListDoubleNew();
+            var notLooped0= ll.IsLoopedHash();
+            var notLooped1 = ll.IsLoppedVisited();
+            var notLooped2 = ll.IsLoopedFloydsCycle();
             
-            ListNodeDouble node = new ListNodeDouble("node one");
-            lnk.Add(node);
+            ll.Add(n5);
+            ll.Add(n6);
 
-            Utils.PrintTrace(lnk.print());
-
-            
-            
-            lnk.Add(new ListNodeDouble("node two"));
-            lnk.Add(new ListNodeDouble("node three"));
-            
-            Utils.PrintTrace(lnk.print());
-
-            
-            
-            var nodeFound = lnk.FindById(2);
-            var deleted = lnk.DeleteById(2);
-            
-            Utils.PrintTrace(lnk.print());
-
-            
-            lnk.Add(new ListNodeDouble("node four"));
-            Utils.PrintTrace(lnk.print());
-            
-            
-            lnk.Reverse();
-            Utils.PrintTrace(lnk.print());
-
-
-            
-            
-            var lnk_ = new LinkedListDouble();
-
-            lnk_.AddLast(new ListNodeDouble("node one"));
-            lnk_.AddLast(new ListNodeDouble("node two"));
-            lnk_.AddLast(new ListNodeDouble("node three"));
-            
-            Utils.PrintTrace(lnk_.Print());
-
-            var node_ = lnk_.FindById(1);
-            var delete = lnk_.Remove(1);
-            Utils.PrintTrace(lnk_.Print());
-            
-            lnk_.AddLast(new ListNodeDouble("node four"));
-            Utils.PrintTrace(lnk_.Print());
-            
-            lnk_.Reverse();
-            Utils.PrintTrace(lnk_.Print());
+            var l0= ll.IsLoopedHash();
+            var l1 = ll.IsLoppedVisited();
+            var l2 = ll.IsLoopedFloydsCycle();
         }
     }
+    
 }
 
 namespace Patterns
