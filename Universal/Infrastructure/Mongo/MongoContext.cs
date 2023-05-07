@@ -8,14 +8,14 @@ namespace CoreSB.Universal.Infrastructure.Mongo
 {
     public class MongoContext : IMongoContext
     {
-        internal MongoClient _client;
+        internal IMongoClient _client;
 
         internal IMongoDatabase _database;
         internal string dbName;
 
         internal MongoClientSettings _settings;
 
-        public MongoContext(MongoClient client)
+        public MongoContext(IMongoClient client)
         {
             _client = client;
         }
@@ -161,6 +161,7 @@ namespace CoreSB.Universal.Infrastructure.Mongo
             where T : ICreateDateDAL
         {
             var deleteFilter = Builders<T>.Filter.Lte(s => s.Created, created);
+           
             var c = await GetCollection<T>()
                 .DeleteOneAsync(deleteFilter);
             return c.DeletedCount;
@@ -178,5 +179,6 @@ namespace CoreSB.Universal.Infrastructure.Mongo
         {
             return Builders<T>.Filter;
         }
+   
     }
 }
