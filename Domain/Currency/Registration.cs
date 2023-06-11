@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using AutoMapper;
+using CoreSB.Domain.Currency;
 using CoreSB.Domain.Currency.EF;
 using CoreSB.Domain.Currency.Mongo;
 using CoreSB.Universal;
@@ -11,9 +12,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 
-namespace CoreSB.Domain.Currency
+namespace CoreSB.Domain
 {
-    public class Registration
+    public partial class Registration
     {
         public static void ConfigureCurrencyServices(IServiceCollection services, IConfiguration configuration)
         {

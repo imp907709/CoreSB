@@ -41,9 +41,7 @@ namespace CoreSB.API.Controllers
         [Route("getConnectionString")]
         public ActionResult<string> GetConnectionString()
         {
-            #if DEBUG
-                return $"Write service connstr: {_serviceEF.GetConnectionString()}";
-            #endif
+            return $"Write service connstr: {_serviceEF.GetConnectionString()}";
         }
 
         [HttpGet]

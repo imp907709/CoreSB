@@ -43,9 +43,16 @@ dotnet add package AutoFixture
 ## Docker commands
 -------------------------------------------------------
 
-docker pull mcr.microsoft.com/mssql/server
+//Net Core web api
+//stop and erase image and container
+docker stop coresbapp
+docker rm coresbapp
+docker rmi coresbimage
 
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=QwErTy_1" -e "MSSQL_PID=Express" -p 1433:1433 --name msSQL -d
-mcr.microsoft.com/mssql/server:latest
+//rebuild  image
+docker build -t coresbimage .
+
+//run compose
+docker compose up -d
 
 -------------------------------------------------------

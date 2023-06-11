@@ -15,8 +15,8 @@ services:
         - sqldb
     environment:
         ASPNETCORE_ENVIRONMENT: "Development"
-        AZURE_SQL_CONNECTIONSTRING: "Server=tcp:coresqldb.database.windows.net,1433;Initial Catalog=coreSB;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-        MsSQlCoreSBConnection: "Server=tcp:coresqldb2.database.windows.net,1433;Initial Catalog=testdb;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        AZUREMSSQL: "Server=tcp:coresqldb.database.windows.net,1433;Initial Catalog=coreSB;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        MSSQLLOCAL: "Server=tcp:coresqldb2.database.windows.net,1433;Initial Catalog=testdb;Persist Security Info=False;User ID=core;Password=awsedrQ1;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   
   sqldb:
     container_name: MSSQLCoreSB
@@ -72,5 +72,6 @@ services:
     ports: 
         - 27017:27017
 
+# intraservice visibility
 networks:
     elastic:
