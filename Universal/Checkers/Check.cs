@@ -1118,12 +1118,67 @@ namespace Algorithms
         }
     }
 
+
+    public class CountingSort
+    {
+        public int[] GOint(int[] arr)
+        {
+            if (arr?.Length <= 1)
+                return arr;
+
+            var count = new int[255];
+            var res = new int[arr.Length];
+            
+            // count
+            for(int i = 0; i < arr.Length; i++)
+                count[arr[i]] += 1;
+
+            for (int i = 1; i < 255; i++)
+                count[i] += count[i - 1];
+
+            for (int i = arr.Length - 1; i >= 0; i--)
+            {
+                res[count[arr[i]] - 1] = arr[i];
+                count[arr[i]]--;
+            }
+            
+            return res;
+        }
+
+        public char[] GOchar(char[] arr)
+        {
+            if (arr?.Length <= 1)
+                return arr;
+
+            var count = new int[255];
+            var res = new char[arr.Length];
+            
+            // count
+            for(int i = 0; i < arr.Length; i++)
+                count[arr[i]] += 1;
+
+            for (int i = 1; i < 255; i++)
+                count[i] += count[i - 1];
+
+            for (int i = arr.Length - 1; i >= 0; i--)
+            {
+                res[count[arr[i]] - 1] = arr[i];
+                count[arr[i]]--;
+            }
+            
+            return res;
+
+        }
+        
+    }
+
     
 
     public delegate int[] SortInt(int[] arr);
+    public delegate char[] SortChar(char[] arr);
 
 
-    //utilities, helpers
+    // utilities, helpers
     public class Utils
     {
         public static void Split(int[] arr, out int[] l, out int[] r)
@@ -1189,21 +1244,23 @@ namespace Algorithms
             QuickSortNew qsn = new QuickSortNew();
             MergeSortNew msn = new MergeSortNew();
 
-            // List<SortInt> algs = new List<SortInt>() { ms._GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
-            List<SortInt> algs = new List<SortInt>() {qso.GO, qsn.GO };
+            CountingSort qs = new CountingSort();
 
-            //for (var rng = 5; rng <= 1000; rng += 10)
+             // List<SortInt> algs = new List<SortInt>() { ms.GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
+            List<SortInt> algs = new List<SortInt>() {qs.GOint};
+
+            // for (var rng = 5; rng <= 1000; rng += 10)
             foreach (var rng in _ranges)
             {
                 var arr = fillRandomArr(rng);
                 Trace.WriteLine($"Array under test:{string.Join(",", arr.ToList())} ;");
 
-                // arr = new List<int>() {5, 9, 0, 6, 2, 1};
+                arr = new List<int>() { 5,8,6,5,4,8,5,7,5,7};
                 var sortedarr = copySorted(arr);
 
                 var sw = new Stopwatch();
 
-                // arr = new List<int>() { 2, 1, 4, 3, 5};
+              
                 foreach (var alg in algs)
                 {
                     sw.Reset();

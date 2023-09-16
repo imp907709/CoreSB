@@ -10,7 +10,7 @@ namespace CoreSB.Startup
         {
             System.Diagnostics.Trace.WriteLine($"Started");
             // LINQcheck.GO();
-            // AlgCheck.GO();
+            AlgCheck.GO();
             Datastructures.DataStructuresCheck.GO();
             // Datastructures.DataStructuresCheck.GO();
             
