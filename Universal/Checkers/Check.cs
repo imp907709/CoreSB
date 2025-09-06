@@ -1129,10 +1129,11 @@ namespace Algorithms
             var count = new int[255];
             var res = new int[arr.Length];
             
-            // count
-            for(int i = 0; i < arr.Length; i++)
+                // count
+            for (int i = 0; i < arr.Length; i++)
                 count[arr[i]] += 1;
 
+                // move >> 1
             for (int i = 1; i < 255; i++)
                 count[i] += count[i - 1];
 
@@ -1175,7 +1176,6 @@ namespace Algorithms
     
 
     public delegate int[] SortInt(int[] arr);
-    public delegate char[] SortChar(char[] arr);
 
 
     // utilities, helpers
@@ -1246,7 +1246,9 @@ namespace Algorithms
 
             CountingSort qs = new CountingSort();
 
-             // List<SortInt> algs = new List<SortInt>() { ms.GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
+            // List<SortInt> algs = new List<SortInt>() { ms.GO, mso.GO, sso.GO,sst.GO, iss.GO, iso.GO };
+             
+            // sorting alg - no negative nums, no chars 
             List<SortInt> algs = new List<SortInt>() {qs.GOint};
 
             // for (var rng = 5; rng <= 1000; rng += 10)
@@ -1255,7 +1257,7 @@ namespace Algorithms
                 var arr = fillRandomArr(rng);
                 Trace.WriteLine($"Array under test:{string.Join(",", arr.ToList())} ;");
 
-                arr = new List<int>() { 5,8,6,5,4,8,5,7,5,7};
+                arr = new List<int>() { 5,3,3,4,5,3,2};
                 var sortedarr = copySorted(arr);
 
                 var sw = new Stopwatch();
@@ -1403,6 +1405,43 @@ namespace Algorithms
 
 namespace Datastructures
 {
+
+    public class ArraysMethodsCheck
+    {
+        public static void ArrayCheck()
+        {
+            var arr1 = new int[] {6, 4, 3, 9};
+            var arr2 = new int[] {6, 4, 3, 9, 7};
+            var arr3 = new int[] {6, 4, 3, 9, 7, 1};
+
+            var arr1r = new int[] {9, 3, 4, 6};
+            var arr2r = new int[] {7,9,3,4,6};
+            var arr3r = new int[] {1,7,9,3,4,6};
+
+            var arr1red = ArrayReverse(arr1);
+            var arr2red = ArrayReverse(arr2);
+            var arr3red = ArrayReverse(arr3);
+
+            var b1 = arr1red.SequenceEqual(arr1r);
+            var b2 = arr2red.SequenceEqual(arr2r);
+            var b3 = arr3red.SequenceEqual(arr3r);
+        }
+
+        public static int[] ArrayReverse(int[] arr)
+        {
+            
+            var n = arr.Length-1;
+            if(n<=1)
+                return arr;
+
+            for (int i = 0; i <= n/2; i++)
+            {
+                (arr[i], arr[n-i]) = (arr[n-i], arr[i]);
+            }
+
+            return arr;
+        }
+    }
     public class LinkedLists
     {
         public static void FrameworkSingleList()
@@ -2207,9 +2246,10 @@ namespace Datastructures
         {
             LinkedListCheck();
             LinkedListNewCheck();
+            ArraysCheck();
         }
 
-        private void LinkedListCheck()
+        public void LinkedListCheck()
         {
             LinkedListDouble ll = new LinkedListDouble();
 
@@ -2234,7 +2274,7 @@ namespace Datastructures
             UtilsCustom.Utils.PrintTrace(ll.Print());
         }
 
-        private void LinkedListNewCheck()
+        public void LinkedListNewCheck()
         {
             var ll = new LinkedListDoubleNew();
             
@@ -2273,6 +2313,11 @@ namespace Datastructures
             var l0= ll.IsLoopedHash();
             var l1 = ll.IsLoppedVisited();
             var l2 = ll.IsLoopedFloydsCycle();
+        }
+
+        public void ArraysCheck()
+        {
+            ArraysMethodsCheck.ArrayCheck();
         }
     }
     
